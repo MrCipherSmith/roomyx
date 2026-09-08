@@ -1,17 +1,45 @@
 import { readFileSync } from "node:fs";
+import { z } from "zod";
 import type { AgentDetail, MessageEnvelope, RoomState, RosterEntry } from "./types";
 
-interface StateLine {
-  type: "state";
-  goal_contract: RoomState["goal_contract"];
-  roster: RosterEntry[];
-}
+const rosterEntrySchema = z.object({ id: z.string(), name: z.string() });
 
-interface MessageLine extends MessageEnvelope {
-  type: "message";
-}
+const goalContractSchema = z.object({
+  version: z.number().int().min(1),
+  updated_in_round: z.number().int().min(0).optional(),
+  updated_by: z.literal("owner").optional(),
+  goal_statement: z.string(),
+  criteria: z.string(),
+  threshold: z.object({
+    fail_below: z.number(),
+    pass_at_or_above: z.number(),
+  }),
+});
 
-type LogLine = StateLine | MessageLine;
+const messageKindSchema = z.enum([
+  "pitch",
+  "question",
+  "challenge",
+  "answer",
+  "vote",
+  "status",
+  "research",
+]);
+
+const stateLineSchema = z.object({
+  type: z.literal("state"),
+  goal_contract: goalContractSchema,
+  roster: z.array(rosterEntrySchema),
+});
+
+const messageLineSchema = z.object({
+  type: z.literal("message"),
+  seq: z.number().int().min(1),
+  from: z.string().min(1),
+  in_reply_to: z.number().int().min(1).optional(),
+  kind: messageKindSchema.optional(),
+  body: z.string(),
+});
 
 /**
  * Reads the room log (see room-tui/README.md for the on-disk format) without
@@ -27,19 +55,25 @@ export function loadRoomLog(path: string): { state: RoomState; messages: Message
   }
 
   const [headerLine, ...rest] = lines as [string, ...string[]];
-  const header = JSON.parse(headerLine) as LogLine;
-  if (header.type !== "state") {
-    throw new Error(`Room log at ${path} must start with a "state" line, got "${header.type}".`);
+  const headerResult = stateLineSchema.safeParse(JSON.parse(headerLine));
+  if (!headerResult.success) {
+    throw new Error(
+      `Room log at ${path} must start with a valid "state" line: ${headerResult.error.message}`,
+    );
   }
 
-  const state: RoomState = { goal_contract: header.goal_contract, roster: header.roster };
+  const state: RoomState = {
+    goal_contract: headerResult.data.goal_contract,
+    roster: headerResult.data.roster,
+  };
 
-  const messages: MessageEnvelope[] = rest.map((line) => {
-    const parsed = JSON.parse(line) as LogLine;
-    if (parsed.type !== "message") {
-      throw new Error(`Expected a "message" line, got "${parsed.type}".`);
+  const messages: MessageEnvelope[] = rest.map((line, index) => {
+    const result = messageLineSchema.safeParse(JSON.parse(line));
+    if (!result.success) {
+      // +2: 1-indexed lines, plus the header line already consumed.
+      throw new Error(`Invalid "message" line ${index + 2} in ${path}: ${result.error.message}`);
     }
-    const { type: _type, ...envelope } = parsed;
+    const { type: _type, ...envelope } = result.data;
     return envelope;
   });
 
