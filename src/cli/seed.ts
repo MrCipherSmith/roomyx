@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { appendFileSync, existsSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import type { GoalContract, MessageEnvelope, RosterEntry } from "../log/types";
 
 /**
@@ -28,13 +28,12 @@ function parseFlags(args: string[]): Record<string, string> {
 
 function nextSeq(path: string): number {
   if (!existsSync(path)) return 1;
-  const lines = require("node:fs")
-    .readFileSync(path, "utf8")
+  const lines = readFileSync(path, "utf8")
     .split("\n")
-    .filter((l: string) => l.trim().length > 0);
+    .filter((l) => l.trim().length > 0);
   const messageSeqs = lines
     .slice(1)
-    .map((l: string) => (JSON.parse(l) as { seq: number }).seq);
+    .map((l) => (JSON.parse(l) as { seq: number }).seq);
   return messageSeqs.length > 0 ? Math.max(...messageSeqs) + 1 : 1;
 }
 

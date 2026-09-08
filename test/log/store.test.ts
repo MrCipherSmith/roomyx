@@ -1,9 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync, statSync } from "node:fs";
+import { mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadRoomLog, getTranscript, getAgentDetail } from "../../src/log/store";
 
 const FIXTURE = join(import.meta.dir, "..", "fixtures", "sample-room.jsonl");
+
+function writeTempLog(contents: string): string {
+  const dir = mkdtempSync(join(tmpdir(), "room-tui-test-"));
+  const path = join(dir, "log.jsonl");
+  writeFileSync(path, contents);
+  return path;
+}
 
 describe("loadRoomLog", () => {
   test("parses the state header (goal contract + roster)", () => {
@@ -23,6 +31,32 @@ describe("loadRoomLog", () => {
     expect(messages).toHaveLength(4);
     expect(messages[0]).toMatchObject({ seq: 1, from: "yuki", kind: "pitch" });
     expect(messages[3]).toMatchObject({ seq: 4, from: "zara", kind: "status" });
+  });
+
+  test("rejects a state line with an invalid kind enum value on a message line", () => {
+    const path = writeTempLog(
+      [
+        JSON.stringify({
+          type: "state",
+          goal_contract: {
+            version: 1,
+            goal_statement: "g",
+            criteria: "c",
+            threshold: { fail_below: 1, pass_at_or_above: 2 },
+          },
+          roster: [{ id: "a", name: "A" }],
+        }),
+        JSON.stringify({ type: "message", seq: 1, from: "a", kind: "not-a-real-kind", body: "x" }),
+      ].join("\n"),
+    );
+    expect(() => loadRoomLog(path)).toThrow(/Invalid "message" line/);
+  });
+
+  test("rejects a header missing required goal_contract fields", () => {
+    const path = writeTempLog(
+      JSON.stringify({ type: "state", goal_contract: { version: 1 }, roster: [] }),
+    );
+    expect(() => loadRoomLog(path)).toThrow(/must start with a valid "state" line/);
   });
 
   test("does not mutate the log file on disk (AC4)", () => {
