@@ -1,6 +1,6 @@
 # room-tui
 
-Version: 0.1.0
+Version: 0.2.0
 
 ## Purpose
 
@@ -8,7 +8,7 @@ Version: 0.1.0
 
 ## Status
 
-`draft` — архитектура согласована в переписке с оператором (2026-09-08), код не написан.
+`spec ready` for R1/R5/R6 and the TUI client; **`implemented`** for the MCP server read-side (R2, R3, R4 — `room.get_state`, `room.get_transcript`, `room.get_agent_detail`) as of flow `001-2026-09-08-room-tui-mcp-server-mvp-room-status-chat`, 2026-09-08. Code lives at `arena/room-tui/` (Bun + TypeScript + `@modelcontextprotocol/sdk`), tested against a fixture room log (`bun test`: 16/16 pass; `bunx tsc --noEmit`: clean). `room.post_owner_command` (R5), the TUI client itself, and live dispatcher integration (writing to the log during a real room) are still `spec ready`, not implemented — see `prd.md`'s Out of Scope for this flow.
 
 ## Document Index
 
