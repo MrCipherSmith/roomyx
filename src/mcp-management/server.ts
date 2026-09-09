@@ -10,6 +10,15 @@ export interface ManagementOptions {
   registryPath: string;
   bundledSkillPath: string;
   configPath: string;
+  /**
+   * The project a project-scoped target resolves against — `keryx` keeps its
+   * skills in `<project>/.metaproject/project-skills/`. Defaults to
+   * `process.cwd()`, which is right for `roomyx mcp` and wrong for a
+   * long-lived embedded server whose working directory is somebody else's.
+   * Every other path this server touches is already explicit; this one was
+   * the exception.
+   */
+  cwd?: string;
 }
 
 export interface ManagementServeOptions {
@@ -45,33 +54,21 @@ export function createManagementMcpServer(options: ManagementOptions): McpServer
     {
       title: "Sync the bundled startup-room skill",
       description:
-        "Diffs/backs-up/writes the bundled skill into a target (see decisions.md D-02 for safety rules).",
+        "Diffs/backs-up/writes the bundled skill into a named runtime's skill location (see decisions.md D-02 for safety rules).",
       inputSchema: {
-        target: z
-          .enum([...NAMED_TARGETS, "all"])
-          .optional()
-          .describe("A runtime by name, or `all`. Use targetPath instead for a literal path."),
-        targetPath: z.string().min(1).optional().describe("A literal path. Takes precedence over target."),
+        // Named targets only. This tool used to accept a literal `targetPath`,
+        // which made it an arbitrary-path file writer reachable over a loopback
+        // port with no authentication — a browser on any page the operator
+        // visits could drive it cross-origin. The CLI keeps the literal-path
+        // escape hatch, because that is the operator on their own machine;
+        // the network surface does not get one.
+        target: z.enum([...NAMED_TARGETS, "all"]).describe("A runtime by name, or `all`."),
         dryRun: z.boolean().optional(),
         yes: z.boolean().optional(),
       },
     },
-    async ({ target, targetPath, dryRun, yes }) => {
-      // One of the two is required, and neither can be marked required in the
-      // schema without excluding the other.
-      if (!target && !targetPath) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify({
-                error: `Pass either target (${[...NAMED_TARGETS, "all"].join(", ")}) or targetPath.`,
-              }),
-            },
-          ],
-        };
-      }
-      const targets = targetPath ? [{ name: targetPath, path: targetPath }] : resolveTargets(target as string);
+    async ({ target, dryRun, yes }) => {
+      const targets = resolveTargets(target, options.cwd);
       const results = targets.map(({ name, path }) => ({
         target: name,
         path,

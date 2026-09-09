@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -59,13 +59,20 @@ describe("MCP management server", () => {
 
   test("roomyx.skills.sync writes via a real MCP round-trip (AC5)", async () => {
     setup();
-    managementHandle = await serveManagement({ registryPath, bundledSkillPath: BUNDLED_SKILL, configPath }, { port: 0 });
+    // `keryx` is the project-scoped target, so pointing the server's `cwd` at a
+    // temp directory keeps this test inside it. D-02: the mechanism is
+    // exercised against fixtures, never a real `~/.claude/skills/...` file —
+    // and now that the tool takes named targets only, `cwd` is the only way to
+    // honour that.
+    managementHandle = await serveManagement(
+      { registryPath, bundledSkillPath: BUNDLED_SKILL, configPath, cwd: dir },
+      { port: 0 },
+    );
     const client = await connectClient(managementHandle.url);
 
-    const target = join(dir, "SKILL.md");
     const result = await client.callTool({
       name: "roomyx.skills.sync",
-      arguments: { targetPath: target },
+      arguments: { target: "keryx", yes: true },
     });
     const text = (result.content as Array<{ type: string; text: string }>)[0]?.text ?? "";
     // An array because `target: "all"` fans out to several runtimes; one
@@ -73,19 +80,43 @@ describe("MCP management server", () => {
     const sync = JSON.parse(text);
     expect(sync).toHaveLength(1);
     expect(sync[0].written).toBe(true);
-    expect(sync[0].path).toBe(target);
+    expect(sync[0].path).toBe(join(dir, ".metaproject", "project-skills", "startup-room", "SKILL.md"));
 
     await client.close();
   });
 
-  test("roomyx.skills.sync refuses when given neither target nor targetPath", async () => {
+  test("roomyx.skills.sync no longer accepts a literal path — the arbitrary-path writer is gone", async () => {
     setup();
-    managementHandle = await serveManagement({ registryPath, bundledSkillPath: BUNDLED_SKILL, configPath }, { port: 0 });
+    managementHandle = await serveManagement(
+      { registryPath, bundledSkillPath: BUNDLED_SKILL, configPath, cwd: dir },
+      { port: 0 },
+    );
+    const client = await connectClient(managementHandle.url);
+
+    const victim = join(dir, "victim.md");
+    const result = await client.callTool({
+      name: "roomyx.skills.sync",
+      arguments: { targetPath: victim, yes: true },
+    });
+
+    // The schema rejects it: `target` is required and `targetPath` is not a
+    // field any more, so an attacker-chosen path cannot reach syncSkill.
+    expect(result.isError).toBe(true);
+    expect(existsSync(victim)).toBe(false);
+
+    await client.close();
+  });
+
+  test("roomyx.skills.sync refuses a call with no target at all", async () => {
+    setup();
+    managementHandle = await serveManagement(
+      { registryPath, bundledSkillPath: BUNDLED_SKILL, configPath, cwd: dir },
+      { port: 0 },
+    );
     const client = await connectClient(managementHandle.url);
 
     const result = await client.callTool({ name: "roomyx.skills.sync", arguments: {} });
-    const text = (result.content as Array<{ type: string; text: string }>)[0]?.text ?? "";
-    expect(JSON.parse(text).error).toContain("targetPath");
+    expect(result.isError).toBe(true);
 
     await client.close();
   });
