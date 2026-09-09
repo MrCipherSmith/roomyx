@@ -117,14 +117,28 @@ export async function serveMcpOverHttp(
   }
 
   /**
-   * Closes sessions nothing has touched for a while.
+   * Closes sessions nothing has touched for a long time.
    *
-   * A well-behaved client polls every second or three, so a minute of silence
-   * means it is gone — and the ones that are gone are precisely the ones that
-   * never sent the DELETE that would have said so. `unref()` so an idle sweeper
-   * cannot be the reason a process stays alive.
+   * The first version of this used a minute, reasoning that a well-behaved
+   * client polls every second or three. That is true of roomyx's own TUI and
+   * false of every other consumer: `roomyx mcp` is documented for Claude Code,
+   * Codex and keryx, whose clients call a tool when a model decides to, and a
+   * minute of think-time is ordinary. Measured — connect, call a tool, idle 95
+   * seconds, and the next call fails permanently, because the SDK client never
+   * clears its session id on a 404 and never re-initializes. So the fix broke
+   * the product's primary integration surface: `roomyx mcp` worked once and was
+   * dead for the rest of the host's lifetime.
+   *
+   * **Eviction is one-way, so the window has to mean "certainly gone", not
+   * "probably gone".** Thirty minutes is past any plausible think-time while
+   * still bounding what a crashed client can leave behind. The ordinary case is
+   * not this sweeper's job at all — it is `terminateSession()` at every client
+   * close and `transport.onclose`; this only catches a client that died without
+   * being able to say so.
+   *
+   * `unref()` so an idle sweeper cannot be the reason a process stays alive.
    */
-  const IDLE_SESSION_MS = 60_000;
+  const IDLE_SESSION_MS = 30 * 60_000;
   const sweeper = setInterval(() => {
     const cutoff = Date.now() - IDLE_SESSION_MS;
     for (const [id, entry] of sessions) {
@@ -154,7 +168,18 @@ export async function serveMcpOverHttp(
 
     const transportPromise = existing ? Promise.resolve(existing.transport) : createSession();
     transportPromise
-      .then((transport) => transport.handleRequest(req, res))
+      .then(async (transport) => {
+        await transport.handleRequest(req, res);
+        // The 404 above closed one half of this class and the comment claimed
+        // both. A request carrying *no* session id still reaches `createSession`
+        // — it has to, because that is how `initialize` arrives — but if it was
+        // not an initialize, `onsessioninitialized` never fires and the
+        // transport never enters `sessions`: unsweepable, and invisible to
+        // `closeSessions` on shutdown. Measured: 15 session-less `tools/list`
+        // POSTs minted 15 transports and tracked 0. Anything that did not
+        // become a session is closed here.
+        if (transport.sessionId === undefined) await transport.close().catch(() => undefined);
+      })
       .catch((error) => {
         if (!res.headersSent) {
           res.writeHead(500, { "content-type": "application/json" });

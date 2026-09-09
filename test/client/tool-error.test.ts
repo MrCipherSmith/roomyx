@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { appendFileSync, mkdtempSync, rmSync } from "node:fs";
+import { appendFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { serve } from "../../src/server/serve";
 import type { ServeHandle } from "../../src/server/serve";
-import { RoomClient } from "../../src/client/mcp-client";
+import { RoomClient, ToolError } from "../../src/client/mcp-client";
 import { createRoomLog } from "../../src/log/write";
 
 /**
@@ -73,20 +73,39 @@ describe("a server that answers with an error", () => {
     expect(toolErrors[0]).toContain("line 2");
   }, 20000);
 
-  test("keeps polling rather than tearing the connection down", async () => {
-    handle = await serve(poisonedLog(), { port: 0 });
+  test("keeps polling, so a log repaired under a running client recovers", async () => {
+    // This used to assert that the error count kept growing, which was really
+    // asserting the flood: a persistent fault was reported once per poll. The
+    // property worth holding is the one underneath — the loop is still running,
+    // which is observable by repairing the log and watching messages arrive.
+    const dir = mkdtempSync(join(tmpdir(), "roomyx-recover-"));
+    dirs.push(dir);
+    const path = join(dir, "room.jsonl");
+    createRoomLog(path, { goalStatement: "recovery", roster: [{ id: "a", name: "Ann" }] });
+    appendFileSync(path, `${JSON.stringify({ type: "message", seq: 1, from: "", body: "broken" })}\n`);
+
+    handle = await serve(path, { port: 0 });
     const toolErrors: string[] = [];
+    const messages: string[] = [];
     client = new RoomClient(
-      { url: handle.url, stateIntervalMs: 20, transcriptIntervalMs: 20 },
-      { onToolError: (message) => toolErrors.push(message) },
+      { url: handle.url, stateIntervalMs: 50, transcriptIntervalMs: 50 },
+      {
+        onToolError: (message) => toolErrors.push(message),
+        onNewMessages: (batch) => messages.push(...batch.map((m) => m.body)),
+      },
     );
     client.start();
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const first = toolErrors.length;
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    expect(toolErrors).toHaveLength(1);
+    expect(messages).toHaveLength(0);
 
-    // Still retrying, so a log fixed under a running client recovers by itself.
-    expect(toolErrors.length).toBeGreaterThan(first);
+    // Repair it: rewrite the bad line as a good one.
+    const lines = readFileSync(path, "utf8").split("\n").filter((l) => l.trim());
+    lines[1] = JSON.stringify({ type: "message", seq: 1, from: "a", body: "REPAIRED" });
+    writeFileSync(path, `${lines.join("\n")}\n`);
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    expect(messages).toContain("REPAIRED");
   }, 20000);
 
   test("a real transport loss still reads as a disconnect", async () => {
@@ -147,5 +166,60 @@ describe("stopping the client", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 600));
     expect(afterStop).toEqual([]);
+  }, 20000);
+});
+
+describe("a tool error that does not go away", () => {
+  test("is reported once, not once per poll", async () => {
+    // A tool error is usually a property of the file, not a transient: a log
+    // line the reader's schema refuses stays refused. Reported per poll it
+    // produced ~80 identical transcript entries a minute, each allocating a
+    // renderable that was never freed — the same finite pool whose exhaustion
+    // this round fixed elsewhere, re-entered through a different door.
+    handle = await serve(poisonedLog(), { port: 0 });
+    const toolErrors: string[] = [];
+    client = new RoomClient(
+      { url: handle.url, stateIntervalMs: 100, transcriptIntervalMs: 100 },
+      { onToolError: (message) => toolErrors.push(message) },
+    );
+    client.start();
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Twenty-odd polls in that window, and the fault never changes.
+    expect(toolErrors).toHaveLength(1);
+  }, 20000);
+
+  test("a different error is still news", async () => {
+    // Deduplication must not swallow a second, distinct fault.
+    const first = new ToolError("Invalid \"message\" line 2");
+    const second = new ToolError("Invalid \"message\" line 9");
+    expect(first.message).not.toBe(second.message);
+  });
+});
+
+describe("a client that was stopped", () => {
+  test("can be started again", async () => {
+    // `stop()` cancelled the pending reconnect but left the handle set, and
+    // `scheduleConnect` uses that field as its single-flight token — so
+    // `start()` returned immediately and the client was inert for good.
+    const roomClient = new RoomClient({ url: "http://127.0.0.1:1/mcp", transcriptIntervalMs: 50 }, {});
+    roomClient.start();
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await roomClient.stop();
+
+    const statuses: string[] = [];
+    const restarted = new RoomClient(
+      { url: "http://127.0.0.1:1/mcp", transcriptIntervalMs: 50 },
+      { onConnectionChange: (status) => statuses.push(status) },
+    );
+    restarted.start();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await restarted.stop();
+    statuses.length = 0;
+
+    restarted.start();
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    await restarted.stop();
+    expect(statuses.length).toBeGreaterThan(0);
   }, 20000);
 });
