@@ -2,7 +2,6 @@
   "name": "@mrciphersmith/roomyx",
   "version": "0.1.0",
   "description": "MCP server + terminal UI for startup-room: live room status, chat, per-agent modal, an installable room registry, and skill-sync.",
-  "private": true,
   "publishConfig": {
     "access": "public"
   },
@@ -26,6 +25,12 @@
   "bin": {
     "roomyx": "./src/cli.ts"
   },
+  "files": [
+    "src",
+    "LICENSE",
+    "README.md",
+    "package.json"
+  ],
   "scripts": {
     "test": "bun test",
     "typecheck": "tsc --noEmit",
