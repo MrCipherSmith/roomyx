@@ -62,6 +62,7 @@
     "test/client/message-row.test.ts",
     "test/client/owner-prompt.test.ts",
     "test/client/render.test.ts",
+    "test/client/renderable-lifetime.test.ts",
     "test/client/scroll.test.ts",
     "test/client/search-prompt.test.ts",
     "test/client/transcript.test.ts",

@@ -9,7 +9,7 @@
   "title": "Fix the 2026-09-09 full-repository review: 3 blockers and the major findings",
   "status": "in-progress",
   "createdAt": "2026-09-09T17:48:55.941Z",
-  "updatedAt": "2026-09-09T17:52:26.112Z",
+  "updatedAt": "2026-09-09T17:53:46.009Z",
   "source": {
     "type": "description",
     "ref": null
@@ -107,7 +107,7 @@
       "id": "T6",
       "title": "B2 — destroy detached renderables and skip unchanged roster rebuilds",
       "kind": "implement",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -115,7 +115,8 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T7",
@@ -318,6 +319,11 @@
       "at": "2026-09-09T17:52:26.112Z",
       "event": "task-done",
       "detail": "T5: B1 — one schema for both directions of the room log"
+    },
+    {
+      "at": "2026-09-09T17:53:46.009Z",
+      "event": "task-done",
+      "detail": "T6: B2 — destroy detached renderables and skip unchanged roster rebuilds"
     }
   ]
 }
