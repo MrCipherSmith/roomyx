@@ -22,3 +22,4 @@
 - 2026-09-09T17:57:02.005Z - task-done: T7: B3 — tool errors are not disconnects; single-flight reconnect
 - 2026-09-09T18:01:57.954Z - task-done: T8: M1+M4 — serve exits on signals with a client attached; identity-checked liveness
 - 2026-09-09T18:04:36.575Z - task-done: T9: M2 — serialise seq allocation on append
+- 2026-09-09T18:10:03.900Z - task-done: T10: M3+M5 — export path containment and the MCP skill-sync gate

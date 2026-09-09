@@ -54,7 +54,20 @@ export async function serveMcpOverHttp(
     );
   }
 
-  const sessions = new Map<string, StreamableHTTPServerTransport>();
+  /**
+   * Live sessions, with the time each was last used.
+   *
+   * A session used to leave this map only via `onsessionclosed`, which the SDK
+   * fires on an HTTP DELETE — and nothing in roomyx sends one. `Client.close()`
+   * aborts the local controller; `terminateSession()` is the method that sends
+   * the DELETE, and it had no callers. So every session the process ever
+   * accepted was retained for the life of the process, at roughly 70-78 KB
+   * each, fed by ordinary use: one per `rooms list`, one per `room append`, one
+   * per client start, one per reconnect. Each abandoned id also stayed a fully
+   * routable handle to the room — three clients closed, then a raw POST
+   * replaying their recorded ids still returned a full `tools/list`.
+   */
+  const sessions = new Map<string, { transport: StreamableHTTPServerTransport; lastSeenMs: number }>();
 
   // Filled in after listen(). Sessions are only ever created while handling a
   // request, so by the time createSession runs this is the real bound port —
@@ -86,23 +99,60 @@ export async function serveMcpOverHttp(
       allowedHosts: [`127.0.0.1:${boundPort}`, `localhost:${boundPort}`, `[::1]:${boundPort}`],
       allowedOrigins: [`http://127.0.0.1:${boundPort}`, `http://localhost:${boundPort}`],
       onsessioninitialized: (sessionId) => {
-        sessions.set(sessionId, transport);
+        sessions.set(sessionId, { transport, lastSeenMs: Date.now() });
       },
       onsessionclosed: (sessionId) => {
         sessions.delete(sessionId);
       },
     });
+    // The DELETE is one way a session can end; the transport closing for any
+    // other reason is another, and only the first was being listened for.
+    transport.onclose = () => {
+      const id = transport.sessionId;
+      if (id !== undefined) sessions.delete(id);
+    };
     const mcpServer = options.createMcpServer();
     await mcpServer.connect(transport);
     return transport;
   }
 
+  /**
+   * Closes sessions nothing has touched for a while.
+   *
+   * A well-behaved client polls every second or three, so a minute of silence
+   * means it is gone — and the ones that are gone are precisely the ones that
+   * never sent the DELETE that would have said so. `unref()` so an idle sweeper
+   * cannot be the reason a process stays alive.
+   */
+  const IDLE_SESSION_MS = 60_000;
+  const sweeper = setInterval(() => {
+    const cutoff = Date.now() - IDLE_SESSION_MS;
+    for (const [id, entry] of sessions) {
+      if (entry.lastSeenMs < cutoff) {
+        sessions.delete(id);
+        void entry.transport.close().catch(() => undefined);
+      }
+    }
+  }, IDLE_SESSION_MS / 2);
+  sweeper.unref();
+
   const httpServer = createHttpServer((req, res) => {
     const sessionIdHeader = req.headers["mcp-session-id"];
     const sessionId = typeof sessionIdHeader === "string" ? sessionIdHeader : undefined;
     const existing = sessionId ? sessions.get(sessionId) : undefined;
+    if (existing) existing.lastSeenMs = Date.now();
 
-    const transportPromise = existing ? Promise.resolve(existing) : createSession();
+    // A request naming a session that does not exist is answered, not granted a
+    // new one. Minting a transport for an unknown id created one that never
+    // entered `sessions`, so it could not be closed even by `closeSessions` on
+    // shutdown — a leak reachable by anyone sending a random header.
+    if (sessionId !== undefined && existing === undefined) {
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: `Unknown session ${sessionId}` }));
+      return;
+    }
+
+    const transportPromise = existing ? Promise.resolve(existing.transport) : createSession();
     transportPromise
       .then((transport) => transport.handleRequest(req, res))
       .catch((error) => {
@@ -120,6 +170,7 @@ export async function serveMcpOverHttp(
       httpServer.listen(port, host, () => resolve());
     });
   } catch (error) {
+    clearInterval(sweeper);
     await closeSessions(sessions);
     throw error;
   }
@@ -142,6 +193,7 @@ export async function serveMcpOverHttp(
       //
       // The management server used to skip closing sessions entirely, so its
       // sessions outlived the process. One implementation, one behaviour.
+      clearInterval(sweeper);
       await closeSessions(sessions);
 
       await new Promise<void>((resolve, reject) => {
@@ -158,6 +210,8 @@ export async function serveMcpOverHttp(
   };
 }
 
-function closeSessions(sessions: Map<string, StreamableHTTPServerTransport>): Promise<unknown[]> {
-  return Promise.all([...sessions.values()].map((t) => t.close().catch(() => undefined)));
+function closeSessions(
+  sessions: Map<string, { transport: StreamableHTTPServerTransport; lastSeenMs: number }>,
+): Promise<unknown[]> {
+  return Promise.all([...sessions.values()].map((entry) => entry.transport.close().catch(() => undefined)));
 }

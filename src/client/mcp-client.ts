@@ -37,6 +37,23 @@ export class ToolError extends Error {}
 const MAX_BACKOFF_MS = 30_000;
 
 /**
+ * Ends a session on the server as well as locally.
+ *
+ * `client.close()` aborts the local controller and tells the server nothing.
+ * `terminateSession()` is what sends the HTTP DELETE the server needs to drop
+ * its transport — and it had no callers anywhere, so every connect this client
+ * ever made left a session behind that the room server retained for its whole
+ * life, and that stayed a fully routable handle to the room.
+ */
+async function endSession(
+  client: Client | undefined,
+  transport: StreamableHTTPClientTransport | undefined,
+): Promise<void> {
+  await transport?.terminateSession().catch(() => undefined);
+  await client?.close().catch(() => undefined);
+}
+
+/**
  * Polls a roomyx MCP server over HTTP for state and transcript updates.
  * Deliberately polling, not a push subscription — mirrors the server's own
  * "re-read on every call, no fs-watch" simplicity (see roomyx/README.md).
@@ -49,6 +66,7 @@ export class RoomClient {
   private readonly events: RoomClientEvents;
 
   private client: Client | undefined;
+  private transport: StreamableHTTPClientTransport | undefined;
   private status: ConnectionStatus = "connecting";
   private sinceSeq = 0;
   private stopped = false;
@@ -87,8 +105,9 @@ export class RoomClient {
     clearTimeout(this.stateTimer);
     clearTimeout(this.transcriptTimer);
     clearTimeout(this.reconnectTimer);
-    await this.client?.close().catch(() => undefined);
+    await endSession(this.client, this.transport);
     this.client = undefined;
+    this.transport = undefined;
   }
 
   private setStatus(status: ConnectionStatus): void {
@@ -115,18 +134,21 @@ export class RoomClient {
     this.setStatus("connecting");
     try {
       const client = new Client({ name: "roomyx-client", version: "0.1.0" });
-      await client.connect(new StreamableHTTPClientTransport(new URL(this.url)));
+      const transport = new StreamableHTTPClientTransport(new URL(this.url));
+      await client.connect(transport);
       if (this.stopped) {
         // stop() ran while this connection was in flight; this.client was
         // still undefined for it to close, so close the one it never saw.
-        await client.close().catch(() => undefined);
+        await endSession(client, transport);
         return;
       }
       // Close whatever we were holding before replacing it. A reconnect used
       // to drop the previous Client on the floor, leaking its socket.
       const previous = this.client;
+      const previousTransport = this.transport;
       this.client = client;
-      if (previous) void previous.close().catch(() => undefined);
+      this.transport = transport;
+      if (previous) void endSession(previous, previousTransport);
 
       this.backoffMs = this.transcriptIntervalMs;
       this.setStatus("connected");
@@ -235,8 +257,10 @@ export class RoomClient {
     clearTimeout(this.stateTimer);
     clearTimeout(this.transcriptTimer);
     const previous = this.client;
+    const previousTransport = this.transport;
     this.client = undefined;
-    if (previous) void previous.close().catch(() => undefined);
+    this.transport = undefined;
+    if (previous) void endSession(previous, previousTransport);
     this.setStatus("disconnected");
     this.scheduleConnect(this.backoffMs);
     this.backoffMs = Math.min(this.backoffMs * 2, MAX_BACKOFF_MS);

@@ -9,7 +9,7 @@
   "title": "Fix the 2026-09-09 full-repository review: 3 blockers and the major findings",
   "status": "in-progress",
   "createdAt": "2026-09-09T17:48:55.941Z",
-  "updatedAt": "2026-09-09T18:04:36.575Z",
+  "updatedAt": "2026-09-09T18:10:03.900Z",
   "source": {
     "type": "description",
     "ref": null
@@ -167,7 +167,7 @@
       "id": "T10",
       "title": "M3+M5 — export path containment and the MCP skill-sync gate",
       "kind": "implement",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -175,7 +175,8 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T11",
@@ -342,6 +343,11 @@
       "at": "2026-09-09T18:04:36.575Z",
       "event": "task-done",
       "detail": "T9: M2 — serialise seq allocation on append"
+    },
+    {
+      "at": "2026-09-09T18:10:03.900Z",
+      "event": "task-done",
+      "detail": "T10: M3+M5 — export path containment and the MCP skill-sync gate"
     }
   ]
 }
