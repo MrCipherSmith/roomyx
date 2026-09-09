@@ -1,4 +1,4 @@
-import { join, resolve, sep } from "node:path";
+import { dirname, resolve } from "node:path";
 
 /**
  * Where a transcript export is allowed to land, and under what name.
@@ -46,11 +46,21 @@ export function nextFreeExportPath(cwd: string, base: string, exists: (path: str
   const root = resolve(cwd);
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     const name = `${base}${attempt === 0 ? "" : `-${attempt}`}.txt`;
-    const path = join(root, name);
-    // The fact, checked after the transformation rather than instead of it.
-    if (path !== join(root, name) || !resolve(path).startsWith(root + sep)) {
-      return { ok: false, reason: "escapes-cwd" };
-    }
+    const path = resolve(root, name);
+    // The fact, checked after the transformation rather than instead of it —
+    // and this time it is actually a check. The first version compared `path`
+    // against the identical expression that had produced it one line earlier,
+    // which is unsatisfiable, and paired it with a `startsWith(root + sep)`
+    // test that inverted to always-false when `root` was `/`: started in a
+    // container with no working directory, every export was refused with
+    // "refusing to write outside the working directory", which is the opposite
+    // of what had happened.
+    //
+    // `dirname` equality holds at the filesystem root and is genuinely
+    // falsifiable the moment `name` regains a separator or a `..` segment —
+    // which is what the sanitiser above is for, and what this is here to catch
+    // if that sanitiser is ever loosened.
+    if (dirname(path) !== resolve(root)) return { ok: false, reason: "escapes-cwd" };
     if (!exists(path)) return { ok: true, path, name };
   }
   return { ok: false, reason: "exhausted" };

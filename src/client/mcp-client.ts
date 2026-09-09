@@ -85,6 +85,8 @@ export class RoomClient {
    * from a single malformed log line: one connection became 510 in ten seconds.
    */
   private generation = 0;
+  /** The last tool-error text reported, so a persistent fault is said once. */
+  private lastToolError: string | undefined;
 
   constructor(options: RoomClientOptions, events: RoomClientEvents) {
     this.url = options.url;
@@ -105,6 +107,11 @@ export class RoomClient {
     clearTimeout(this.stateTimer);
     clearTimeout(this.transcriptTimer);
     clearTimeout(this.reconnectTimer);
+    // Cleared, not just cancelled: `scheduleConnect` uses this field as its
+    // single-flight token, so a client stopped with a reconnect pending could
+    // never schedule another one — `start()` returned immediately and the
+    // client was inert for good.
+    this.reconnectTimer = undefined;
     await endSession(this.client, this.transport);
     this.client = undefined;
     this.transport = undefined;
@@ -199,7 +206,16 @@ export class RoomClient {
    */
   private handleToolError(error: unknown, resume: () => void): boolean {
     if (!(error instanceof ToolError)) return false;
-    this.events.onToolError?.(error.message);
+    // Reported once per distinct message, not once per poll. A tool error is
+    // usually a property of the file rather than a transient — a log line the
+    // reader's schema refuses stays refused — so the loop reported the same
+    // sentence about eighty times a minute, each one a transcript entry
+    // allocating a renderable it never freed. That is the pool exhaustion this
+    // same round fixed elsewhere, re-entered through a different door.
+    if (error.message !== this.lastToolError) {
+      this.lastToolError = error.message;
+      this.events.onToolError?.(error.message);
+    }
     resume();
     return true;
   }
@@ -212,6 +228,7 @@ export class RoomClient {
     this.callTool<RoomState>("room.get_state", {})
       .then((state) => {
         if (this.isStale(generation)) return;
+        this.lastToolError = undefined;
         this.events.onStateUpdate?.(state);
         again();
       })
