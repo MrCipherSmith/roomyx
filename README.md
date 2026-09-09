@@ -20,10 +20,12 @@ serving that path. See D-01a.
 
 ## Requirements
 
-**[Bun](https://bun.sh) 1.1 or newer must be on your `PATH`.** Both binaries are
-shipped as TypeScript with a `#!/usr/bin/env bun` shebang and are executed by
-Bun directly — there is no compiled or transpiled build step. Installing with
-npm works fine, but the commands will not run on a machine that has only Node.
+**[Bun](https://bun.sh) 1.1 or newer must be on your `PATH`.** roomyx ships
+TypeScript and runs it directly — there is no build step, so Bun is the
+interpreter rather than a build-time dependency.
+
+Installing on a machine without Bun succeeds, and the commands then tell you so
+and point at https://bun.sh. They will not install it for you.
 
 ## Install
 
