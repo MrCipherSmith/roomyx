@@ -103,3 +103,44 @@ describe("scrolling the transcript", () => {
     v.destroy();
   });
 });
+
+describe("the roster at narrow widths", () => {
+  test("it keeps its gutter on a normal terminal and gives it up on a narrow one", async () => {
+    // At 72 columns the roster was spending a third of the terminal on a few
+    // short names while messages wrapped to 46. A breakpoint rather than a
+    // hard minimum: widen the terminal and the list comes back.
+    for (const [width, visible] of [
+      [120, true],
+      [80, true],
+      [79, false],
+      [60, false],
+    ] as const) {
+      const { renderer } = await createTestRenderer({ width, height: 20 });
+      const chat = new ChatView(renderer, { width, height: 20 });
+      expect(chat.isRosterVisible()).toBe(visible);
+      renderer.destroy();
+    }
+  });
+
+  test("a narrow pane spends the reclaimed columns on the message body", async () => {
+    async function widestBodyLine(width: number): Promise<number> {
+      const { renderer, renderOnce, captureCharFrame } = await createTestRenderer({ width, height: 20 });
+      const chat = new ChatView(renderer, { width, height: 20 });
+      renderer.root.add(chat.node);
+      chat.setRoster([{ id: "a", name: "Ann" }]);
+      chat.appendMessages([{ seq: 1, from: "a", body: "wrap ".repeat(60).trim() }]);
+      await renderOnce();
+      const widest = Math.max(
+        ...captureCharFrame()
+          .split("\n")
+          .filter((line) => line.includes("wrap"))
+          .map((line) => line.trimEnd().length),
+      );
+      renderer.destroy();
+      return widest;
+    }
+    // Same terminal width either side of the breakpoint; below it the body gets
+    // the roster's 24 columns back.
+    expect(await widestBodyLine(79)).toBeGreaterThan(await widestBodyLine(80) - 24 + 20);
+  });
+});
