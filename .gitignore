@@ -39,3 +39,8 @@ brainstorm/.serve.log
 
 # bun test --coverage output
 coverage/
+
+# Rewritten by keryx's post-commit hook on every commit, so versioning it would
+# put a guaranteed diff in every future commit. Deliberately outside the
+# keryx:begin/end block above, which `keryx update` regenerates.
+.metaproject/data/wiki/freshness-queue.jsonl
