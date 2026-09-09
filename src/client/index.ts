@@ -12,6 +12,7 @@ import { resolveAction } from "./keymap";
 import type { Action } from "./keymap";
 import { livenessLine } from "./liveness";
 import { exportBaseName, nextFreeExportPath } from "./export-name";
+import { createShutdown } from "./shutdown";
 import { CLOSED, opened, searchPromptLine, stepSearchPrompt } from "./search-prompt";
 import type { SearchPromptState } from "./search-prompt";
 import type { ConnectionStatus } from "./mcp-client";
@@ -155,28 +156,17 @@ export async function runClient(flags: FlagValues): Promise<void> {
     showPrompt();
   }
 
-  /**
-   * Order matters, and it is the whole fix: stop polling **before** tearing the
-   * renderer down. The other way round, an in-flight poll loses its connection
-   * during teardown, calls `handleDisconnect`, and writes "disconnected" into a
-   * text buffer the renderer has already destroyed — which throws
-   * `TextBuffer is destroyed` and dumps ten frames of stack at someone who
-   * just closed a window.
-   *
-   * `q` and Ctrl-C always went through this path. Signals did not go through
-   * anything at all, so `kill` on an attached client produced exactly that
-   * trace. They share one exit now.
-   */
-  let shuttingDown = false;
-  function shutdown(code: number): void {
-    if (shuttingDown) return;
-    shuttingDown = true;
-    clearInterval(footerTimer);
-    void roomClient.stop().finally(() => {
-      renderer.destroy();
-      process.exit(code);
-    });
-  }
+  // The ordering and the re-entry guard live in `./shutdown` so they can be
+  // tested; see that file for why the order is the fix. `q`, Ctrl-C and all
+  // three signals share this one exit.
+  const shutdown = createShutdown({
+    stopClient: async () => {
+      clearInterval(footerTimer);
+      await roomClient.stop();
+    },
+    destroyRenderer: () => renderer.destroy(),
+    exit: (code) => process.exit(code),
+  });
 
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
     process.on(signal, () => shutdown(0));

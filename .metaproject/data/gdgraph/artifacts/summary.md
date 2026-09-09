@@ -2,11 +2,11 @@
 
 ## Stats
 
-- Source files indexed: 69
+- Source files indexed: 71
 - Imported asset files indexed: 0
-- Total nodes: 69
-- Edges: 115
-- Import edges: 115
+- Total nodes: 71
+- Edges: 118
+- Import edges: 118
 - Asset edges: 0
 - Unresolved imports: 0
 - Import resolution: 100%
@@ -16,7 +16,7 @@
 
 | Module | Source Files |
 |---|---:|
-| test | 34 |
+| test | 36 |
 | client | 14 |
 | server | 6 |
 | installer | 5 |

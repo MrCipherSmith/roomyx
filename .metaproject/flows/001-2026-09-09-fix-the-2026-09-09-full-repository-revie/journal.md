@@ -24,3 +24,4 @@
 - 2026-09-09T18:04:36.575Z - task-done: T9: M2 — serialise seq allocation on append
 - 2026-09-09T18:10:03.900Z - task-done: T10: M3+M5 — export path containment and the MCP skill-sync gate
 - 2026-09-09T18:12:58.329Z - task-done: T11: M6 — release MCP sessions
+- 2026-09-09T18:15:09.386Z - task-done: T12: M8+M10 — help overlay fits; roster and status bar truncate

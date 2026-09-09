@@ -22,6 +22,45 @@ afterEach(async () => {
   dir = undefined;
 });
 
+/**
+ * Reads the client's stdout until its painted frame satisfies `predicate`.
+ *
+ * The frame arrives as escape sequences, so it is stripped before matching —
+ * the roster name from the fixture is the cheapest proof that the client
+ * connected, polled and painted.
+ */
+async function waitForFrame(
+  proc: ReturnType<typeof Bun.spawn>,
+  predicate: (frame: string) => boolean,
+  timeoutMs = 15000,
+): Promise<{ consumed: string; rest: ReadableStreamDefaultReader<Uint8Array> }> {
+  const reader = (proc.stdout as ReadableStream<Uint8Array>).getReader();
+  const decoder = new TextDecoder();
+  let consumed = "";
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) throw new Error("client stdout ended before it painted");
+    consumed += decoder.decode(value, { stream: true });
+    const plain = consumed.replace(/\x1b\[[0-9;?]*[a-zA-Z]|\x1b\][^\x07]*\x07|\x1b./g, "");
+    // Returns the reader as well as what it already took: the stream can only
+    // be consumed once, and the assertions below need the rest of it.
+    if (predicate(plain)) return { consumed, rest: reader };
+    if (Date.now() > deadline) throw new Error("timed out waiting for the client to paint");
+  }
+}
+
+/** Everything left on a reader `waitForFrame` handed back. */
+async function drain(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<string> {
+  const decoder = new TextDecoder();
+  let text = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) return text;
+    text += decoder.decode(value, { stream: true });
+  }
+}
+
 async function serveFixture(): Promise<{ registryPath: string }> {
   dir = mkdtempSync(join(tmpdir(), "roomyx-client-shutdown-"));
   const registryPath = join(dir, "registry.json");
@@ -63,17 +102,17 @@ describe("the client's shutdown", () => {
       const client = Bun.spawn(["bun", CLIENT, "--registry", registryPath], { stdout: "pipe", stderr: "pipe" });
       procs.push(client);
 
-      // Let it connect and paint at least once, so teardown races a live poll.
-      await new Promise((r) => setTimeout(r, 2000));
+      // The precondition, established rather than hoped for. A fixed 2s wait
+      // and three negative assertions meant a client still on its "connecting…"
+      // frame satisfied every one of them — a silent green on the regression
+      // gate for a defect that already shipped.
+      const painted = await waitForFrame(client, (frame) => frame.includes("Омар"));
       client.kill(signal);
 
-      const [stdout, stderr] = await Promise.all([
-        new Response(client.stdout).text(),
-        new Response(client.stderr).text(),
-      ]);
+      const [rest, stderr] = await Promise.all([drain(painted.rest), new Response(client.stderr).text()]);
       await client.exited;
 
-      const output = stdout + stderr;
+      const output = painted.consumed + rest + stderr;
       expect(output).not.toContain("TextBuffer is destroyed");
       expect(output).not.toContain("handleDisconnect");
       // Nothing that looks like a stack frame from either roomyx or the renderer.
@@ -86,7 +125,7 @@ describe("the client's shutdown", () => {
     const client = Bun.spawn(["bun", CLIENT, "--registry", registryPath], { stdout: "pipe", stderr: "pipe" });
     procs.push(client);
 
-    await new Promise((r) => setTimeout(r, 2000));
+    await waitForFrame(client, (frame) => frame.includes("Омар"));
     client.kill("SIGTERM");
 
     const exited = await Promise.race([
