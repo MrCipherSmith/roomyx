@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createCliRenderer } from "@opentui/core";
 import { RoomClient } from "./mcp-client";
@@ -11,6 +11,7 @@ import type { OwnerPromptState } from "./owner-prompt";
 import { resolveAction } from "./keymap";
 import type { Action } from "./keymap";
 import { livenessLine } from "./liveness";
+import { exportBaseName, nextFreeExportPath } from "./export-name";
 import { CLOSED, opened, searchPromptLine, stepSearchPrompt } from "./search-prompt";
 import type { SearchPromptState } from "./search-prompt";
 import type { ConnectionStatus } from "./mcp-client";
@@ -226,27 +227,30 @@ export async function runClient(flags: FlagValues): Promise<void> {
    * exactly the kind of small theft a keystroke should not be able to commit.
    */
   function exportTranscript(): void {
-    const base = `roomyx-transcript${filtered === null ? "" : `-${filtered.id}`}`;
-    for (let attempt = 0; attempt < 100; attempt += 1) {
-      const name = `${base}${attempt === 0 ? "" : `-${attempt}`}.txt`;
-      const path = join(process.cwd(), name);
-      try {
-        writeFileSync(path, `${chatView.transcript.toText()}\n`, { encoding: "utf8", flag: "wx" });
-        // The name, not the absolute path: the status bar is one line and
-        // truncates, and an absolute path under a deep working directory gets
-        // cut exactly where the filename would have been. The file is in the
-        // directory the client was started from.
-        chatView.statusBar.setNotice(`written to ./${name}`);
-        return;
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === "EEXIST") continue;
-        chatView.statusBar.setNotice(
-          `could not write ${path} — ${error instanceof Error ? error.message : String(error)}`,
-        );
-        return;
-      }
+    const base = exportBaseName(filtered?.id ?? null);
+    const target = nextFreeExportPath(process.cwd(), base, existsSync);
+    if (!target.ok) {
+      chatView.statusBar.setNotice(
+        target.reason === "exhausted"
+          ? `${base}.txt and 99 numbered siblings all exist — nothing written`
+          : "refusing to write outside the working directory",
+      );
+      return;
     }
-    chatView.statusBar.setNotice(`${base}.txt and 99 numbered siblings all exist — nothing written`);
+    try {
+      // `wx` creates or fails; it never truncates.
+      writeFileSync(target.path, `${chatView.transcript.toText()}\n`, { encoding: "utf8", flag: "wx" });
+      // The name, not the absolute path: the status bar is one line and
+      // truncates, and an absolute path under a deep working directory gets cut
+      // exactly where the filename would have been. The file is in the
+      // directory the client was started from, which the containment check
+      // above now guarantees rather than assumes.
+      chatView.statusBar.setNotice(`written to ./${target.name}`);
+    } catch (error) {
+      chatView.statusBar.setNotice(
+        `could not write ./${target.name} — ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   renderer.keyInput.on("keypress", (event) => {

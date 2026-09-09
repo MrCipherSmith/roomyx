@@ -57,7 +57,7 @@ describe("MCP management server", () => {
     await client.close();
   });
 
-  test("roomyx.skills.sync writes via a real MCP round-trip (AC5)", async () => {
+  test("roomyx.skills.sync reports what a sync would do, and writes nothing (AC5)", async () => {
     setup();
     // `keryx` is the project-scoped target, so pointing the server's `cwd` at a
     // temp directory keeps this test inside it. D-02: the mechanism is
@@ -70,6 +70,13 @@ describe("MCP management server", () => {
     );
     const client = await connectClient(managementHandle.url);
 
+    // `yes` used to be on this tool's input schema and reached `syncSkill`
+    // untouched, so a caller could turn off D-02's overwrite guard by setting a
+    // boolean for itself — over an unauthenticated loopback port, while the
+    // CLI's own help said "Without --yes nothing is written". Deciding to land
+    // on a real skill file is the operator's act, at the CLI. This surface
+    // reports; it does not write.
+    const target = join(dir, ".metaproject", "project-skills", "startup-room", "SKILL.md");
     const result = await client.callTool({
       name: "roomyx.skills.sync",
       arguments: { target: "keryx", yes: true },
@@ -79,8 +86,11 @@ describe("MCP management server", () => {
     // target is the one-element case, not a different shape.
     const sync = JSON.parse(text);
     expect(sync).toHaveLength(1);
-    expect(sync[0].written).toBe(true);
-    expect(sync[0].path).toBe(join(dir, ".metaproject", "project-skills", "startup-room", "SKILL.md"));
+    expect(sync[0].path).toBe(target);
+    expect(sync[0].wouldWrite).toBe(true);
+    expect(sync[0].written).toBe(false);
+    // And nothing reached the disk, which is the claim that matters.
+    expect(existsSync(target)).toBe(false);
 
     await client.close();
   });

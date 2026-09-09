@@ -305,7 +305,9 @@ const COMMANDS: Record<string, Command> = {
       }
 
       const yes = flags.yes === true;
-      const dryRun = flags["dry-run"] === true || !yes;
+      // The gate itself lives in `syncSkill` now, computed once for every
+      // surface — this line only forwards what the operator typed.
+      const dryRun = flags["dry-run"] === true;
       const configPath = typeof flags.config === "string" ? flags.config : defaultConfigPath();
       if (!existsSync(configPath)) {
         throw new ArgError(`No ${configPath}. Run \`roomyx init\` first.`);
@@ -324,7 +326,12 @@ const COMMANDS: Record<string, Command> = {
         if (result.written) {
           console.log(result.backedUpTo ? `  written (backup: ${result.backedUpTo})` : "  written");
         } else {
-          console.log(dryRun ? "  would write (pass --yes to apply)" : "  not written");
+          // "not written" was the message whenever `dryRun` was false, which
+          // after the gate moved into syncSkill meant the ordinary
+          // no-flags run reported a bare refusal instead of the sentence that
+          // says how to proceed. Branch on why nothing was written, not on
+          // which flag was passed.
+          console.log(result.wouldWrite ? "  would write (pass --yes to apply)" : "  not written");
         }
       }
     },

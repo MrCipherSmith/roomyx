@@ -31,6 +31,9 @@
     "src/installer/skill-sync.ts",
     "src/installer/skill-targets.ts"
   ],
+  "lockfile.ts": [
+    "src/lockfile.ts"
+  ],
   "log": [
     "src/log/schema.ts",
     "src/log/store.ts",

@@ -9,7 +9,7 @@
   "title": "Fix the 2026-09-09 full-repository review: 3 blockers and the major findings",
   "status": "in-progress",
   "createdAt": "2026-09-09T17:48:55.941Z",
-  "updatedAt": "2026-09-09T18:01:57.954Z",
+  "updatedAt": "2026-09-09T18:04:36.575Z",
   "source": {
     "type": "description",
     "ref": null
@@ -152,7 +152,7 @@
       "id": "T9",
       "title": "M2 — serialise seq allocation on append",
       "kind": "implement",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -160,7 +160,8 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T10",
@@ -336,6 +337,11 @@
       "at": "2026-09-09T18:01:57.954Z",
       "event": "task-done",
       "detail": "T8: M1+M4 — serve exits on signals with a client attached; identity-checked liveness"
+    },
+    {
+      "at": "2026-09-09T18:04:36.575Z",
+      "event": "task-done",
+      "detail": "T9: M2 — serialise seq allocation on append"
     }
   ]
 }

@@ -59,8 +59,6 @@ export function syncSkill(options: SyncOptions): SyncResult {
   const neverSyncedButPreExisting = targetExists && lastSyncedHash === undefined;
   const handEditedSinceLastSync =
     targetExists && lastSyncedHash !== undefined && hashOf(targetContent as string) !== lastSyncedHash;
-  const targetHasIndependentChanges = neverSyncedButPreExisting || handEditedSinceLastSync;
-
   const warnings: string[] = [];
   if (neverSyncedButPreExisting) {
     warnings.push(
@@ -72,10 +70,19 @@ export function syncSkill(options: SyncOptions): SyncResult {
     );
   }
 
-  if (options.dryRun) {
-    return { wouldWrite: true, written: false, backedUpTo: null, warnings };
-  }
-  if (targetHasIndependentChanges && !options.yes) {
+  // Gated by default, and the default lives here rather than in each caller.
+  // It used to be computed per surface, and the two surfaces disagreed: the CLI
+  // did `dryRun = flags["dry-run"] === true || !yes`, while the MCP tool passed
+  // both through as `undefined` — so a call carrying only `target` wrote a real
+  // skill file over an unauthenticated loopback port, with no confirmation,
+  // while the CLI's own help said "Without --yes nothing is written". D-02
+  // exists to make landing on a real skill file a deliberate act; a default
+  // computed twice is a default that will differ once.
+  // `yes` now gates every write, not only a write over independent changes, so
+  // the old second guard (`targetHasIndependentChanges && !options.yes`) is
+  // subsumed: nothing reaches here without `yes: true`. The warnings above are
+  // still built, so a refusal still says which target had unrecorded content.
+  if (options.dryRun === true || options.yes !== true) {
     return { wouldWrite: true, written: false, backedUpTo: null, warnings };
   }
 

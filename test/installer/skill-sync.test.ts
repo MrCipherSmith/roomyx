@@ -23,7 +23,7 @@ describe("syncSkill", () => {
     const configPath = freshConfig(dir);
     const target = join(dir, "SKILL.md");
 
-    const result = syncSkill({ bundledSkillPath: BUNDLED, targetPath: target, configPath });
+    const result = syncSkill({ bundledSkillPath: BUNDLED, targetPath: target, configPath, yes: true });
     expect(result.written).toBe(true);
     expect(result.backedUpTo).toBeNull();
     expect(readFileSync(target, "utf8")).toBe(readFileSync(BUNDLED, "utf8"));
@@ -33,9 +33,9 @@ describe("syncSkill", () => {
     dir = mkdtempSync(join(tmpdir(), "roomyx-sync-test-"));
     const configPath = freshConfig(dir);
     const target = join(dir, "SKILL.md");
-    syncSkill({ bundledSkillPath: BUNDLED, targetPath: target, configPath });
+    syncSkill({ bundledSkillPath: BUNDLED, targetPath: target, configPath, yes: true });
 
-    const result = syncSkill({ bundledSkillPath: BUNDLED, targetPath: target, configPath });
+    const result = syncSkill({ bundledSkillPath: BUNDLED, targetPath: target, configPath, yes: true });
     expect(result.written).toBe(true);
     expect(result.warnings).toEqual([]);
   });
@@ -44,7 +44,7 @@ describe("syncSkill", () => {
     dir = mkdtempSync(join(tmpdir(), "roomyx-sync-test-"));
     const configPath = freshConfig(dir);
     const target = join(dir, "SKILL.md");
-    syncSkill({ bundledSkillPath: BUNDLED, targetPath: target, configPath });
+    syncSkill({ bundledSkillPath: BUNDLED, targetPath: target, configPath, yes: true });
     writeFileSync(target, "hand-edited content, not what we last synced");
 
     const result = syncSkill({ bundledSkillPath: BUNDLED, targetPath: target, configPath });
@@ -57,7 +57,7 @@ describe("syncSkill", () => {
     dir = mkdtempSync(join(tmpdir(), "roomyx-sync-test-"));
     const configPath = freshConfig(dir);
     const target = join(dir, "SKILL.md");
-    syncSkill({ bundledSkillPath: BUNDLED, targetPath: target, configPath });
+    syncSkill({ bundledSkillPath: BUNDLED, targetPath: target, configPath, yes: true });
     writeFileSync(target, "hand-edited content, not what we last synced");
 
     const result = syncSkill({ bundledSkillPath: BUNDLED, targetPath: target, configPath, yes: true });
@@ -110,5 +110,26 @@ describe("syncSkill", () => {
     expect(result.wouldWrite).toBe(true);
     expect(readFileSync(target, "utf8")).toBe("pre-existing content");
     expect(existsSync(join(dir, "SKILL.md.bak"))).toBe(false);
+  });
+});
+
+describe("the write gate is off by default", () => {
+  test("a call that does not ask for a write does not get one", () => {
+    // The default used to be computed by each caller. The CLI computed
+    // `dryRun = --dry-run || !yes`; the MCP tool passed both through as
+    // undefined and so wrote a real skill file with no confirmation, over an
+    // unauthenticated loopback port, while the CLI's own help said "Without
+    // --yes nothing is written". One default, here, and it fails closed.
+    const dir = mkdtempSync(join(tmpdir(), "roomyx-sync-default-"));
+    try {
+      const configPath = freshConfig(dir);
+      const target = join(dir, "SKILL.md");
+      const result = syncSkill({ bundledSkillPath: BUNDLED, targetPath: target, configPath });
+      expect(result.written).toBe(false);
+      expect(result.wouldWrite).toBe(true);
+      expect(existsSync(target)).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
