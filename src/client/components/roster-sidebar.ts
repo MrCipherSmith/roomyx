@@ -2,6 +2,11 @@ import { BoxRenderable, TextRenderable } from "@opentui/core";
 import type { RenderContext } from "@opentui/core";
 import type { RosterEntry } from "../../log/types";
 
+/** Same ids, same names, same order — the only thing a rebuild would change. */
+function sameRoster(a: RosterEntry[], b: RosterEntry[]): boolean {
+  return a.length === b.length && a.every((entry, i) => entry.id === b[i]?.id && entry.name === b[i]?.name);
+}
+
 /**
  * Roster list — one Renderable row per participant, not a single joined-text
  * blob (per-row rows are required for OpenTUI mouse targeting and keep the
@@ -23,8 +28,23 @@ export class RosterSidebar {
   }
 
   setRoster(roster: RosterEntry[]): void {
+    // `onStateUpdate` calls this on every `room.get_state` poll — every three
+    // seconds — whether or not anything changed, and a room's roster changes
+    // approximately never. Rebuilding it anyway was not merely wasteful: see
+    // the destroy below.
+    if (sameRoster(this.roster, roster)) return;
+
     this.roster = roster;
-    for (const row of this.rows) this.node.remove(row);
+    for (const row of this.rows) {
+      this.node.remove(row);
+      // `remove()` unlinks; it does not free. The native yoga node and the
+      // TextBuffer are released only by `destroy()`, and the native pool is
+      // finite — so this was a ceiling, not a slow leak. Measured at five
+      // leaked renderables per poll with an unchanged five-person roster: an
+      // idle attached client exhausted the pool and died in about 2.7 hours,
+      // then reported it as a lost connection.
+      row.destroyRecursively();
+    }
     this.rows = roster.map((agent, index) => {
       const row = new TextRenderable(this.ctx, { content: this.rowLabel(agent, index), height: 1 });
       this.node.add(row);

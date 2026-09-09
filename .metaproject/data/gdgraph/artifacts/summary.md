@@ -2,11 +2,11 @@
 
 ## Stats
 
-- Source files indexed: 60
+- Source files indexed: 62
 - Imported asset files indexed: 0
-- Total nodes: 60
-- Edges: 97
-- Import edges: 97
+- Total nodes: 62
+- Edges: 104
+- Import edges: 104
 - Asset edges: 0
 - Unresolved imports: 0
 - Import resolution: 100%
@@ -16,11 +16,11 @@
 
 | Module | Source Files |
 |---|---:|
-| test | 28 |
+| test | 29 |
 | client | 13 |
 | server | 6 |
 | installer | 5 |
-| log | 3 |
+| log | 4 |
 | cli | 2 |
 | eslint.config.js | 1 |
 | cli.ts | 1 |

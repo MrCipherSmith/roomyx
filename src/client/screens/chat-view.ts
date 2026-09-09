@@ -203,7 +203,13 @@ export class ChatView {
   }
 
   private rebuild(): void {
-    for (const row of this.rows) this.scroll.remove(row);
+    for (const row of this.rows) {
+      this.scroll.remove(row);
+      // See roster-sidebar.ts: `remove()` unlinks without freeing, and the
+      // native renderable pool is finite. A dozen filter toggles on a long room
+      // were enough to exhaust it.
+      row.destroyRecursively();
+    }
     this.rows = [];
     const count = this.transcript.visible().length;
     for (let index = 0; index < count; index += 1) this.addRow(index);
