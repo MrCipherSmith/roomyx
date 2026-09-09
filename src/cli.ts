@@ -88,7 +88,7 @@ const COMMANDS: Record<string, Command> = {
     usage: "roomyx room append <path> --from <id> --body <text> [flags]",
     summary: "append a message to a room log",
     notes:
-      "Refuses when a live room is serving that log: its dispatcher is the\n  single writer (D-01a). --force overrides if you know the room is gone.",
+      "Refuses when a live room is serving that log: if that room has a\n  dispatcher, the dispatcher is the single writer (D-01a). --force appends\n  anyway — a room served by bare `roomyx serve` has no dispatcher to race.",
     flags: {
       from: { type: "string", describe: "Required. Participant id" },
       body: { type: "string", describe: "Required. The message" },
@@ -111,8 +111,19 @@ const COMMANDS: Record<string, Command> = {
         const registryPath = typeof flags.registry === "string" ? flags.registry : defaultRegistryPath();
         const serving = (await listLiveRooms(registryPath)).find((room) => room.logPath === absolute);
         if (serving) {
+          // The old wording ended "Pass --force if you know it isn't" — it asked
+          // the operator to assert the room is gone. But the common case for
+          // reaching this message is a room served by bare `roomyx serve`, where
+          // the room is genuinely live and simply has no dispatcher attached, so
+          // there is no second writer to race. The flag was the right escape
+          // hatch behind a claim that was false exactly when you needed it.
+          //
+          // roomyx cannot tell the two apart: the registry records that a room
+          // serves this path, not whether anything is dispatching into it. So
+          // say what is known and let the operator judge, rather than making
+          // --force mean something untrue.
           throw new ArgError(
-            `A live room (${serving.id}) is serving this log; its dispatcher is the single writer (D-01). Pass --force if you know it isn't.`,
+            `A live room (${serving.id}) is serving this log. If it has a dispatcher, that dispatcher is the log's single writer (D-01a) and appending here races it. Pass --force to append anyway.`,
           );
         }
       }

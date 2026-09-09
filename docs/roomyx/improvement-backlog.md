@@ -145,6 +145,28 @@ against the published package:
 - **The first message of every room is never drawn.** One message → empty pane.
   Twelve → you see 2 through 12. A one-row over-scroll from
   `stickyScroll: true, stickyStart: "bottom"` at `chat-view.ts:36`.
+
+  > **Correction, recorded after implementation (2026-09-09).** The defect is
+  > real and the diagnosis was right, but "every room, never" is wrong, and
+  > that phrasing is what put this item in position one unanimously.
+  >
+  > Measured four arrival patterns against the pre-fix build. Only one loses
+  > seq 1: **≥2 messages appended before the pane's first layout pass.** Render
+  > once first — even an empty pane — and seq 1 survives, at any message count.
+  > So does appending one message at a time.
+  >
+  > The real client always renders a `[connecting…]` frame before its first
+  > poll returns, so **it never hits the trigger.** Confirmed end-to-end: the
+  > pre-fix client, against a real `roomyx serve` and a real two-message log,
+  > draws seq 1. The room found this through the headless test renderer, which
+  > constructs `ChatView` and appends before rendering — the one pattern that
+  > reproduces it.
+  >
+  > It was still worth fixing: it is one line, and it is a trap laid for
+  > whoever later makes the client paint after its first batch instead of
+  > before. But no user of 0.4.0 lost a message to it, and the item's ranking
+  > rested on the claim that they did. The scoring gate checked the finding's
+  > reproduction, not the generality of the sentence written above it.
 - **Every message is one hard-clipped line.** `message-row.ts` hardcodes
   `height: 1`. No wrap, no ellipsis, no sign anything was cut. `kind` and
   `in_reply_to` are dropped entirely — the challenge/answer structure that is the

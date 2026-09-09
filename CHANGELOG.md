@@ -8,6 +8,55 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com). Versions
 are [semantic](https://semver.org), with the `0.x` convention that breaking
 changes land in the minor position.
 
+## [Unreleased]
+
+Found by running the published 0.5.0 by hand — a real room, real agents talking
+into it, the TUI attached, rooms opened and closed.
+
+### Fixed
+
+- **Closing the client no longer dumps a stack trace.** `SIGTERM`/`SIGINT`/
+  `SIGHUP` had no handler at all, so killing an attached client tore the
+  renderer down underneath a live poll: the poll lost its connection, called
+  `handleDisconnect`, and wrote "disconnected" into an already-destroyed text
+  buffer — `TextBuffer is destroyed`, ten frames of stack, at someone who just
+  closed a window. `q` and Ctrl-C escaped it only because that path happened to
+  stop the client first. All four now share one ordered shutdown that stops
+  polling before destroying the renderer.
+
+- **Long messages are no longer silently cut.** `message-row.ts` set
+  `height: 1` with no wrapping, so every message was clipped at the pane width
+  with no ellipsis and nothing to scroll — and what got cut was the end of the
+  sentence, which in a room of arguing agents is where the claim is. Bodies now
+  wrap on word boundaries.
+
+- **`kind` and `in_reply_to` are displayed.** Both are in `MessageEnvelope` and
+  both were written by the dispatcher and rendered by nothing. The
+  challenge/answer structure that is the point of the log schema was visible in
+  the log and invisible in the viewer of that log. Rows now read
+  `Ann [challenge re #1]: …`.
+
+- **A pane holding its first messages before its first layout pass no longer
+  drops message 1.** The horizontal scrollbar occupies a viewport row whether
+  or not there is anything to scroll, leaving `maxScrollTop` at 1 on a pane
+  that is not full, so sticky-bottom scrolled down by one.
+
+  Narrower than [the backlog][backlog] claims, and that correction is recorded
+  there: the real client always paints a `[connecting…]` frame before its first
+  poll returns, so it never triggered this. No 0.4.0 or 0.5.0 user lost a
+  message to it. Fixed because it is one line and a trap for whoever later
+  makes the client paint after its first batch rather than before.
+
+- **`room append`'s refusal no longer asks you to assert something false.** It
+  ended "Pass `--force` if you know it isn't" — but the ordinary way to meet
+  that message is a room served by bare `roomyx serve`, which is genuinely live
+  and simply has no dispatcher, so there is no second writer to race. The
+  registry records that a room serves a path, not whether anything dispatches
+  into it, so the message now says what is known and leaves the judgement to
+  the operator.
+
+[backlog]: docs/roomyx/improvement-backlog.md
+
 ## [0.5.0] — 2026-09-09
 
 The security release. Every item here came out of a review of the published

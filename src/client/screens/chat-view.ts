@@ -33,7 +33,21 @@ export class ChatView {
     this.roster = new RosterSidebar(ctx, { width: 24, onSelect: options.onSelectAgent });
     body.add(this.roster.node);
 
-    this.scroll = new ScrollBoxRenderable(ctx, { flexGrow: 1, stickyScroll: true, stickyStart: "bottom" });
+    // `horizontalScrollbarOptions: { visible: false }` is the whole fix for
+    // the first message vanishing. The horizontal scrollbar occupies a
+    // viewport row whether or not it has anything to scroll, which leaves
+    // `maxScrollTop` at 1 on a pane that is not full — so sticky-bottom
+    // scrolls down by one and takes seq 1 with it. Found by bisection rather
+    // than by reading: `scrollX: false` and the `contentOptions` variants were
+    // measured and do nothing.
+    //
+    // Nothing here scrolls horizontally anyway; message bodies wrap.
+    this.scroll = new ScrollBoxRenderable(ctx, {
+      flexGrow: 1,
+      stickyScroll: true,
+      stickyStart: "bottom",
+      horizontalScrollbarOptions: { visible: false },
+    });
     body.add(this.scroll);
   }
 
