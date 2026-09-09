@@ -14,6 +14,23 @@ The security release. Every item here came out of a review of the published
 0.4.0 that reproduced each finding before recording it; the full list is in
 [`docs/roomyx/improvement-backlog.md`](docs/roomyx/improvement-backlog.md).
 
+### Added
+
+- **`roomyx room new` and `roomyx room append`.** There was no supported way to
+  create the file `roomyx serve` takes. The only tool that made one was
+  `src/cli/seed.ts` — shipped in the package, absent from `bin` and the README,
+  and documented only as a call through an absolute path into the global
+  `node_modules`. Time-to-first-room is this product's central number and that
+  was the path to it.
+
+  `new` refuses to overwrite an existing log. `append` refuses when the
+  registry shows a live room serving that path, because that room's dispatcher
+  is the log's single writer; `--force` overrides. Recorded as **D-01a**: D-01
+  constrains the server, not the package, and the invariant is one writer per
+  *live* room.
+
+  `src/cli/seed.ts` is removed, superseded by these.
+
 ### Removed — breaking
 
 - **`roomyx.skills.sync` no longer accepts `targetPath`.** The MCP tool took a

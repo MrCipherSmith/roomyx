@@ -98,24 +98,28 @@ Not an error, not a stack trace — there is simply nothing there. Go back:
 
 ## 3. Make a room log
 
-A room log is JSONL: one `state` line, then `message` lines. The package ships
-a seeding helper for exactly this:
+A room log is JSONL: one `state` line, then `message` lines.
 
 ```bash
-SEED="$(npm root -g)/@mrciphersmith/roomyx/src/cli/seed.ts"
-bun "$SEED" init room.jsonl \
+roomyx room new room.jsonl \
   --goal "Pick a database for the trial service" \
   --roster yuki:Юки,omar:Omar
 ```
 
 ```
-Initialized room.jsonl with 2 roster entries.
+Created /tmp/roomyx-trial/room.jsonl
+serve it with `roomyx serve room.jsonl`
 ```
 
 ```bash
-bun "$SEED" append room.jsonl --from yuki --body "Postgres. Boring on purpose."
-bun "$SEED" append room.jsonl --from omar --body "Boring is the requirement." --kind challenge --in-reply-to 1
+roomyx room append room.jsonl --from yuki --body "Postgres. Boring on purpose."
+roomyx room append room.jsonl --from omar --body "Boring is the requirement." --kind challenge --in-reply-to 1
 ```
+
+`room new` refuses to overwrite an existing log — a room log is append-only,
+and clobbering one loses a session. `room append` refuses when a live room is
+serving that log, because its dispatcher is the single writer (D-01a);
+`--force` overrides that if you know the room is gone.
 
 ## 4. Serve the room
 
@@ -182,8 +186,11 @@ Then ask, in plain language:
 
 > Run `roomyx rooms list` and tell me what's running.
 
-> Append a message to room.jsonl from omar saying "then let's stop arguing",
-> using the seed helper at `$(npm root -g)/@mrciphersmith/roomyx/src/cli/seed.ts`.
+> Append a message to room.jsonl from omar saying "then let's stop arguing".
+
+The interesting part of that one: a room is running, so `room append` should
+refuse and name it. See whether the agent reads the refusal and stops, or
+reaches for `--force`.
 
 > Start a second room on a fresh log and tell me both room IDs.
 
