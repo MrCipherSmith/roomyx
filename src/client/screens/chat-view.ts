@@ -1,22 +1,21 @@
-import { BoxRenderable, ScrollBoxRenderable } from "@opentui/core";
+import { BoxRenderable, ScrollBoxRenderable, TextRenderable } from "@opentui/core";
 import type { RenderContext } from "@opentui/core";
 import type { GoalContract, MessageEnvelope, RosterEntry } from "../../log/types";
 import { StatusBar } from "../components/status-bar";
 import { RosterSidebar } from "../components/roster-sidebar";
+import { Footer } from "../components/footer";
 import { createMessageRow } from "../components/message-row";
 import type { ConnectionStatus } from "../mcp-client";
 
 /**
  * Main screen: StatusBar on top, RosterSidebar on the left, a scrolling
- * message stream on the right. Uses ScrollBoxRenderable's built-in
- * `stickyScroll`/`stickyStart: "bottom"` for AC8 (don't yank the view when
- * the user has scrolled up to read history) instead of hand-rolling
- * scroll-position math.
+ * message stream on the right, Footer along the bottom.
  */
 export class ChatView {
   readonly node: BoxRenderable;
   readonly statusBar: StatusBar;
   readonly roster: RosterSidebar;
+  readonly footer: Footer;
   private readonly scroll: ScrollBoxRenderable;
   private readonly ctx: RenderContext;
   private rosterById = new Map<string, RosterEntry>();
@@ -49,6 +48,9 @@ export class ChatView {
       horizontalScrollbarOptions: { visible: false },
     });
     body.add(this.scroll);
+
+    this.footer = new Footer(ctx, { width: options.width });
+    this.node.add(this.footer.node);
   }
 
   setConnectionStatus(status: ConnectionStatus): void {
@@ -69,5 +71,42 @@ export class ChatView {
       const fromName = this.rosterById.get(message.from)?.name ?? message.from;
       this.scroll.add(createMessageRow(this.ctx, message, fromName));
     }
+  }
+
+  /**
+   * A state change written into the transcript itself, not only into the
+   * footer. A footer is repainted at a fixed row with the cursor parked
+   * elsewhere, so a screen reader never speaks it and a `tee`'d session never
+   * records it — it is invisible in exactly the way that matters. A line in
+   * the stream lands in speech, in scrollback and in the log at once.
+   */
+  appendSystemLine(text: string): void {
+    this.scroll.add(new TextRenderable(this.ctx, { content: `— ${text} —`, wrapMode: "word" }));
+  }
+
+  /** True when the reader is parked at the newest message. */
+  isAtBottom(): boolean {
+    return this.scroll.scrollTop >= this.maxScrollTop() - 1;
+  }
+
+  scrollByLines(lines: number): void {
+    this.scroll.scrollTop = Math.max(0, Math.min(this.maxScrollTop(), this.scroll.scrollTop + lines));
+  }
+
+  scrollToTop(): void {
+    this.scroll.scrollTop = 0;
+  }
+
+  scrollToBottom(): void {
+    this.scroll.scrollTop = this.maxScrollTop();
+  }
+
+  /** Viewport height in rows, for page-sized movement. */
+  pageSize(): number {
+    return Math.max(1, this.scroll.viewport.height);
+  }
+
+  private maxScrollTop(): number {
+    return Math.max(0, this.scroll.scrollHeight - this.scroll.viewport.height);
   }
 }

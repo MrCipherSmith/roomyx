@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { IDLE, ownerPromptLine, stepOwnerPrompt } from "../../src/client/owner-prompt";
+import { IDLE, OPENED, ownerPromptLine, stepOwnerPrompt } from "../../src/client/owner-prompt";
 import type { OwnerPromptState } from "../../src/client/owner-prompt";
 
 function type(state: OwnerPromptState, keys: Array<{ name: string; sequence?: string; ctrl?: boolean }>) {
@@ -21,22 +21,21 @@ describe("owner command prompt", () => {
     }
   });
 
-  test("`o` opens the kind picker and the line explains the four choices", () => {
-    const { state } = stepOwnerPrompt(IDLE, { name: "o", sequence: "o" });
-    expect(state.stage).toBe("kind");
-    const line = ownerPromptLine(state) ?? "";
+  test("the opened prompt's line explains the four choices", () => {
+    const line = ownerPromptLine(OPENED) ?? "";
     for (const hint of ["(v)eto", "(c)onstraint", "(a)dd", "(g)oal"]) {
       expect(line).toContain(hint);
     }
   });
 
-  test("ctrl-o is not the same key and does not open the prompt", () => {
-    expect(stepOwnerPrompt(IDLE, { name: "o", sequence: "o", ctrl: true }).state).toEqual(IDLE);
+  test("idle opens for nothing at all — which key opens the prompt is keymap.ts's decision", () => {
+    for (const key of [{ name: "o", sequence: "o" }, { name: ":", sequence: ":" }, { name: "o", sequence: "o", ctrl: true }]) {
+      expect(stepOwnerPrompt(IDLE, key).state).toEqual(IDLE);
+    }
   });
 
   test("picking a kind and typing a body sends exactly what was typed", () => {
-    const { action } = type(IDLE, [
-      { name: "o", sequence: "o" },
+    const { action } = type(OPENED, [
       { name: "v", sequence: "v" },
       { name: "d", sequence: "d" },
       { name: "r", sequence: "r" },
@@ -55,8 +54,7 @@ describe("owner command prompt", () => {
       ["g", "goal_edit"],
     ];
     for (const [letter, kind] of cases) {
-      const { action } = type(IDLE, [
-        { name: "o", sequence: "o" },
+      const { action } = type(OPENED, [
         { name: letter, sequence: letter },
         { name: "x", sequence: "x" },
         { name: "return" },
@@ -66,16 +64,14 @@ describe("owner command prompt", () => {
   });
 
   test("a typo at the kind picker is ignored rather than throwing the prompt away", () => {
-    const { state } = type(IDLE, [
-      { name: "o", sequence: "o" },
+    const { state } = type(OPENED, [
       { name: "z", sequence: "z" },
     ]);
     expect(state.stage).toBe("kind");
   });
 
   test("backspace edits the body, and Enter on an empty body sends nothing", () => {
-    const { state, action } = type(IDLE, [
-      { name: "o", sequence: "o" },
+    const { state, action } = type(OPENED, [
       { name: "c", sequence: "c" },
       { name: "x", sequence: "x" },
       { name: "backspace" },
@@ -86,13 +82,12 @@ describe("owner command prompt", () => {
   });
 
   test("Esc cancels from either stage and returns to idle", () => {
-    expect(type(IDLE, [{ name: "o", sequence: "o" }, { name: "escape" }])).toEqual({
+    expect(type(OPENED, [{ name: "escape" }])).toEqual({
       state: IDLE,
       action: { type: "cancel" },
     });
     expect(
-      type(IDLE, [
-        { name: "o", sequence: "o" },
+      type(OPENED, [
         { name: "v", sequence: "v" },
         { name: "x", sequence: "x" },
         { name: "escape" },
@@ -101,8 +96,7 @@ describe("owner command prompt", () => {
   });
 
   test("`q` typed into a body is text, not a quit — the prompt owns the keyboard", () => {
-    const { action } = type(IDLE, [
-      { name: "o", sequence: "o" },
+    const { action } = type(OPENED, [
       { name: "g", sequence: "g" },
       { name: "q", sequence: "q" },
       { name: "return" },

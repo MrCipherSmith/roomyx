@@ -10,8 +10,56 @@ changes land in the minor position.
 
 ## [Unreleased]
 
-Found by running the published 0.5.0 by hand — a real room, real agents talking
-into it, the TUI attached, rooms opened and closed.
+Found by running the published 0.5.0 by hand, then by putting ten screenshots
+of it in front of four reviewers — design, accessibility, CLI ergonomics,
+onboarding. Their ranked outcome is in
+[`docs/roomyx/tui-review.md`](docs/roomyx/tui-review.md); the first two items
+are below.
+
+### Added
+
+- **The transcript scrolls, and the arrows belong to it.** `↑`/`↓` by a line,
+  `PgUp`/`PgDn` by a page, `Ctrl-U`/`Ctrl-D` by a half, `g`/`G` to the top and
+  back to the bottom. The roster keeps its selection on `j`/`k`.
+
+  Before this, no key scrolled anything: the arrows moved the roster, so four
+  keypresses on a room taller than the pane moved one caret and left the stream
+  apparently frozen. A room that outgrew its pane could not be read back at
+  all.
+
+  **`:` opens the owner prompt.** `o` means *open* nearly everywhere and was
+  borrowed rather than chosen. It still works and is not documented, so a habit
+  from 0.5.0 does not break on upgrade.
+
+  The keymap is now data in `src/client/keymap.ts` rather than an `else if`
+  chain inside the keypress handler — which is how it could be wrong without
+  being visibly wrong, since there was no artefact anyone could read to answer
+  "what keys does this have?". A test asserts no two bindings claim the same
+  key, because a first-match-wins resolver silently shadows the loser.
+
+- **A footer, generated from that keymap.** Keys on the right, liveness on the
+  left — and the liveness is a fact that *moves*: a message count and the age
+  of the newest message. A word that has always said the same thing stops being
+  read, which is precisely why a dead room looked like a live one; the header
+  differed from a working room by one word in the same ink. When the number
+  stops, the silence means something.
+
+  An empty room now says `connected · waiting for the first message` rather
+  than showing a void that reads as a hang. Scroll away from the bottom and the
+  footer says so and says how to return. On a terminal too narrow for
+  everything, hints drop one at a time by usefulness — the first version
+  dropped all of them at once, which took the keys away in the two states that
+  most need them.
+
+  Shipped in the same change as the rebind on purpose. A footer is a keymap's
+  confession: shipping it first would have printed `↑/↓ roster` on the screen
+  as documented behaviour, and made the correction more expensive.
+
+- **Connection changes are written into the transcript, not only the footer.**
+  A footer repainted at a fixed row, with the cursor parked in another pane, is
+  never spoken by a screen reader and never survives a `tee`. A `— disconnected,
+  retrying —` line in the stream lands in speech, in scrollback and in the log
+  at once.
 
 ### Fixed
 
