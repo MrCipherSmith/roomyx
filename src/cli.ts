@@ -5,6 +5,7 @@ import { serve } from "./server/serve";
 import { init } from "./installer/init";
 import { registerRoom, deregisterRoom, listLiveRooms } from "./installer/registry";
 import { syncSkill } from "./installer/skill-sync";
+import { appendMessage, createRoomLog, parseRoster } from "./log/write";
 import { NAMED_TARGETS, resolveTargets } from "./installer/skill-targets";
 import { serveManagement } from "./mcp-management/server";
 
@@ -47,8 +48,19 @@ function bundledSkillPath(): string {
   return join(import.meta.dir, "bundled-skills", "startup-room", "SKILL.md");
 }
 
-const USAGE =
-  "Usage: roomyx <init|serve <logPath>|client|mcp|rooms list|skills sync --target <claude|codex|keryx|all|path>>";
+const USAGE = [
+  "Usage: roomyx <command>",
+  "",
+  "  init                                    scaffold .roomyx/ in this project",
+  "  room new <path> --goal <s>              create a room log",
+  "  room append <path> --from <id> --body <s>   append a message to one",
+  "  serve <logPath>                         serve a room log over MCP",
+  "  rooms list                              live rooms, liveness-checked",
+  "  client                                  attach the terminal UI",
+  "  mcp                                     start the management MCP server",
+  "  skills sync --target <claude|codex|keryx|all|path>",
+  "  --version",
+].join("\n");
 
 async function runInit(): Promise<void> {
   const result = init({ cwd: process.cwd(), bundledSkillPath: bundledSkillPath() });
@@ -144,6 +156,70 @@ async function runSkillsSync(rest: string[]): Promise<void> {
   }
 }
 
+/**
+ * `roomyx room new <path> --goal <s> [--criteria <s>] [--roster id:Name,...]`
+ * `roomyx room append <path> --from <id> --body <s> [--kind k] [--in-reply-to n] [--force]`
+ *
+ * D-01a: creating a log nobody serves takes the writer count 0→1 and needs no
+ * exception. Appending to a log a live room is serving would mint a second
+ * writer, so it is refused unless the caller says they know better.
+ */
+async function runRoomNew(path: string | undefined, rest: string[]): Promise<void> {
+  if (!path) {
+    console.error("Missing <path>. Usage: roomyx room new <path> --goal <statement> [--roster id:Name,...]");
+    process.exit(1);
+  }
+  const flags = parseFlags(rest);
+  const goalStatement = typeof flags.goal === "string" ? flags.goal : undefined;
+  if (!goalStatement) {
+    console.error("Missing --goal. A room without a stated goal has nothing to converge on.");
+    process.exit(1);
+  }
+  const absolute = resolve(path);
+  createRoomLog(absolute, {
+    goalStatement,
+    criteria: typeof flags.criteria === "string" ? flags.criteria : undefined,
+    roster: typeof flags.roster === "string" ? parseRoster(flags.roster) : [],
+  });
+  console.log(`Created ${absolute}`);
+  console.log(`serve it with \`roomyx serve ${path}\``);
+}
+
+async function runRoomAppend(path: string | undefined, rest: string[]): Promise<void> {
+  if (!path) {
+    console.error("Missing <path>. Usage: roomyx room append <path> --from <id> --body <text>");
+    process.exit(1);
+  }
+  const flags = parseFlags(rest);
+  const from = typeof flags.from === "string" ? flags.from : undefined;
+  const body = typeof flags.body === "string" ? flags.body : undefined;
+  if (!from || !body) {
+    console.error("Missing --from or --body.");
+    process.exit(1);
+  }
+
+  const absolute = resolve(path);
+  if (flags.force !== true) {
+    const registryPath = typeof flags.registry === "string" ? flags.registry : defaultRegistryPath();
+    const live = await listLiveRooms(registryPath);
+    const serving = live.find((room) => room.logPath === absolute);
+    if (serving) {
+      console.error(
+        `A live room (${serving.id}) is serving this log; its dispatcher is the single writer (D-01). Pass --force if you know it isn't.`,
+      );
+      process.exit(1);
+    }
+  }
+
+  const message = appendMessage(absolute, {
+    from,
+    body,
+    kind: typeof flags.kind === "string" ? (flags.kind as never) : undefined,
+    inReplyTo: flags["in-reply-to"] !== undefined ? Number(flags["in-reply-to"]) : undefined,
+  });
+  console.log(`Appended seq ${message.seq} from ${message.from}.`);
+}
+
 async function runMcp(rest: string[]): Promise<void> {
   const flags = parseFlags(rest);
   const handle = await serveManagement(
@@ -195,6 +271,10 @@ async function main(): Promise<void> {
     await runRoomsList();
   } else if (command === "skills" && rest[0] === "sync") {
     await runSkillsSync(rest.slice(1));
+  } else if (command === "room" && rest[0] === "new") {
+    await runRoomNew(rest[1], rest.slice(2));
+  } else if (command === "room" && rest[0] === "append") {
+    await runRoomAppend(rest[1], rest.slice(2));
   } else {
     console.error(USAGE);
     console.error("The terminal UI is also a separate binary: roomyx-client [--room <id>]");

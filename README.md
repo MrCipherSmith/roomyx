@@ -7,11 +7,16 @@ run at once and be found by id, and a skill-sync path that installs the bundled
 `startup-room` skill into a project without ever silently overwriting local
 edits.
 
-roomyx never writes to a room log. Owner commands do exist —
-`room.post_owner_command` takes a veto, constraint, added participant or goal
-edit — but the tool only forwards them to the dispatcher that runs the room.
-The log keeps exactly one writer, which is what the room's consistency rests
+**A live room has exactly one writer, and it is never roomyx's server.** Owner
+commands exist — `room.post_owner_command` takes a veto, constraint, added
+participant or goal edit — but the tool only forwards them to the dispatcher
+running the room. That single-writer rule is what the room's consistency rests
 on.
+
+`roomyx room new` and `roomyx room append` do write, and that is not an
+exception to the rule: creating a log nobody serves takes the writer count from
+zero to one, and `append` refuses outright when the registry shows a live room
+serving that path. See D-01a.
 
 ## Requirements
 
@@ -32,14 +37,15 @@ bun install -g @mrciphersmith/roomyx
 
 ```bash
 cd your-project
-roomyx init                    # scaffold .roomyx/
-roomyx serve path/to/room.jsonl   # serve one room log over MCP
+roomyx init                                 # scaffold .roomyx/
+roomyx room new room.jsonl --goal "Pick a database"   # create a room log
+roomyx serve room.jsonl                     # serve it over MCP
 ```
 
 `serve` prints the room's URL and its generated id:
 
 ```
-roomyx serving path/to/room.jsonl at http://127.0.0.1:4319/mcp
+roomyx serving /abs/path/room.jsonl at http://127.0.0.1:4319/mcp
 room ID: r-a1b2c3 — attach with `roomyx-client --room r-a1b2c3`
 ```
 
@@ -70,6 +76,24 @@ Creates `.roomyx/` in the current directory: `config.json`, an empty room
 registry, and a staged copy of the bundled `startup-room` skill. It never
 clobbers a registry that already has rooms in it, and never overwrites an
 existing `config.json`.
+
+### `roomyx room new <path> [flags]` / `roomyx room append <path> [flags]`
+
+Creates a room log, and appends messages to one.
+
+| Flag | Meaning |
+| --- | --- |
+| `--goal <s>` | Required by `new`. A room without a stated goal has nothing to converge on. |
+| `--criteria <s>` | The success criteria, stored in the goal contract. |
+| `--roster id:Name,...` | Participants. `id` is what `room.get_agent_detail` takes. |
+| `--from <id>` / `--body <s>` | Required by `append`. |
+| `--kind <k>` / `--in-reply-to <n>` | Optional message structure. |
+| `--force` | Append anyway when a live room is serving that log. |
+
+`new` refuses to overwrite an existing log — it is append-only, and clobbering
+one loses a session. `append` refuses when the registry shows a live room
+serving that path, because that room's dispatcher is the log's single writer
+(D-01a). `--force` is for when you know the room is gone.
 
 ### `roomyx serve <logPath> [flags]`
 

@@ -13,7 +13,7 @@ Version: 0.5.0
 ```text
 roomyx/
   src/
-    log/               # implemented (flow 001): store.ts, types.ts
+    log/               # implemented (flow 001): store.ts (чтение), types.ts
     server/
       index.ts          # implemented: createRoomMcpServer() — три read-only тула
       serve.ts           # NEW (эта версия): биндит сервер к транспорту и слушает
@@ -28,8 +28,7 @@ roomyx/
         message-row.ts       # одна строка чата (per-row Renderable, не один текстовый блоб)
         roster-sidebar.ts
         status-bar.ts         # goal contract коротко + статус соединения
-    cli/
-      seed.ts            # implemented: dev-хелпер для ручного тестирования лога
+      write.ts           # `roomyx room new|append` — создание лога и дописывание в него (D-01a)
   test/                  # implemented: store/tools тесты; NEW: client polling/render logic tests
 ```
 
@@ -50,6 +49,7 @@ roomyx/
 
 ## CLI / Skill Surface
 
+- `roomyx room new <path> --goal <s> [--criteria <s>] [--roster id:Name,...]` и `roomyx room append <path> --from <id> --body <s> [--kind k] [--in-reply-to n] [--force]` — создание лога комнаты и дописывание в него. `new` отказывается перезаписывать существующий лог; `append` отказывается писать в лог, который обслуживает живая комната, потому что её диспетчер — единственный писатель (D-01a). До этого единственным способом создать лог был неанонсированный `src/cli/seed.ts`, вызываемый через путь в глобальный `node_modules`.
 - `roomyx serve <logPath> [--port N] [--acknowledge-non-loopback]` — NEW: поднимает MCP-сервер, биндит к loopback HTTP, печатает фактический адрес в stdout. Оркестратор запускает это при старте комнаты (`implemented` статус — `createRoomMcpServer()` — не включает сам transport-биндинг; этот CLI — недостающий слой, задача этой версии спеки).
 - `roomyx-client [--room <id>] [--connect http://127.0.0.1:4319]` — запускает TUI, подключается к уже поднятому серверу. Отдельный бинарник, потому что D-06 держит TUI независимым процессом; `roomyx client` (через пробел) — алиас, поднимающий тот же TUI из основного бинарника. Ручной запуск пользователем в отдельном терминале — основной путь v1 (R6); авто-подъём оркестратором как дочернего процесса — второй шаг, не в этой версии.
 
