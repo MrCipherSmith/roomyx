@@ -68,8 +68,24 @@ describe("MCP management server", () => {
       arguments: { targetPath: target },
     });
     const text = (result.content as Array<{ type: string; text: string }>)[0]?.text ?? "";
+    // An array because `target: "all"` fans out to several runtimes; one
+    // target is the one-element case, not a different shape.
     const sync = JSON.parse(text);
-    expect(sync.written).toBe(true);
+    expect(sync).toHaveLength(1);
+    expect(sync[0].written).toBe(true);
+    expect(sync[0].path).toBe(target);
+
+    await client.close();
+  });
+
+  test("roomyx.skills.sync refuses when given neither target nor targetPath", async () => {
+    setup();
+    managementHandle = await serveManagement({ registryPath, bundledSkillPath: BUNDLED_SKILL, configPath }, { port: 0 });
+    const client = await connectClient(managementHandle.url);
+
+    const result = await client.callTool({ name: "roomyx.skills.sync", arguments: {} });
+    const text = (result.content as Array<{ type: string; text: string }>)[0]?.text ?? "";
+    expect(JSON.parse(text).error).toContain("targetPath");
 
     await client.close();
   });

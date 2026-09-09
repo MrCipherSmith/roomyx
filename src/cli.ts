@@ -1,12 +1,16 @@
 #!/usr/bin/env bun
-import { join } from "node:path";
+import { existsSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { serve } from "./server/serve";
 import { init } from "./installer/init";
 import { registerRoom, deregisterRoom, listLiveRooms } from "./installer/registry";
+import { syncSkill } from "./installer/skill-sync";
+import { NAMED_TARGETS, resolveTargets } from "./installer/skill-targets";
 import { serveManagement } from "./mcp-management/server";
 
 /**
- * `roomyx init` / `roomyx serve` / `roomyx rooms list` / `roomyx mcp`.
+ * `roomyx init` / `roomyx serve` / `roomyx rooms list` / `roomyx mcp` /
+ * `roomyx skills sync`.
  * The TUI is primarily `roomyx-client` (its own binary over src/client/index.ts)
  * so the orchestrator and the TUI stay independent processes (decisions.md
  * D-06). `roomyx client` is a thin alias that starts that same TUI in this
@@ -43,7 +47,8 @@ function bundledSkillPath(): string {
   return join(import.meta.dir, "bundled-skills", "startup-room", "SKILL.md");
 }
 
-const USAGE = "Usage: roomyx <init|serve <logPath>|client|mcp|rooms list>";
+const USAGE =
+  "Usage: roomyx <init|serve <logPath>|client|mcp|rooms list|skills sync --target <claude|codex|keryx|all|path>>";
 
 async function runInit(): Promise<void> {
   const result = init({ cwd: process.cwd(), bundledSkillPath: bundledSkillPath() });
@@ -56,16 +61,25 @@ async function runServe(logPath: string | undefined, rest: string[]): Promise<vo
     process.exit(1);
   }
   const flags = parseFlags(rest);
-  const handle = await serve(logPath, {
+  // Absolute, because the registry outlives this process's working directory:
+  // `roomyx-client` resolves rooms from wherever the person happened to run it,
+  // and a relative logPath means nothing there. The specification's registry
+  // example has always shown an absolute path; only the code disagreed.
+  const absoluteLogPath = resolve(logPath);
+  const handle = await serve(absoluteLogPath, {
     port: flags.port !== undefined ? Number(flags.port) : undefined,
     host: typeof flags.host === "string" ? flags.host : undefined,
     acknowledgeNonLoopback: flags["acknowledge-non-loopback"] === true,
   });
 
   const registryPath = typeof flags.registry === "string" ? flags.registry : defaultRegistryPath();
-  const entry = registerRoom(registryPath, { port: handle.port, logPath, pid: process.pid });
+  const entry = registerRoom(registryPath, {
+    port: handle.port,
+    logPath: absoluteLogPath,
+    pid: process.pid,
+  });
 
-  console.log(`roomyx serving ${logPath} at ${handle.url}`);
+  console.log(`roomyx serving ${absoluteLogPath} at ${handle.url}`);
   console.log(`room ID: ${entry.id} — attach with \`roomyx-client --room ${entry.id}\``);
 
   const shutdown = () => {
@@ -84,6 +98,49 @@ async function runRoomsList(): Promise<void> {
   }
   for (const room of rooms) {
     console.log(`${room.id}  port=${room.port}  log=${room.logPath}  started=${room.startedAt}`);
+  }
+}
+
+/**
+ * `roomyx skills sync --target <claude|codex|keryx|all|path> [--dry-run] [--yes]`.
+ *
+ * Without `--yes` this reports what it would do and writes nothing — the
+ * specification's wording, and D-02's requirement that landing on a real skill
+ * file be a separate, deliberate act rather than a side effect of the
+ * mechanism existing. `--dry-run` is then the same thing said explicitly.
+ */
+async function runSkillsSync(rest: string[]): Promise<void> {
+  const flags = parseFlags(rest);
+  const target = typeof flags.target === "string" ? flags.target : undefined;
+  if (!target) {
+    console.error(`Missing --target. Expected one of ${NAMED_TARGETS.join(", ")}, all, or a path.`);
+    process.exit(1);
+  }
+
+  const yes = flags.yes === true;
+  const dryRun = flags["dry-run"] === true || !yes;
+  const configPath = typeof flags.config === "string" ? flags.config : defaultConfigPath();
+
+  if (!existsSync(configPath)) {
+    console.error(`No ${configPath}. Run \`roomyx init\` first.`);
+    process.exit(1);
+  }
+
+  for (const { name, path } of resolveTargets(target)) {
+    const result = syncSkill({
+      bundledSkillPath: bundledSkillPath(),
+      targetPath: path,
+      configPath,
+      dryRun,
+      yes,
+    });
+    console.log(name === path ? path : `${name}: ${path}`);
+    for (const warning of result.warnings) console.log(`  warning: ${warning}`);
+    if (result.written) {
+      console.log(result.backedUpTo ? `  written (backup: ${result.backedUpTo})` : "  written");
+    } else {
+      console.log(dryRun ? "  would write (pass --yes to apply)" : "  not written");
+    }
   }
 }
 
@@ -126,6 +183,8 @@ async function main(): Promise<void> {
     await runMcp(rest);
   } else if (command === "rooms" && rest[0] === "list") {
     await runRoomsList();
+  } else if (command === "skills" && rest[0] === "sync") {
+    await runSkillsSync(rest.slice(1));
   } else {
     console.error(USAGE);
     console.error("The terminal UI is also a separate binary: roomyx-client [--room <id>]");

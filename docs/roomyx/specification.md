@@ -1,12 +1,12 @@
 # roomyx — specification
 
-Version: 0.4.0
+Version: 0.5.0
 
 ## Module Identity
 
 - **Название:** `roomyx` — интерактивный терминальный интерфейс к startup-room комнатам, через MCP.
 - **Тип:** два независимых процесса — MCP-сервер (встроен в оркестратор) и TUI-клиент (отдельный терминальный процесс), соединённые по loopback HTTP.
-- **Статус:** сервер (`room.get_state`/`room.get_transcript`/`room.get_agent_detail`, R2-R4) — `implemented` (flow 001). Транспорт (`roomyx serve`) и TUI-клиент (chat view, agent modal) — `implemented` (flow 002, 2026-09-09), верифицировано реальными захваченными кадрами терминала через `@opentui/core/testing`. `room.post_owner_command` (R5) и авто-подъём TUI оркестратором остаются `spec ready`.
+- **Статус:** сервер (`room.get_state`/`room.get_transcript`/`room.get_agent_detail`, R2-R4) — `implemented` (flow 001). Транспорт (`roomyx serve`) и TUI-клиент (chat view, agent modal) — `implemented` (flow 002, 2026-09-09), верифицировано реальными захваченными кадрами терминала через `@opentui/core/testing`. `room.post_owner_command` (R5) — `implemented` (2026-09-09): тул принимает команду и передаёт её обработчику, который предоставляет встраивающий диспетчер; сам сервер по-прежнему не пишет в лог (D-01). Авто-подъём TUI оркестратором как дочернего процесса остаётся `spec ready` — и это сознательно: D-06 держит TUI отдельным процессом, поэтому «поднять» его означает подсказать оператору команду, что и делает бандлед-скилл.
 
 ## Structure
 
@@ -51,7 +51,7 @@ roomyx/
 ## CLI / Skill Surface
 
 - `roomyx serve <logPath> [--port N] [--acknowledge-non-loopback]` — NEW: поднимает MCP-сервер, биндит к loopback HTTP, печатает фактический адрес в stdout. Оркестратор запускает это при старте комнаты (`implemented` статус — `createRoomMcpServer()` — не включает сам transport-биндинг; этот CLI — недостающий слой, задача этой версии спеки).
-- `roomyx client [--connect http://127.0.0.1:4319]` — NEW: запускает TUI, подключается к уже поднятому серверу. Ручной запуск пользователем в отдельном терминале — основной путь v1 (R6); авто-подъём оркестратором как дочернего процесса — второй шаг, не в этой версии.
+- `roomyx-client [--room <id>] [--connect http://127.0.0.1:4319]` — запускает TUI, подключается к уже поднятому серверу. Отдельный бинарник, потому что D-06 держит TUI независимым процессом; `roomyx client` (через пробел) — алиас, поднимающий тот же TUI из основного бинарника. Ручной запуск пользователем в отдельном терминале — основной путь v1 (R6); авто-подъём оркестратором как дочернего процесса — второй шаг, не в этой версии.
 
 ## TUI Client Architecture (NEW, эта версия)
 
@@ -78,7 +78,7 @@ roomyx/
 | `Esc` | закрыть модалку / выйти из выделения |
 | `q` / `Ctrl+C` | выход из TUI (не останавливает сервер — независимые процессы) |
 
-Команд владельца (veto/constraint) в этой версии нет — они появятся только когда `room.post_owner_command` (R5) будет реализован на сервере; до тех пор TUI — чистый read-only просмотрщик, что честно отражает нынешние возможности сервера.
+Клавиш для команд владельца (veto/constraint) в TUI пока нет. Серверная сторона R5 уже есть — `room.post_owner_command` принимает команду и передаёт её диспетчеру, — но привязать её к клавише имеет смысл только там, где диспетчер действительно подключён; у комнаты, поднятой голым `roomyx serve`, обработчика нет, и тул честно отвечает отказом. До тех пор TUI остаётся read-only просмотрщиком.
 
 ## Data Contracts — MCP Tool Surface (proposed, v1)
 
@@ -103,7 +103,7 @@ roomyx/
 |---|---|---|
 | AC1 | TUI показывает сообщения комнаты в реальном времени через `room.get_transcript`, без параллельного чтения сырого лог-файла | `implemented` (flow 002, `test/client/render.test.ts` — реальный захваченный кадр терминала содержит ростер и сообщения) |
 | AC2 | Открытие модалки агента показывает только его данные (`room.get_agent_detail`), не полный транскрипт | `implemented` (flow 002; независимое ревью нашло и помогло исправить реальный баг — модалка изначально не перекрывала экран из-за отсутствия `position: absolute`) |
-| AC3 | `room.post_owner_command` не пишет в лог сама — диспетчер получает команду и пишет решение сам, единственный писатель лога не меняется | `spec ready` (R5 не реализован на сервере вообще) |
+| AC3 | `room.post_owner_command` не пишет в лог сама — диспетчер получает команду и пишет решение сам, единственный писатель лога не меняется | `implemented` (`test/server/owner-command.test.ts`: команда доходит до обработчика хоста, а лог после вызова побайтово тот же; без обработчика тул честно отвечает `accepted: false`) |
 | AC4 | Смена оркестратора (Claude Code → Codex → keryx shell) не требует изменений в TUI-клиенте — контракт инструментов один и тот же независимо от того, кто сервер поднял | `spec ready` (архитектурно верно по построению; Codex/keryx shell как оркестраторы не тестировались) |
 | AC5 | Ни один из тулов не заявлен как поддерживающий смешение провайдеров внутри одной комнаты — это explicit non-goal v1 | `implemented` (верно и для текущего сервера) |
 | AC6 | `roomyx serve` биндится только к `127.0.0.1` без `--acknowledge-non-loopback`; попытка забиндиться на не-loopback без флага завершается ошибкой, не предупреждением | `implemented` (flow 002, `test/server/serve.test.ts`) |
@@ -111,15 +111,15 @@ roomyx/
 | AC8 | Chat view не перескакивает вниз при поступлении нового сообщения, если пользователь прокрутил историю вверх | `implemented` через встроенный `stickyScroll`/`stickyStart: "bottom"` в `@opentui/core`; конкретно сценарий "прокрутил вверх, потом пришло сообщение" отдельным тестом не покрыт |
 | AC9 | Ни сервер, ни клиент не пишут в лог-файл комнаты ни при каких обстоятельствах v1 | `implemented`, тестами покрыто для сервера (flow 001 AC4, flow 002 `serve.test.ts`); клиент физически не имеет кода записи в файл (только HTTP-вызовы) |
 
-**Текущий статус: AC1, AC2, AC5-9 — `implemented` (flow 002); AC3, AC4 — `spec ready` (R5 не реализован; смена оркестратора не протестирована на практике).**
+**Текущий статус: AC1-AC3, AC5-9 — `implemented`; AC4 — `spec ready` (смена оркестратора верна по построению, но на практике не протестирована).**
 
 ## Requirement Coverage Map
 
 | Требование | Раздел спецификации | Статус |
 |---|---|---|
 | R1 — единый провайдер на сессию | Data Contracts (нет multi-provider полей ни в одном tool) + AC5 | `implemented` (верно по построению для существующего сервера) |
-| R2 — MCP-сервер как источник состояния | Structure, CLI / Skill Surface | `implemented` (три read-only тула, flow 001); транспорт (`roomyx serve`) — `spec ready` |
-| R3 — общий чат-вид | Data Contracts → `room.get_state`, `room.get_transcript`; TUI Client Architecture → Chat view | сервер `implemented`; UI-часть — `spec ready` |
-| R4 — модалка на агента | Data Contracts → `room.get_agent_detail`; TUI Client Architecture → Agent modal | сервер `implemented`; UI-часть — `spec ready` |
-| R5 — интерактивные команды владельца | Data Contracts → `room.post_owner_command` | `spec ready`, отложено на следующий flow (ни сервер, ни клиент не реализуют это в данной версии) |
-| R6 — ручной и автоматический запуск | CLI / Skill Surface → `roomyx client`, `roomyx serve` | `spec ready` |
+| R2 — MCP-сервер как источник состояния | Structure, CLI / Skill Surface | `implemented` — три read-only тула плюс транспорт `roomyx serve` |
+| R3 — общий чат-вид | Data Contracts → `room.get_state`, `room.get_transcript`; TUI Client Architecture → Chat view | `implemented` — и сервер, и UI (`test/client/render.test.ts` — реальный кадр терминала) |
+| R4 — модалка на агента | Data Contracts → `room.get_agent_detail`; TUI Client Architecture → Agent modal | `implemented` — и сервер, и UI |
+| R5 — интерактивные команды владельца | Data Contracts → `room.post_owner_command` | `partial` — серверная сторона реализована (тул принимает команду и передаёт диспетчеру); в TUI клавиш для отправки команд пока нет, он остаётся read-only просмотрщиком |
+| R6 — ручной и автоматический запуск | CLI / Skill Surface → `roomyx client`, `roomyx serve` | `partial` — ручной запуск реализован (`roomyx-client`, `roomyx client`); автоматический доведён до подсказки в бандлед-скилле, спавна дочернего процесса нет (D-06) |

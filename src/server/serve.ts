@@ -1,10 +1,11 @@
 import { createServer } from "node:http";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createRoomMcpServer } from "./index";
+import type { RoomMcpServerOptions } from "./index";
 
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
 
-export interface ServeOptions {
+export interface ServeOptions extends RoomMcpServerOptions {
   /** Defaults to 4319 (specification.md's default). 0 selects an ephemeral port. */
   port?: number;
   host?: string;
@@ -51,7 +52,7 @@ export async function serve(logPath: string, options: ServeOptions): Promise<Ser
         sessions.delete(sessionId);
       },
     });
-    const mcpServer = createRoomMcpServer(logPath);
+    const mcpServer = createRoomMcpServer(logPath, { onOwnerCommand: options.onOwnerCommand });
     await mcpServer.connect(transport);
     return transport;
   }

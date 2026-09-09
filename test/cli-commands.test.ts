@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -104,4 +104,76 @@ describe("cli subcommands", () => {
     expect(JSON.parse(text)).toEqual([]);
     await client.close();
   }, 10000);
+});
+
+describe("roomyx skills sync", () => {
+  // Every one of these points --target at a temp path. D-02: the mechanism is
+  // exercised against fixtures, never a real ~/.claude/skills/... file.
+  function setupProject(): { configPath: string; target: string } {
+    dir = mkdtempSync(join(tmpdir(), "roomyx-cli-skills-"));
+    const configPath = join(dir, "config.json");
+    writeFileSync(configPath, JSON.stringify({ schemaVersion: 1, defaultPort: 4319, roomLogDir: "" }));
+    return { configPath, target: join(dir, "nested", "SKILL.md") };
+  }
+
+  async function runSync(args: string[]): Promise<{ stdout: string; stderr: string; code: number | null }> {
+    const proc = Bun.spawn(["bun", CLI, "skills", "sync", ...args], { stdout: "pipe", stderr: "pipe" });
+    procs.push(proc);
+    const [stdout, stderr] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+    ]);
+    await proc.exited;
+    return { stdout, stderr, code: proc.exitCode };
+  }
+
+  test("without --yes it reports what it would do and writes nothing", async () => {
+    const { configPath, target } = setupProject();
+    const { stdout, code } = await runSync(["--target", target, "--config", configPath]);
+    expect(code).toBe(0);
+    expect(stdout).toContain("would write");
+    expect(existsSync(target)).toBe(false);
+  });
+
+  test("with --yes it writes the bundled skill, creating the directory it needs", async () => {
+    const { configPath, target } = setupProject();
+    const { stdout, code } = await runSync(["--target", target, "--config", configPath, "--yes"]);
+    expect(code).toBe(0);
+    expect(stdout).toContain("written");
+    expect(readFileSync(target, "utf8")).toContain("startup-room");
+  });
+
+  test("a second --yes run against a target it wrote itself backs up the previous content", async () => {
+    const { configPath, target } = setupProject();
+    await runSync(["--target", target, "--config", configPath, "--yes"]);
+    const { stdout } = await runSync(["--target", target, "--config", configPath, "--yes"]);
+    expect(stdout).toContain("backup:");
+  });
+
+  test("refuses to overwrite content roomyx never wrote, even with --yes absent from the picture", async () => {
+    const { configPath } = setupProject();
+    const handWritten = join(dir!, "hand-written.md");
+    writeFileSync(handWritten, "someone's own skill");
+    const { stdout } = await runSync(["--target", handWritten, "--config", configPath]);
+    expect(stdout).toContain("never synced it before");
+    expect(readFileSync(handWritten, "utf8")).toBe("someone's own skill");
+  });
+
+  test("missing --target is an error, not a default", async () => {
+    const { stderr, code } = await runSync([]);
+    expect(stderr).toContain("Missing --target");
+    expect(code).toBe(1);
+  });
+
+  test("an un-initialized project is told to run init rather than shown a stack trace", async () => {
+    dir = mkdtempSync(join(tmpdir(), "roomyx-cli-skills-noinit-"));
+    const { stderr, code } = await runSync([
+      "--target",
+      join(dir, "SKILL.md"),
+      "--config",
+      join(dir, "config.json"),
+    ]);
+    expect(stderr).toContain("roomyx init");
+    expect(code).toBe(1);
+  });
 });
