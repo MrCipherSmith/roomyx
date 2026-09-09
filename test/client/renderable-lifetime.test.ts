@@ -23,6 +23,23 @@ function registry(): Map<number, unknown> {
   return (Renderable as unknown as { renderablesByNumber: Map<number, unknown> }).renderablesByNumber;
 }
 
+/**
+ * The highest renderable number handed out so far.
+ *
+ * The map's *size* is a net count, and net is the wrong instrument for half of
+ * this: with the skip-unchanged-roster short-circuit deleted, 100 identical
+ * polls destroy five rows and allocate five rows each time, so the size is
+ * unchanged at the end and the test passes. An independent mutation pass caught
+ * that — the case named "allocate nothing" was certifying the destroy and
+ * certifying the skip zero times. Allocation is monotonic, so the highest key
+ * separates "allocated nothing" from "allocated and freed five hundred".
+ */
+function allocations(): number {
+  let highest = 0;
+  for (const key of registry().keys()) if (key > highest) highest = key;
+  return highest;
+}
+
 const ROSTER = Array.from({ length: 5 }, (_, i) => ({ id: `a${i}`, name: `Agent ${i}` }));
 
 async function view(width = 100, height = 24) {
@@ -38,12 +55,16 @@ describe("renderable lifetime", () => {
     v.chat.setRoster(ROSTER);
     await v.renderOnce();
 
-    const before = registry().size;
+    const beforeSize = registry().size;
+    const beforeAllocations = allocations();
     for (let i = 0; i < 100; i += 1) v.chat.setRoster(ROSTER);
     await v.renderOnce();
 
     // 100 polls is five minutes of a live room. It used to cost 500 renderables.
-    expect(registry().size).toBe(before);
+    expect(registry().size).toBe(beforeSize);
+    // And nothing was allocated at all — which is the half the net count cannot
+    // see, and the half `sameRoster` exists for.
+    expect(allocations()).toBe(beforeAllocations);
     v.destroy();
   });
 

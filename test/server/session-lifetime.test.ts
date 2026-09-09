@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { serve } from "../../src/server/serve";
+import { RoomClient } from "../../src/client/mcp-client";
 import type { ServeHandle } from "../../src/server/serve";
 
 const FIXTURE = join(import.meta.dir, "..", "fixtures", "sample-room.jsonl");
@@ -94,4 +95,66 @@ describe("session lifetime", () => {
       await client.close().catch(() => undefined);
     }
   }, 20000);
+});
+
+/**
+ * The originating defect was that `terminateSession()` had no callers — the
+ * client closed locally and told the server nothing. The tests above prove the
+ * *server* honours a DELETE, which was never in doubt; deleting the one client
+ * call again left all 261 tests green. This drives the release through
+ * `RoomClient` itself.
+ *
+ * Capturing the session id needs a way to see the header the client sends, so
+ * the client is pointed at a one-request-deep proxy that records it and
+ * forwards. That is a smaller price than exposing the transport on the class
+ * just so a test can read it.
+ */
+describe("the client's own session release", () => {
+  test("stop() ends the session on the server, not only locally", async () => {
+    handle = await serve(FIXTURE, { port: 0 });
+    const upstream = handle.url;
+
+    const seen = new Set<string>();
+    const proxy = Bun.serve({
+      port: 0,
+      async fetch(request) {
+        const id = request.headers.get("mcp-session-id");
+        if (id) seen.add(id);
+        const target = new URL(upstream);
+        // Rewrite Host, or the server's DNS-rebinding guard refuses the
+        // forwarded request — correctly: it is a request whose Host names
+        // somewhere other than where it arrived. That guard working is why the
+        // first version of this test saw no session id at all.
+        const headers = new Headers(request.headers);
+        headers.set("host", target.host);
+        headers.delete("origin");
+        return fetch(target, {
+          method: request.method,
+          headers,
+          body: request.method === "GET" || request.method === "DELETE" ? undefined : await request.arrayBuffer(),
+        });
+      },
+    });
+
+    try {
+      const client = new RoomClient(
+        { url: `http://127.0.0.1:${proxy.port}/mcp`, stateIntervalMs: 50, transcriptIntervalMs: 50 },
+        {},
+      );
+      client.start();
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      expect(seen.size).toBeGreaterThan(0);
+
+      await client.stop();
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      // Every session the client opened is gone from the server, so replaying
+      // its id gets the 404 an unknown session gets.
+      for (const id of seen) {
+        expect(await replay(upstream, id)).toBe(404);
+      }
+    } finally {
+      proxy.stop(true);
+    }
+  }, 30000);
 });
