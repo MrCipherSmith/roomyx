@@ -97,18 +97,20 @@ jobs:
           # This step used to run `roomyx --help > /dev/null 2>&1 || true`,
           # which discarded the output, discarded the exit code, and then
           # swallowed whatever was left. It could not fail, and it passed every
-          # release while `--help` was exiting 1.
+          # release while `--help` was exiting 1 — reporting success on a defect
+          # it was standing right next to.
           #
-          # `--version` is asserted rather than `--help` because `--help` still
-          # exits 1 today; that is a separate defect with its own fix, and
-          # gating this release on it would fail the release on a bug the
-          # release does not contain. The `--help` assertion joins this step
-          # once that lands.
+          # `--help` is asserted first because it is the cheapest proof that the
+          # binary starts at all, and it is now the command it always claimed to
+          # be rather than one that boots a server.
           #
-          # Checking the printed version against the tag is stricter than what
-          # was here before: the manifest-versus-tag check above compares the
-          # repository, this compares what the *packed artifact* actually says
-          # when it runs.
+          # Then the version, against the tag. That is stricter than the
+          # manifest check above: the manifest check compares what the
+          # repository says, this compares what the *packed artifact* says when
+          # it runs.
+          ./.release/prefix/bin/roomyx --help > /dev/null
+          echo "--help exits 0"
+
           ACTUAL="$(./.release/prefix/bin/roomyx --version)"
           EXPECTED="${GITHUB_REF_NAME#v}"
           echo "installed binary reports: $ACTUAL"

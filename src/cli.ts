@@ -8,33 +8,20 @@ import { syncSkill } from "./installer/skill-sync";
 import { appendMessage, createRoomLog, parseRoster } from "./log/write";
 import { NAMED_TARGETS, resolveTargets } from "./installer/skill-targets";
 import { serveManagement } from "./mcp-management/server";
+import { ArgError, parseArgs, renderFlags } from "./cli/args";
+import type { FlagSpecs, ParsedArgs } from "./cli/args";
+import { CLIENT_FLAGS } from "./cli/specs";
 
 /**
- * `roomyx init` / `roomyx serve` / `roomyx rooms list` / `roomyx mcp` /
- * `roomyx skills sync`.
- * The TUI is primarily `roomyx-client` (its own binary over src/client/index.ts)
- * so the orchestrator and the TUI stay independent processes (decisions.md
- * D-06). `roomyx client` is a thin alias that starts that same TUI in this
- * process — a separate invocation from `serve`/`mcp`, not a shared lifetime.
+ * The TUI is primarily `roomyx-client` (its own binary over
+ * src/client/index.ts) so the orchestrator and the TUI stay independent
+ * processes (decisions.md D-06). `roomyx client` is a thin alias that starts
+ * that same TUI in this process — a separate invocation from `serve`/`mcp`,
+ * not a shared lifetime.
+ *
+ * Every command declares its flags rather than scanning argv by hand. See
+ * `./cli/args` for what that fixes and why it was one defect rather than six.
  */
-
-function parseFlags(args: string[]): Record<string, string | boolean> {
-  const flags: Record<string, string | boolean> = {};
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-    if (arg?.startsWith("--")) {
-      const key = arg.slice(2);
-      const next = args[i + 1];
-      if (next !== undefined && !next.startsWith("--")) {
-        flags[key] = next;
-        i++;
-      } else {
-        flags[key] = true;
-      }
-    }
-  }
-  return flags;
-}
 
 function defaultRegistryPath(): string {
   return join(process.cwd(), ".roomyx", "rooms", "registry.json");
@@ -48,202 +35,250 @@ function bundledSkillPath(): string {
   return join(import.meta.dir, "bundled-skills", "startup-room", "SKILL.md");
 }
 
-const USAGE = [
-  "Usage: roomyx <command>",
-  "",
-  "  init                                    scaffold .roomyx/ in this project",
-  "  room new <path> --goal <s>              create a room log",
-  "  room append <path> --from <id> --body <s>   append a message to one",
-  "  serve <logPath>                         serve a room log over MCP",
-  "  rooms list                              live rooms, liveness-checked",
-  "  client                                  attach the terminal UI",
-  "  mcp                                     start the management MCP server",
-  "  skills sync --target <claude|codex|keryx|all|path>",
-  "  --version",
-].join("\n");
+const REGISTRY_FLAG = { type: "string", describe: "Registry file (default .roomyx/rooms/registry.json)" } as const;
 
-async function runInit(): Promise<void> {
-  const result = init({ cwd: process.cwd(), bundledSkillPath: bundledSkillPath() });
-  console.log(result.created ? `Created ${result.roomyxDir}` : `${result.roomyxDir} already initialized`);
+interface Command {
+  usage: string;
+  summary: string;
+  /** Extra lines under the flag table. */
+  notes?: string;
+  flags: FlagSpecs;
+  run: (args: ParsedArgs) => Promise<void>;
 }
 
-async function runServe(logPath: string | undefined, rest: string[]): Promise<void> {
-  if (!logPath) {
-    console.error("Missing <logPath>. Usage: roomyx serve <logPath> [--port N]");
-    process.exit(1);
-  }
-  const flags = parseFlags(rest);
-  // Absolute, because the registry outlives this process's working directory:
-  // `roomyx-client` resolves rooms from wherever the person happened to run it,
-  // and a relative logPath means nothing there. The specification's registry
-  // example has always shown an absolute path; only the code disagreed.
-  const absoluteLogPath = resolve(logPath);
-  const handle = await serve(absoluteLogPath, {
-    port: flags.port !== undefined ? Number(flags.port) : undefined,
-    host: typeof flags.host === "string" ? flags.host : undefined,
-    acknowledgeNonLoopback: flags["acknowledge-non-loopback"] === true,
-  });
+const COMMANDS: Record<string, Command> = {
+  init: {
+    usage: "roomyx init",
+    summary: "scaffold .roomyx/ in this project",
+    flags: {},
+    run: async () => {
+      const result = init({ cwd: process.cwd(), bundledSkillPath: bundledSkillPath() });
+      console.log(result.created ? `Created ${result.roomyxDir}` : `${result.roomyxDir} already initialized`);
+    },
+  },
 
-  const registryPath = typeof flags.registry === "string" ? flags.registry : defaultRegistryPath();
-  const entry = registerRoom(registryPath, {
-    port: handle.port,
-    logPath: absoluteLogPath,
-    pid: process.pid,
-  });
+  "room new": {
+    usage: "roomyx room new <path> --goal <statement> [flags]",
+    summary: "create a room log",
+    notes: "Refuses to overwrite an existing log — a room log is append-only.",
+    flags: {
+      goal: { type: "string", describe: "Required. What the room is for, in one sentence" },
+      criteria: { type: "string", describe: "Success criteria, stored in the goal contract" },
+      roster: { type: "string", describe: "Participants, as id:Name,id2:Name2" },
+    },
+    run: async ({ positionals, flags }) => {
+      const path = positionals[0];
+      if (!path) throw new ArgError("Missing <path>.");
+      const goalStatement = flags.goal;
+      if (typeof goalStatement !== "string") {
+        throw new ArgError("Missing --goal. A room without a stated goal has nothing to converge on.");
+      }
+      const absolute = resolve(path);
+      createRoomLog(absolute, {
+        goalStatement,
+        criteria: typeof flags.criteria === "string" ? flags.criteria : undefined,
+        roster: typeof flags.roster === "string" ? parseRoster(flags.roster) : [],
+      });
+      console.log(`Created ${absolute}`);
+      console.log(`serve it with \`roomyx serve ${path}\``);
+    },
+  },
 
-  console.log(`roomyx serving ${absoluteLogPath} at ${handle.url}`);
-  console.log(`room ID: ${entry.id} — attach with \`roomyx-client --room ${entry.id}\``);
+  "room append": {
+    usage: "roomyx room append <path> --from <id> --body <text> [flags]",
+    summary: "append a message to a room log",
+    notes:
+      "Refuses when a live room is serving that log: its dispatcher is the\n  single writer (D-01a). --force overrides if you know the room is gone.",
+    flags: {
+      from: { type: "string", describe: "Required. Participant id" },
+      body: { type: "string", describe: "Required. The message" },
+      kind: { type: "string", describe: "Message kind, e.g. challenge" },
+      "in-reply-to": { type: "number", describe: "seq of the message replied to" },
+      force: { type: "boolean", describe: "Append even if a live room serves this log" },
+      registry: REGISTRY_FLAG,
+    },
+    run: async ({ positionals, flags }) => {
+      const path = positionals[0];
+      if (!path) throw new ArgError("Missing <path>.");
+      const from = flags.from;
+      const body = flags.body;
+      if (typeof from !== "string" || typeof body !== "string") {
+        throw new ArgError("Both --from and --body are required.");
+      }
 
-  const shutdown = () => {
-    deregisterRoom(registryPath, entry.id);
-    void handle.close().then(() => process.exit(0));
-  };
-  process.on("SIGINT", shutdown);
-  process.on("SIGTERM", shutdown);
-}
+      const absolute = resolve(path);
+      if (flags.force !== true) {
+        const registryPath = typeof flags.registry === "string" ? flags.registry : defaultRegistryPath();
+        const serving = (await listLiveRooms(registryPath)).find((room) => room.logPath === absolute);
+        if (serving) {
+          throw new ArgError(
+            `A live room (${serving.id}) is serving this log; its dispatcher is the single writer (D-01). Pass --force if you know it isn't.`,
+          );
+        }
+      }
 
-async function runRoomsList(): Promise<void> {
-  const rooms = await listLiveRooms(defaultRegistryPath());
-  if (rooms.length === 0) {
-    console.log("No live rooms.");
-    return;
-  }
-  for (const room of rooms) {
-    console.log(`${room.id}  port=${room.port}  log=${room.logPath}  started=${room.startedAt}`);
-  }
-}
+      const message = appendMessage(absolute, {
+        from,
+        body,
+        kind: typeof flags.kind === "string" ? (flags.kind as never) : undefined,
+        inReplyTo: typeof flags["in-reply-to"] === "number" ? flags["in-reply-to"] : undefined,
+      });
+      console.log(`Appended seq ${message.seq} from ${message.from}.`);
+    },
+  },
 
-/**
- * `roomyx skills sync --target <claude|codex|keryx|all|path> [--dry-run] [--yes]`.
- *
- * Without `--yes` this reports what it would do and writes nothing — the
- * specification's wording, and D-02's requirement that landing on a real skill
- * file be a separate, deliberate act rather than a side effect of the
- * mechanism existing. `--dry-run` is then the same thing said explicitly.
- */
-async function runSkillsSync(rest: string[]): Promise<void> {
-  const flags = parseFlags(rest);
-  const target = typeof flags.target === "string" ? flags.target : undefined;
-  if (!target) {
-    console.error(`Missing --target. Expected one of ${NAMED_TARGETS.join(", ")}, all, or a path.`);
-    process.exit(1);
-  }
+  serve: {
+    usage: "roomyx serve <logPath> [flags]",
+    summary: "serve a room log over MCP",
+    flags: {
+      port: { type: "number", describe: "Listen port (default 4319; 0 picks an ephemeral one)" },
+      host: { type: "string", describe: "Bind address (default 127.0.0.1)" },
+      "acknowledge-non-loopback": { type: "boolean", describe: "Required to bind a non-loopback host" },
+      registry: REGISTRY_FLAG,
+    },
+    run: async ({ positionals, flags }) => {
+      const logPath = positionals[0];
+      if (!logPath) throw new ArgError("Missing <logPath>.");
 
-  const yes = flags.yes === true;
-  const dryRun = flags["dry-run"] === true || !yes;
-  const configPath = typeof flags.config === "string" ? flags.config : defaultConfigPath();
+      // Absolute, because the registry outlives this process's working
+      // directory: `roomyx-client` resolves rooms from wherever the person
+      // happened to run it, and a relative logPath means nothing there.
+      const absoluteLogPath = resolve(logPath);
+      const handle = await serve(absoluteLogPath, {
+        port: typeof flags.port === "number" ? flags.port : undefined,
+        host: typeof flags.host === "string" ? flags.host : undefined,
+        acknowledgeNonLoopback: flags["acknowledge-non-loopback"] === true,
+      });
 
-  if (!existsSync(configPath)) {
-    console.error(`No ${configPath}. Run \`roomyx init\` first.`);
-    process.exit(1);
-  }
+      const registryPath = typeof flags.registry === "string" ? flags.registry : defaultRegistryPath();
+      const entry = registerRoom(registryPath, {
+        port: handle.port,
+        logPath: absoluteLogPath,
+        pid: process.pid,
+      });
 
-  for (const { name, path } of resolveTargets(target)) {
-    const result = syncSkill({
-      bundledSkillPath: bundledSkillPath(),
-      targetPath: path,
-      configPath,
-      dryRun,
-      yes,
-    });
-    console.log(name === path ? path : `${name}: ${path}`);
-    for (const warning of result.warnings) console.log(`  warning: ${warning}`);
-    if (result.written) {
-      console.log(result.backedUpTo ? `  written (backup: ${result.backedUpTo})` : "  written");
-    } else {
-      console.log(dryRun ? "  would write (pass --yes to apply)" : "  not written");
-    }
-  }
-}
+      console.log(`roomyx serving ${absoluteLogPath} at ${handle.url}`);
+      console.log(`room ID: ${entry.id} — attach with \`roomyx-client --room ${entry.id}\``);
 
-/**
- * `roomyx room new <path> --goal <s> [--criteria <s>] [--roster id:Name,...]`
- * `roomyx room append <path> --from <id> --body <s> [--kind k] [--in-reply-to n] [--force]`
- *
- * D-01a: creating a log nobody serves takes the writer count 0→1 and needs no
- * exception. Appending to a log a live room is serving would mint a second
- * writer, so it is refused unless the caller says they know better.
- */
-async function runRoomNew(path: string | undefined, rest: string[]): Promise<void> {
-  if (!path) {
-    console.error("Missing <path>. Usage: roomyx room new <path> --goal <statement> [--roster id:Name,...]");
-    process.exit(1);
-  }
-  const flags = parseFlags(rest);
-  const goalStatement = typeof flags.goal === "string" ? flags.goal : undefined;
-  if (!goalStatement) {
-    console.error("Missing --goal. A room without a stated goal has nothing to converge on.");
-    process.exit(1);
-  }
-  const absolute = resolve(path);
-  createRoomLog(absolute, {
-    goalStatement,
-    criteria: typeof flags.criteria === "string" ? flags.criteria : undefined,
-    roster: typeof flags.roster === "string" ? parseRoster(flags.roster) : [],
-  });
-  console.log(`Created ${absolute}`);
-  console.log(`serve it with \`roomyx serve ${path}\``);
-}
+      const shutdown = () => {
+        deregisterRoom(registryPath, entry.id);
+        void handle.close().then(() => process.exit(0));
+      };
+      process.on("SIGINT", shutdown);
+      process.on("SIGTERM", shutdown);
+    },
+  },
 
-async function runRoomAppend(path: string | undefined, rest: string[]): Promise<void> {
-  if (!path) {
-    console.error("Missing <path>. Usage: roomyx room append <path> --from <id> --body <text>");
-    process.exit(1);
-  }
-  const flags = parseFlags(rest);
-  const from = typeof flags.from === "string" ? flags.from : undefined;
-  const body = typeof flags.body === "string" ? flags.body : undefined;
-  if (!from || !body) {
-    console.error("Missing --from or --body.");
-    process.exit(1);
-  }
+  "rooms list": {
+    usage: "roomyx rooms list [flags]",
+    summary: "live rooms, confirmed by a real call rather than by the file",
+    flags: { registry: REGISTRY_FLAG },
+    run: async ({ flags }) => {
+      // `--registry` used to be accepted here and silently ignored: this
+      // command took no arguments at all and read the default path, so
+      // `rooms list --registry /nonexistent.json` printed "No live rooms"
+      // about a different file.
+      const registryPath = typeof flags.registry === "string" ? flags.registry : defaultRegistryPath();
+      const rooms = await listLiveRooms(registryPath);
+      if (rooms.length === 0) {
+        console.log("No live rooms.");
+        return;
+      }
+      for (const room of rooms) {
+        console.log(`${room.id}  port=${room.port}  log=${room.logPath}  started=${room.startedAt}`);
+      }
+    },
+  },
 
-  const absolute = resolve(path);
-  if (flags.force !== true) {
-    const registryPath = typeof flags.registry === "string" ? flags.registry : defaultRegistryPath();
-    const live = await listLiveRooms(registryPath);
-    const serving = live.find((room) => room.logPath === absolute);
-    if (serving) {
-      console.error(
-        `A live room (${serving.id}) is serving this log; its dispatcher is the single writer (D-01). Pass --force if you know it isn't.`,
+  client: {
+    usage: "roomyx client [flags]",
+    summary: "attach the terminal UI (same as the roomyx-client binary)",
+    flags: CLIENT_FLAGS,
+    run: async ({ flags }) => {
+      const { runClient } = await import("./client/index");
+      await runClient(flags);
+    },
+  },
+
+  mcp: {
+    usage: "roomyx mcp [flags]",
+    summary: "start the management MCP server",
+    notes: "Default port 4320, so it does not collide with `roomyx serve`.",
+    flags: {
+      port: { type: "number", describe: "Listen port (default 4320; 0 picks an ephemeral one)" },
+      host: { type: "string", describe: "Bind address (default 127.0.0.1)" },
+      "acknowledge-non-loopback": { type: "boolean", describe: "Required to bind a non-loopback host" },
+      registry: REGISTRY_FLAG,
+      config: { type: "string", describe: "Config file (default .roomyx/config.json)" },
+    },
+    run: async ({ flags }) => {
+      const handle = await serveManagement(
+        {
+          registryPath: typeof flags.registry === "string" ? flags.registry : defaultRegistryPath(),
+          bundledSkillPath: bundledSkillPath(),
+          configPath: typeof flags.config === "string" ? flags.config : defaultConfigPath(),
+        },
+        {
+          port: typeof flags.port === "number" ? flags.port : undefined,
+          host: typeof flags.host === "string" ? flags.host : undefined,
+          acknowledgeNonLoopback: flags["acknowledge-non-loopback"] === true,
+        },
       );
-      process.exit(1);
-    }
-  }
 
-  const message = appendMessage(absolute, {
-    from,
-    body,
-    kind: typeof flags.kind === "string" ? (flags.kind as never) : undefined,
-    inReplyTo: flags["in-reply-to"] !== undefined ? Number(flags["in-reply-to"]) : undefined,
-  });
-  console.log(`Appended seq ${message.seq} from ${message.from}.`);
-}
+      console.log(`roomyx mcp listening at ${handle.url}`);
+      console.log("tools: roomyx.rooms.list, roomyx.skills.sync");
 
-async function runMcp(rest: string[]): Promise<void> {
-  const flags = parseFlags(rest);
-  const handle = await serveManagement(
-    {
-      registryPath: typeof flags.registry === "string" ? flags.registry : defaultRegistryPath(),
-      bundledSkillPath: bundledSkillPath(),
-      configPath: typeof flags.config === "string" ? flags.config : defaultConfigPath(),
+      const shutdown = () => {
+        void handle.close().then(() => process.exit(0));
+      };
+      process.on("SIGINT", shutdown);
+      process.on("SIGTERM", shutdown);
     },
-    {
-      port: flags.port !== undefined ? Number(flags.port) : undefined,
-      host: typeof flags.host === "string" ? flags.host : undefined,
-      acknowledgeNonLoopback: flags["acknowledge-non-loopback"] === true,
+  },
+
+  "skills sync": {
+    usage: "roomyx skills sync --target <claude|codex|keryx|all|path> [flags]",
+    summary: "install the bundled startup-room skill",
+    notes:
+      "Without --yes nothing is written: the run reports what it would do and\n  stops. D-02 — landing on a real skill file is a deliberate act, not a\n  side effect of the mechanism existing.",
+    flags: {
+      target: { type: "string", describe: `Required. ${NAMED_TARGETS.join(", ")}, all, or a literal path` },
+      yes: { type: "boolean", describe: "Actually write" },
+      "dry-run": { type: "boolean", describe: "Report only (the default)" },
+      config: { type: "string", describe: "Config file the sync records hashes in" },
     },
-  );
+    run: async ({ flags }) => {
+      const target = flags.target;
+      if (typeof target !== "string") {
+        throw new ArgError(`Missing --target. Expected one of ${NAMED_TARGETS.join(", ")}, all, or a path.`);
+      }
 
-  console.log(`roomyx mcp listening at ${handle.url}`);
-  console.log("tools: roomyx.rooms.list, roomyx.skills.sync");
+      const yes = flags.yes === true;
+      const dryRun = flags["dry-run"] === true || !yes;
+      const configPath = typeof flags.config === "string" ? flags.config : defaultConfigPath();
+      if (!existsSync(configPath)) {
+        throw new ArgError(`No ${configPath}. Run \`roomyx init\` first.`);
+      }
 
-  const shutdown = () => {
-    void handle.close().then(() => process.exit(0));
-  };
-  process.on("SIGINT", shutdown);
-  process.on("SIGTERM", shutdown);
-}
+      for (const { name, path } of resolveTargets(target)) {
+        const result = syncSkill({
+          bundledSkillPath: bundledSkillPath(),
+          targetPath: path,
+          configPath,
+          dryRun,
+          yes,
+        });
+        console.log(name === path ? path : `${name}: ${path}`);
+        for (const warning of result.warnings) console.log(`  warning: ${warning}`);
+        if (result.written) {
+          console.log(result.backedUpTo ? `  written (backup: ${result.backedUpTo})` : "  written");
+        } else {
+          console.log(dryRun ? "  would write (pass --yes to apply)" : "  not written");
+        }
+      }
+    },
+  },
+};
 
 /** package.json ships in the tarball (see `files`), so this resolves for an installed copy too. */
 function version(): string {
@@ -253,36 +288,74 @@ function version(): string {
   return manifest.version;
 }
 
-async function main(): Promise<void> {
-  const [command, ...rest] = process.argv.slice(2);
+function topLevelHelp(): string {
+  const names = Object.keys(COMMANDS);
+  const width = Math.max(...names.map((n) => n.length));
+  return [
+    "Usage: roomyx <command> [flags]",
+    "",
+    ...names.map((n) => `  ${n.padEnd(width)}  ${COMMANDS[n]!.summary}`),
+    "",
+    "  --version",
+    "",
+    "`roomyx <command> --help` describes one command.",
+    "The terminal UI is also a separate binary: roomyx-client [--room <id>]",
+  ].join("\n");
+}
 
-  if (command === "--version" || command === "-v") {
-    console.log(version());
-  } else if (command === "init") {
-    await runInit();
-  } else if (command === "serve") {
-    await runServe(rest[0], rest.slice(1));
-  } else if (command === "client") {
-    const { runClient } = await import("./client/index");
-    await runClient(rest);
-  } else if (command === "mcp") {
-    await runMcp(rest);
-  } else if (command === "rooms" && rest[0] === "list") {
-    await runRoomsList();
-  } else if (command === "skills" && rest[0] === "sync") {
-    await runSkillsSync(rest.slice(1));
-  } else if (command === "room" && rest[0] === "new") {
-    await runRoomNew(rest[1], rest.slice(2));
-  } else if (command === "room" && rest[0] === "append") {
-    await runRoomAppend(rest[1], rest.slice(2));
-  } else {
-    console.error(USAGE);
-    console.error("The terminal UI is also a separate binary: roomyx-client [--room <id>]");
-    process.exit(1);
+function commandHelp(name: string, command: Command): string {
+  const table = renderFlags(command.flags);
+  return [
+    command.usage,
+    "",
+    `  ${command.summary}`,
+    ...(command.notes ? ["", `  ${command.notes}`] : []),
+    ...(table ? ["", table] : []),
+  ].join("\n");
+}
+
+/** Longest command name first, so "room new" wins over a hypothetical "room". */
+function matchCommand(argv: string[]): { name: string; command: Command; rest: string[] } | undefined {
+  for (const name of Object.keys(COMMANDS).sort((a, b) => b.split(" ").length - a.split(" ").length)) {
+    const words = name.split(" ");
+    if (words.every((word, i) => argv[i] === word)) {
+      return { name, command: COMMANDS[name]!, rest: argv.slice(words.length) };
+    }
   }
+  return undefined;
+}
+
+async function main(): Promise<void> {
+  const argv = process.argv.slice(2);
+
+  if (argv[0] === "--version" || argv[0] === "-v") {
+    console.log(version());
+    return;
+  }
+
+  const matched = matchCommand(argv);
+  if (!matched) {
+    // `--help` is a request and exits 0. A bare `roomyx`, or a command that
+    // isn't one, is a usage error and exits 1 — the convention git follows,
+    // and the distinction a shell script or an agent actually reads.
+    const askedForHelp = argv[0] === "--help" || argv[0] === "-h";
+    console[askedForHelp ? "log" : "error"](topLevelHelp());
+    process.exit(askedForHelp ? 0 : 1);
+  }
+
+  const parsed = parseArgs(matched.rest, matched.command.flags);
+  if (parsed.help) {
+    console.log(commandHelp(matched.name, matched.command));
+    return;
+  }
+  await matched.command.run(parsed);
 }
 
 main().catch((error) => {
+  if (error instanceof ArgError) {
+    console.error(error.message);
+    process.exit(1);
+  }
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 });

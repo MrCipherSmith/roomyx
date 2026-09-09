@@ -54,6 +54,114 @@ async function waitForStdout(
 }
 
 describe("cli subcommands", () => {
+  // Every case here was measured against the published 0.4.0, where the CLI
+  // had two hand-rolled argv scanners and no grammar between them.
+  describe("the argument grammar, end to end", () => {
+    test("`serve --help` prints help instead of starting a server", async () => {
+      const proc = Bun.spawn(["bun", CLI, "serve", "--help"], { stdout: "pipe", stderr: "pipe" });
+      procs.push(proc);
+      const stdout = await new Response(proc.stdout).text();
+      await proc.exited;
+      expect(proc.exitCode).toBe(0);
+      expect(stdout).toContain("roomyx serve <logPath>");
+      expect(stdout).toContain("--port");
+      // The 0.4.0 behaviour: it bound a port and minted a room ID.
+      expect(stdout).not.toContain("room ID:");
+    });
+
+    test("`roomyx --help` exits 0 on stdout, while a bogus command exits 1 on stderr", async () => {
+      const help = Bun.spawn(["bun", CLI, "--help"], { stdout: "pipe", stderr: "pipe" });
+      procs.push(help);
+      const helpOut = await new Response(help.stdout).text();
+      await help.exited;
+      expect(help.exitCode).toBe(0);
+      expect(helpOut).toContain("Usage: roomyx");
+
+      const bogus = Bun.spawn(["bun", CLI, "definitely-not-a-command"], { stdout: "pipe", stderr: "pipe" });
+      procs.push(bogus);
+      const bogusErr = await new Response(bogus.stderr).text();
+      await bogus.exited;
+      expect(bogus.exitCode).toBe(1);
+      expect(bogusErr).toContain("Usage: roomyx");
+    });
+
+    test("options may precede the positional, and the file is not read as a flag", async () => {
+      dir = mkdtempSync(join(tmpdir(), "roomyx-argorder-"));
+      const log = join(dir, "room.jsonl");
+      const registry = join(dir, "registry.json");
+      await new Response(
+        Bun.spawn(["bun", CLI, "room", "new", log, "--goal", "g"], { stdout: "pipe", stderr: "pipe" }).stdout,
+      ).text();
+
+      const proc = Bun.spawn(["bun", CLI, "serve", "--port", "0", "--registry", registry, log], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      procs.push(proc);
+      const stdout = await waitForStdout(proc, "room ID: ", 5000);
+      // 0.4.0 served a file literally named "--port", on the default port.
+      expect(stdout).toContain(log);
+      expect(stdout).not.toContain("--port");
+    }, 10000);
+
+    test("a bad port is refused rather than silently becoming 1 or a random port", async () => {
+      const noValue = Bun.spawn(["bun", CLI, "serve", "x.jsonl", "--port"], { stdout: "pipe", stderr: "pipe" });
+      procs.push(noValue);
+      const noValueErr = await new Response(noValue.stderr).text();
+      await noValue.exited;
+      expect(noValue.exitCode).toBe(1);
+      expect(noValueErr).toContain("--port needs a value");
+
+      const notANumber = Bun.spawn(["bun", CLI, "serve", "x.jsonl", "--port", "abc"], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      procs.push(notANumber);
+      const notANumberErr = await new Response(notANumber.stderr).text();
+      await notANumber.exited;
+      expect(notANumber.exitCode).toBe(1);
+      expect(notANumberErr).toContain("needs a number");
+    });
+
+    test("an unknown flag is refused with a suggestion instead of being ignored", async () => {
+      const proc = Bun.spawn(["bun", CLI, "skills", "sync", "--target", "x", "--dryrun"], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      procs.push(proc);
+      const stderr = await new Response(proc.stderr).text();
+      await proc.exited;
+      expect(proc.exitCode).toBe(1);
+      expect(stderr).toContain("Unknown flag --dryrun");
+      expect(stderr).toContain("--dry-run");
+    });
+
+    test("`rooms list --registry` reads the registry it was given", async () => {
+      dir = mkdtempSync(join(tmpdir(), "roomyx-registry-flag-"));
+      const registry = join(dir, "registry.json");
+      writeFileSync(
+        registry,
+        JSON.stringify({
+          schemaVersion: 1,
+          rooms: [{ id: "r-ghost", port: 1, logPath: "/nope.jsonl", pid: 999999, startedAt: "2026-01-01T00:00:00Z" }],
+        }),
+      );
+
+      const proc = Bun.spawn(["bun", CLI, "rooms", "list", "--registry", registry], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      procs.push(proc);
+      const stdout = await new Response(proc.stdout).text();
+      await proc.exited;
+
+      // The entry is dead, so it is pruned and the answer is "none" — but the
+      // proof it read *this* file is that the file changed.
+      expect(stdout).toContain("No live rooms");
+      expect(JSON.parse(readFileSync(registry, "utf8")).rooms).toEqual([]);
+    }, 10000);
+  });
+
   test("unknown command prints usage including client and mcp", async () => {
     const proc = Bun.spawn(["bun", CLI], { stdout: "pipe", stderr: "pipe" });
     procs.push(proc);
