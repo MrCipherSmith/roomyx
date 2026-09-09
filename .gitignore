@@ -1,1 +1,4 @@
 node_modules/
+.roomyx/
+.metaproject/
+brainstorm/.serve.log
