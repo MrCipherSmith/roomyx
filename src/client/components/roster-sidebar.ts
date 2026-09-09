@@ -2,6 +2,29 @@ import { BoxRenderable, TextRenderable } from "@opentui/core";
 import type { RenderContext } from "@opentui/core";
 import type { RosterEntry } from "../../log/types";
 
+/**
+ * Clips a label to `width` columns, marking the cut.
+ *
+ * The row is a `TextRenderable` with `height: 1` in a fixed-width box, and the
+ * default word wrapping put an over-long label on a second line that `height: 1`
+ * then clipped — so the overflow was not trimmed at the column edge, the whole
+ * trailing word vanished. A single-token name of 23 characters rendered a
+ * completely blank row, while `j`/`k` still moved onto it and Enter still
+ * filtered by it: a filter attributed to a participant whose name was nowhere
+ * on screen.
+ *
+ * Counted in code units, which is what the box is laid out in. That is wrong
+ * for wide characters and is recorded as such — the display-cell arithmetic is
+ * deferred with the resize work that will need the same primitive — but a name
+ * cut one column early is a different order of problem from a name that is not
+ * drawn at all.
+ */
+function clip(label: string, width: number): string {
+  if (width <= 0) return "";
+  if (label.length <= width) return label;
+  return width === 1 ? "…" : `${label.slice(0, width - 1)}…`;
+}
+
 /** Same ids, same names, same order — the only thing a rebuild would change. */
 function sameRoster(a: RosterEntry[], b: RosterEntry[]): boolean {
   return a.length === b.length && a.every((entry, i) => entry.id === b[i]?.id && entry.name === b[i]?.name);
@@ -18,11 +41,13 @@ export class RosterSidebar {
   private rows: TextRenderable[] = [];
   private selectedIndex = 0;
   private onSelect: ((agent: RosterEntry) => void) | undefined;
+  private readonly width: number;
 
   constructor(
     private readonly ctx: RenderContext,
     options: { width: number; onSelect?: (agent: RosterEntry) => void },
   ) {
+    this.width = options.width;
     this.node = new BoxRenderable(ctx, { width: options.width, flexDirection: "column" });
     this.onSelect = options.onSelect;
   }
@@ -46,7 +71,13 @@ export class RosterSidebar {
       row.destroyRecursively();
     }
     this.rows = roster.map((agent, index) => {
-      const row = new TextRenderable(this.ctx, { content: this.rowLabel(agent, index), height: 1 });
+      const row = new TextRenderable(this.ctx, {
+        content: this.rowLabel(agent, index),
+        height: 1,
+        // Explicit, rather than relying on `height: 1` to hide a wrap. That
+        // reliance is what turned an overflow into a vanished row.
+        wrapMode: "none",
+      });
       this.node.add(row);
       return row;
     });
@@ -65,7 +96,10 @@ export class RosterSidebar {
   }
 
   private rowLabel(agent: RosterEntry, index: number): string {
-    return `${index === this.selectedIndex ? "> " : "  "}${agent.name}`;
+    const marker = index === this.selectedIndex ? "> " : "  ";
+    // One column kept clear on the right, so a full-width name cannot abut the
+    // message stream with no separating gap.
+    return `${marker}${clip(agent.name, this.width - marker.length - 1)}`;
   }
 
   private highlightSelected(): void {

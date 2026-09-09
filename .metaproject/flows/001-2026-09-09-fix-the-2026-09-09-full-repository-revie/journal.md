@@ -23,3 +23,4 @@
 - 2026-09-09T18:01:57.954Z - task-done: T8: M1+M4 — serve exits on signals with a client attached; identity-checked liveness
 - 2026-09-09T18:04:36.575Z - task-done: T9: M2 — serialise seq allocation on append
 - 2026-09-09T18:10:03.900Z - task-done: T10: M3+M5 — export path containment and the MCP skill-sync gate
+- 2026-09-09T18:12:58.329Z - task-done: T11: M6 — release MCP sessions
