@@ -1,0 +1,117 @@
+name: Release
+
+# A tag is the only trigger. Pushing `v0.2.0` publishes `0.2.0`; nothing else
+# does. `workflow_dispatch` is deliberately absent, matching keryx's own
+# release.yml — a release that can be fired by hand from an arbitrary ref is
+# one whose provenance nobody can read off the tag afterwards.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write # create the GitHub Release
+  id-token: write # npm provenance attestation
+
+jobs:
+  release:
+    name: verify, publish, announce
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # npm (not bun) publishes, because provenance attestation is an npm CLI
+      # feature. Trusted publishing needs npm >= 11.5.1 and Node >= 22.14.0;
+      # the Node 22 line ships npm 10.x, so the CLI is upgraded explicitly.
+      - name: Set up Node for npm publish
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      # Pinned to the major trusted publishing is known to work on here, same
+      # reasoning as keryx's release.yml: `npm@latest` has drifted past the
+      # working line before. The floor is asserted, not assumed.
+      - name: Upgrade npm to a trusted-publishing capable version
+        run: |
+          set -euo pipefail
+          npm install -g npm@11
+          INSTALLED="$(npm --version)"
+          echo "npm ${INSTALLED}"
+          MAJOR="${INSTALLED%%.*}"
+          if [ "$MAJOR" -lt 11 ]; then
+            echo "::error::npm ${INSTALLED} is below the 11.5.1 trusted-publishing floor"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: bun install
+
+      # The tag and the manifest are two independent statements of one fact.
+      # When they disagree, the published artifact carries a version nobody
+      # intended.
+      - name: Refuse a tag that disagrees with package.json
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          echo "tag:      $TAG_VERSION"
+          echo "manifest: $PKG_VERSION"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version ${PKG_VERSION}."
+            exit 1
+          fi
+
+      # The same gates CI runs. A tag must not be able to ship something a
+      # pull request could not.
+      - name: Lint, typecheck, test
+        run: bun run check
+
+      # Prove the artifact runs before it is published, not after. roomyx
+      # ships its CLI as source (`src/cli.ts`, `#!/usr/bin/env bun` shebang) —
+      # unlike keryx there is no `bun build --compile` step, so this smoke
+      # test is what actually proves the packed tarball is runnable.
+      - name: Pack and smoke-test the artifact
+        run: |
+          set -euo pipefail
+          mkdir -p ./.release
+          npm pack --pack-destination ./.release
+          ls -l ./.release
+          TARBALL="$(find ./.release -maxdepth 1 -name '*.tgz' -print -quit)"
+          if [ -z "$TARBALL" ]; then
+            echo "::error::npm pack produced no tarball in ./.release"
+            exit 1
+          fi
+          echo "packed: $TARBALL"
+          npm install -g --prefix ./.release/prefix "$TARBALL"
+          ./.release/prefix/bin/roomyx --help > /dev/null 2>&1 || true
+          echo "the installed binary is present and executable"
+
+      # No token. Authentication is the OIDC identity of this workflow,
+      # matched against the trusted publisher registered on the package
+      # (`MrCipherSmith/roomyx`, `release.yml`) at npmjs.com -> Packages ->
+      # roomyx -> Settings -> Trusted publishing.
+      #
+      # Bootstrap ordering (learned from keryx, cost that project four failed
+      # attempts): trusted publishing can only be registered for a package
+      # that already exists, so it cannot bootstrap a brand-new package. The
+      # very first publish needs a one-time classic Automation token (the
+      # only token type that bypasses the 2FA prompt a runner cannot answer;
+      # a granular token obeys account 2FA and fails with EOTP) supplied as
+      # NODE_AUTH_TOKEN for that one run, then removed once trusted
+      # publishing is registered.
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            ./.release/*.tgz
