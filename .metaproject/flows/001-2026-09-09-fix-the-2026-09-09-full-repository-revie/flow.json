@@ -9,13 +9,62 @@
   "title": "Fix the 2026-09-09 full-repository review: 3 blockers and the major findings",
   "status": "in-progress",
   "createdAt": "2026-09-09T17:48:55.941Z",
-  "updatedAt": "2026-09-09T18:20:14.458Z",
+  "updatedAt": "2026-09-09T18:23:58.425Z",
   "source": {
     "type": "description",
     "ref": null
   },
   "acChecksum": "sha256:c02bb1e30d73b248fa09e1a8eeabbfb6270d3ce1b410b41e8e5e67dd8562772d",
-  "acConfirmed": {},
+  "acConfirmed": {
+    "AC1": {
+      "at": "2026-09-09T18:23:57.181Z",
+      "note": "test/log/write-contract.test.ts: 7 cases, incl. the property 'whatever the writer accepts, the reader loads'. CLI reproduction re-run: --kind bogus-kind, --in-reply-to 0 and 1.5 all exit 1 with the legal values named, log keeps only its header, a legal append reads back."
+    },
+    "AC2": {
+      "at": "2026-09-09T18:23:57.294Z",
+      "note": "test/client/renderable-lifetime.test.ts: 100 identical setRoster calls add 0 entries to Renderable.renderablesByNumber (was +5 per call). Barrier verified: restoring the leak turns 2 of 3 red."
+    },
+    "AC3": {
+      "at": "2026-09-09T18:23:57.407Z",
+      "note": "test/client/tool-error.test.ts against a real serve with a poisoned log: client stays connected, keeps polling, and the server's text ('line 2') reaches the caller. A real transport loss still reads as a disconnect. Barrier verified: restoring the defect turns 2 of 3 red."
+    },
+    "AC4": {
+      "at": "2026-09-09T18:23:57.517Z",
+      "note": "test/server/shutdown.test.ts: close() resolves with a client attached, and SIGTERM/SIGINT/SIGHUP each exit the process and leave an empty registry. Barrier verified: old ordering turns all 4 red. Test uses a bare Client, chosen by measuring both client shapes."
+    },
+    "AC5": {
+      "at": "2026-09-09T18:23:57.629Z",
+      "note": "test/log/write-contract.test.ts 'concurrent appends': 5 writers racing one instant get 5 distinct seq values, and 5 distinct on disk. Barrier verified: removing the lock turns it red."
+    },
+    "AC6": {
+      "at": "2026-09-09T18:23:57.743Z",
+      "note": "test/client/export-name.test.ts: 9 cases over hostile ids incl. ../../../../../tmp/pwned; the base name is sanitised and the resolved path is asserted inside cwd. Barrier verified: removing the sanitising turns 3 red."
+    },
+    "AC7": {
+      "at": "2026-09-09T18:23:57.854Z",
+      "note": "test/mcp-management/server.test.ts: a call with target and yes:true reports wouldWrite true, written false, and existsSync(target) is false. yes and dryRun are off the tool's input schema entirely."
+    },
+    "AC8": {
+      "at": "2026-09-09T18:23:57.967Z",
+      "note": "test/client/help-overlay.test.ts: every height 10..40 asserts the bottom border matches /^[border]+$/ and 'Esc closes' is on screen; helpBody never returns more lines than it is given. Barrier verified: restoring the overflow turns 2 red."
+    },
+    "AC9": {
+      "at": "2026-09-09T18:23:58.085Z",
+      "note": "test/client/roster-overflow.test.ts: every name length 1..40 renders a non-blank row; a name that does not fit carries a cut marker; a full-width name leaves a separating column. Barrier verified: restoring the wrap turns 3 red."
+    },
+    "AC10": {
+      "at": "2026-09-09T18:23:58.201Z",
+      "note": "Recorded mutation runs. Remove horizontalScrollbarOptions -> first-message.test.ts 3 fail (boundary heights 2/6, 3/9, 4/12, found by sweeping). Invert shutdown order -> shutdown-order.test.ts 1 fail. Drop the re-entry guard -> 1 fail. The stopped guards are the exception and it is recorded: four redundant guards, no single removal is caught, removing all four is."
+    },
+    "AC11": {
+      "at": "2026-09-09T18:23:58.313Z",
+      "note": "test/installer/registry.test.ts 'liveness is about this room, not about that port': two entries on one live port, one with a pid that cannot exist; only the live one is returned."
+    },
+    "AC12": {
+      "at": "2026-09-09T18:23:58.425Z",
+      "note": "bun run check: eslint clean, tsc clean, 255 tests pass. Removed: the duplicate ManagementServeOptions, jumpTo's direction, commandHelp's name, RoomClient.getAgentDetail and getLastSeenSeq, Footer.setWidth. The 0/N counter now reports 'N matches' before a position is known."
+    }
+  },
   "pr": {
     "url": null
   },
@@ -227,7 +276,7 @@
       "id": "T14",
       "title": "Minor cleanups from the review",
       "kind": "implement",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -235,7 +284,8 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     }
   ],
   "history": [
@@ -366,6 +416,71 @@
       "at": "2026-09-09T18:20:14.458Z",
       "event": "task-done",
       "detail": "T13: M12+M13 — restore the regression barriers and replace fixed waits"
+    },
+    {
+      "at": "2026-09-09T18:22:57.865Z",
+      "event": "task-done",
+      "detail": "T14: Minor cleanups from the review"
+    },
+    {
+      "at": "2026-09-09T18:23:57.181Z",
+      "event": "ac-confirmed",
+      "detail": "AC1: test/log/write-contract.test.ts: 7 cases, incl. the property 'whatever the writer accepts, the reader loads'. CLI reproduction re-run: --kind bogus-kind, --in-reply-to 0 and 1.5 all exit 1 with the legal values named, log keeps only its header, a legal append reads back."
+    },
+    {
+      "at": "2026-09-09T18:23:57.294Z",
+      "event": "ac-confirmed",
+      "detail": "AC2: test/client/renderable-lifetime.test.ts: 100 identical setRoster calls add 0 entries to Renderable.renderablesByNumber (was +5 per call). Barrier verified: restoring the leak turns 2 of 3 red."
+    },
+    {
+      "at": "2026-09-09T18:23:57.407Z",
+      "event": "ac-confirmed",
+      "detail": "AC3: test/client/tool-error.test.ts against a real serve with a poisoned log: client stays connected, keeps polling, and the server's text ('line 2') reaches the caller. A real transport loss still reads as a disconnect. Barrier verified: restoring the defect turns 2 of 3 red."
+    },
+    {
+      "at": "2026-09-09T18:23:57.517Z",
+      "event": "ac-confirmed",
+      "detail": "AC4: test/server/shutdown.test.ts: close() resolves with a client attached, and SIGTERM/SIGINT/SIGHUP each exit the process and leave an empty registry. Barrier verified: old ordering turns all 4 red. Test uses a bare Client, chosen by measuring both client shapes."
+    },
+    {
+      "at": "2026-09-09T18:23:57.629Z",
+      "event": "ac-confirmed",
+      "detail": "AC5: test/log/write-contract.test.ts 'concurrent appends': 5 writers racing one instant get 5 distinct seq values, and 5 distinct on disk. Barrier verified: removing the lock turns it red."
+    },
+    {
+      "at": "2026-09-09T18:23:57.743Z",
+      "event": "ac-confirmed",
+      "detail": "AC6: test/client/export-name.test.ts: 9 cases over hostile ids incl. ../../../../../tmp/pwned; the base name is sanitised and the resolved path is asserted inside cwd. Barrier verified: removing the sanitising turns 3 red."
+    },
+    {
+      "at": "2026-09-09T18:23:57.854Z",
+      "event": "ac-confirmed",
+      "detail": "AC7: test/mcp-management/server.test.ts: a call with target and yes:true reports wouldWrite true, written false, and existsSync(target) is false. yes and dryRun are off the tool's input schema entirely."
+    },
+    {
+      "at": "2026-09-09T18:23:57.967Z",
+      "event": "ac-confirmed",
+      "detail": "AC8: test/client/help-overlay.test.ts: every height 10..40 asserts the bottom border matches /^[border]+$/ and 'Esc closes' is on screen; helpBody never returns more lines than it is given. Barrier verified: restoring the overflow turns 2 red."
+    },
+    {
+      "at": "2026-09-09T18:23:58.086Z",
+      "event": "ac-confirmed",
+      "detail": "AC9: test/client/roster-overflow.test.ts: every name length 1..40 renders a non-blank row; a name that does not fit carries a cut marker; a full-width name leaves a separating column. Barrier verified: restoring the wrap turns 3 red."
+    },
+    {
+      "at": "2026-09-09T18:23:58.201Z",
+      "event": "ac-confirmed",
+      "detail": "AC10: Recorded mutation runs. Remove horizontalScrollbarOptions -> first-message.test.ts 3 fail (boundary heights 2/6, 3/9, 4/12, found by sweeping). Invert shutdown order -> shutdown-order.test.ts 1 fail. Drop the re-entry guard -> 1 fail. The stopped guards are the exception and it is recorded: four redundant guards, no single removal is caught, removing all four is."
+    },
+    {
+      "at": "2026-09-09T18:23:58.313Z",
+      "event": "ac-confirmed",
+      "detail": "AC11: test/installer/registry.test.ts 'liveness is about this room, not about that port': two entries on one live port, one with a pid that cannot exist; only the live one is returned."
+    },
+    {
+      "at": "2026-09-09T18:23:58.425Z",
+      "event": "ac-confirmed",
+      "detail": "AC12: bun run check: eslint clean, tsc clean, 255 tests pass. Removed: the duplicate ManagementServeOptions, jumpTo's direction, commandHelp's name, RoomClient.getAgentDetail and getLastSeenSeq, Footer.setWidth. The 0/N counter now reports 'N matches' before a position is known."
     }
   ]
 }
