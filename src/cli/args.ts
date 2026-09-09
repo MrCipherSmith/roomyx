@@ -98,7 +98,12 @@ export function parseArgs(argv: string[], specs: FlagSpecs): ParsedArgs {
       continue;
     }
 
-    const spec = specs[name];
+    // `specs[name]` resolves through the prototype chain, so `--toString`,
+    // `--constructor`, `--valueOf`, `--hasOwnProperty` and `--__proto__` all
+    // found a truthy spec, skipped the refusal below, and consumed the next
+    // argv token as a value — the module's stated invariant failing for exactly
+    // the shape of input it exists to catch.
+    const spec = Object.hasOwn(specs, name) ? specs[name] : undefined;
     if (!spec) {
       const hint = suggest(name, known);
       throw new ArgError(

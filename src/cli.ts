@@ -361,7 +361,7 @@ function topLevelHelp(): string {
   ].join("\n");
 }
 
-function commandHelp(name: string, command: Command): string {
+function commandHelp(command: Command): string {
   const table = renderFlags(command.flags);
   return [
     command.usage,
@@ -403,7 +403,7 @@ async function main(): Promise<void> {
 
   const parsed = parseArgs(matched.rest, matched.command.flags);
   if (parsed.help) {
-    console.log(commandHelp(matched.name, matched.command));
+    console.log(commandHelp(matched.command));
     return;
   }
   await matched.command.run(parsed);

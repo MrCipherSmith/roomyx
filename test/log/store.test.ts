@@ -1,13 +1,22 @@
-import { describe, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { afterEach, describe, expect, test } from "bun:test";
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadRoomLog, getTranscript, getAgentDetail } from "../../src/log/store";
 
 const FIXTURE = join(import.meta.dir, "..", "fixtures", "sample-room.jsonl");
 
+/** Every other file that makes temp directories removes them; this one did not. */
+const dirs: string[] = [];
+
+afterEach(() => {
+  for (const dir of dirs) rmSync(dir, { recursive: true, force: true });
+  dirs.length = 0;
+});
+
 function writeTempLog(contents: string): string {
   const dir = mkdtempSync(join(tmpdir(), "roomyx-test-"));
+  dirs.push(dir);
   const path = join(dir, "log.jsonl");
   writeFileSync(path, contents);
   return path;

@@ -92,12 +92,6 @@ export function createManagementMcpServer(options: ManagementOptions): McpServer
 
 export type ManagementHandle = McpHttpTransportHandle;
 
-export interface ManagementServeOptions {
-  /** Defaults to 4320 so it does not collide with `roomyx serve` (4319). 0 selects an ephemeral port. */
-  port?: number;
-  host?: string;
-  acknowledgeNonLoopback?: boolean;
-}
 
 /**
  * Serves the management tools over the shared loopback HTTP transport. The

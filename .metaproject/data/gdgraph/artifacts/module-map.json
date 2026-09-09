@@ -23,6 +23,7 @@
     "src/client/owner-prompt.ts",
     "src/client/screens/chat-view.ts",
     "src/client/search-prompt.ts",
+    "src/client/shutdown.ts",
     "src/client/transcript.ts"
   ],
   "installer": [
@@ -72,6 +73,7 @@
     "test/client/roster-overflow.test.ts",
     "test/client/scroll.test.ts",
     "test/client/search-prompt.test.ts",
+    "test/client/shutdown-order.test.ts",
     "test/client/tool-error.test.ts",
     "test/client/transcript.test.ts",
     "test/client/wrap-defect.test.ts",

@@ -9,7 +9,7 @@
   "title": "Fix the 2026-09-09 full-repository review: 3 blockers and the major findings",
   "status": "in-progress",
   "createdAt": "2026-09-09T17:48:55.941Z",
-  "updatedAt": "2026-09-09T18:15:09.386Z",
+  "updatedAt": "2026-09-09T18:20:14.458Z",
   "source": {
     "type": "description",
     "ref": null
@@ -212,7 +212,7 @@
       "id": "T13",
       "title": "M12+M13 — restore the regression barriers and replace fixed waits",
       "kind": "test",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -220,7 +220,8 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T14",
@@ -360,6 +361,11 @@
       "at": "2026-09-09T18:15:09.386Z",
       "event": "task-done",
       "detail": "T12: M8+M10 — help overlay fits; roster and status bar truncate"
+    },
+    {
+      "at": "2026-09-09T18:20:14.458Z",
+      "event": "task-done",
+      "detail": "T13: M12+M13 — restore the regression barriers and replace fixed waits"
     }
   ]
 }

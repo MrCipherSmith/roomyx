@@ -20,7 +20,7 @@ export class Footer {
   readonly node: TextRenderable;
   private liveness = "";
   private scrollNote: string | null = null;
-  private width: number;
+  private readonly width: number;
 
   constructor(ctx: RenderContext, options: { width: number }) {
     this.width = options.width;
@@ -36,11 +36,6 @@ export class Footer {
   /** Set while the reader has scrolled away from the bottom, null at the bottom. */
   setScrollNote(note: string | null): void {
     this.scrollNote = note;
-    this.render();
-  }
-
-  setWidth(width: number): void {
-    this.width = width;
     this.render();
   }
 
