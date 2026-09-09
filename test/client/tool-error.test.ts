@@ -129,10 +129,19 @@ describe("a server that answers with an error", () => {
 
 describe("stopping the client", () => {
   test("no event fires after stop(), even with a poll in flight", async () => {
-    // The three `if (this.stopped) return;` guards on the disconnect path are
-    // what make this true, and deleting all three left the subprocess shutdown
-    // test green — it asserts the absence of a stack trace, which a client that
-    // never reached the race also satisfies.
+    // Corrected after an independent mutation pass, because the earlier note
+    // here counted wrong and a verification record that miscounts is worse than
+    // none.
+    //
+    // The property is held by **two redundant families**: five `this.stopped`
+    // guard sites, and the `this.generation += 1` in `stop()`. Measured, at
+    // this commit: removing all five guards leaves this green (the generation
+    // bump still stales every loop); removing only the generation bump leaves
+    // it green (the guards still catch it); removing both turns it red.
+    //
+    // So no single deletion is caught, and neither is either family alone. The
+    // test holds the property, not any one line — and saying otherwise is the
+    // mistake this whole round exists to stop repeating.
     const dir = mkdtempSync(join(tmpdir(), "roomyx-stop-"));
     dirs.push(dir);
     const path = join(dir, "room.jsonl");
