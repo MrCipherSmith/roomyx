@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { z } from "zod";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
@@ -93,6 +94,23 @@ function withLock<T>(registryPath: string, fn: () => T): T {
   }
 }
 
+/**
+ * True when there is provably nothing to read: no registry file. Callers that
+ * only read use this to skip the lock entirely, because taking the lock means
+ * writing a lockfile NEXT TO the registry — which fails with ENOENT when the
+ * directory itself doesn't exist yet. That is the shape of the bug this
+ * guards: `readRegistryUnlocked` has always tolerated a missing registry, but
+ * in an un-`init`ed project no caller ever reached it, because withLock threw
+ * first. `roomyx rooms list` printed a bare ENOENT and `roomyx-client` printed
+ * a stack trace, both for the ordinary case of "you haven't started a room".
+ *
+ * Racing a registerRoom that lands right after the check is harmless: the
+ * reader returns the empty snapshot it would have returned a moment earlier.
+ */
+function hasNoRegistry(path: string): boolean {
+  return !existsSync(path);
+}
+
 function readRegistryUnlocked(path: string): { schemaVersion: 1; rooms: RoomRegistryEntry[] } {
   if (!existsSync(path)) {
     return { schemaVersion: 1, rooms: [] };
@@ -115,11 +133,19 @@ function generateRoomId(): string {
   return `r-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/** Adds a new room to the registry, generating its id. */
+/**
+ * Adds a new room to the registry, generating its id. Creates the registry's
+ * directory if it isn't there: a write path has to be able to create its own
+ * storage, or `roomyx serve` in an un-`init`ed project binds its port and only
+ * then dies registering itself. This is not a back door around D-01's
+ * explicit, never-clobbering `init` — it creates one empty directory, not the
+ * config and staged skill that `init` scaffolds, and it clobbers nothing.
+ */
 export function registerRoom(
   registryPath: string,
   info: { port: number; logPath: string; pid: number },
 ): RoomRegistryEntry {
+  mkdirSync(dirname(registryPath), { recursive: true });
   return withLock(registryPath, () => {
     const registry = readRegistryUnlocked(registryPath);
     const entry: RoomRegistryEntry = {
@@ -134,8 +160,9 @@ export function registerRoom(
   });
 }
 
-/** Removes one room by id. No-op if the id isn't present. */
+/** Removes one room by id. No-op if the id — or the whole registry — isn't there. */
 export function deregisterRoom(registryPath: string, id: string): void {
+  if (hasNoRegistry(registryPath)) return;
   withLock(registryPath, () => {
     const registry = readRegistryUnlocked(registryPath);
     writeRegistryUnlocked(
@@ -145,8 +172,9 @@ export function deregisterRoom(registryPath: string, id: string): void {
   });
 }
 
-/** All registered rooms, live or not. Empty array if the file doesn't exist. */
+/** All registered rooms, live or not. Empty array if there is no registry yet. */
 export function listRooms(registryPath: string): RoomRegistryEntry[] {
+  if (hasNoRegistry(registryPath)) return [];
   return withLock(registryPath, () => readRegistryUnlocked(registryPath).rooms);
 }
 
@@ -157,6 +185,7 @@ export function listRooms(registryPath: string): RoomRegistryEntry[] {
  * omitted from the returned list.
  */
 export async function listLiveRooms(registryPath: string): Promise<RoomRegistryEntry[]> {
+  if (hasNoRegistry(registryPath)) return [];
   const rooms = withLock(registryPath, () => readRegistryUnlocked(registryPath).rooms);
   const checks = await Promise.all(
     rooms.map(async (room) => {

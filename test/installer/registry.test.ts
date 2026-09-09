@@ -71,6 +71,42 @@ describe("registry", () => {
     expect(listRooms(join(dir, "does-not-exist.json"))).toEqual([]);
   });
 
+  // The test above passes a missing FILE in a directory that exists, which is
+  // why it never caught this: the reads take a lock by writing a lockfile next
+  // to the registry, and that write is what fails when the DIRECTORY is also
+  // missing. In an un-`init`ed project `roomyx rooms list` printed a bare
+  // ENOENT and `roomyx-client` printed a stack trace. Regression, published in
+  // 0.2.0.
+  describe("un-initialized project: no .roomyx/rooms directory at all", () => {
+    test("listRooms returns empty and creates nothing", () => {
+      setup();
+      const uninitialized = join(dir, ".roomyx", "rooms", "registry.json");
+      expect(listRooms(uninitialized)).toEqual([]);
+      expect(existsSync(join(dir, ".roomyx"))).toBe(false);
+    });
+
+    test("listLiveRooms returns empty and creates nothing", async () => {
+      setup();
+      const uninitialized = join(dir, ".roomyx", "rooms", "registry.json");
+      expect(await listLiveRooms(uninitialized)).toEqual([]);
+      expect(existsSync(join(dir, ".roomyx"))).toBe(false);
+    });
+
+    test("deregisterRoom is a no-op rather than a throw", () => {
+      setup();
+      const uninitialized = join(dir, ".roomyx", "rooms", "registry.json");
+      expect(() => deregisterRoom(uninitialized, "r-nothing")).not.toThrow();
+      expect(existsSync(join(dir, ".roomyx"))).toBe(false);
+    });
+
+    test("registerRoom creates the directory it needs and registers", () => {
+      setup();
+      const uninitialized = join(dir, ".roomyx", "rooms", "registry.json");
+      const entry = registerRoom(uninitialized, { port: 1, logPath: FIXTURE, pid: 1 });
+      expect(listRooms(uninitialized).map((r) => r.id)).toEqual([entry.id]);
+    });
+  });
+
   test("listLiveRooms performs a real liveness check: a real serve() instance is live, a dead port is pruned", async () => {
     setup();
     activeHandle = await serve(FIXTURE, { port: 0 });

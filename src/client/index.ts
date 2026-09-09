@@ -91,6 +91,9 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
-  console.error(error);
+  // The message, not the object: a stack trace dumped at someone who simply
+  // hasn't started a room yet reads as a crash, and matches how cli.ts already
+  // reports its own failures.
+  console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 });
