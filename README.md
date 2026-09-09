@@ -165,7 +165,14 @@ and skill-sync — to any MCP client.
 | Tool | Input | Returns |
 | --- | --- | --- |
 | `roomyx.rooms.list` | — | Live, liveness-checked rooms. |
-| `roomyx.skills.sync` | `target?: claude \| codex \| keryx \| all` or `targetPath?: string`, `dryRun?: boolean`, `yes?: boolean` | One result per target: whether it would write, whether it did, and where the backup went. |
+| `roomyx.skills.sync` | `target: claude \| codex \| keryx \| all`, `dryRun?: boolean`, `yes?: boolean` | One result per target: whether it would write, whether it did, and where the backup went. |
+
+**Named targets only, deliberately.** This tool once accepted a literal
+`targetPath`, which made it an arbitrary-path file writer on an unauthenticated
+loopback port — a page in any browser tab could drive it cross-origin. The CLI
+keeps its literal-path escape hatch, because that is the operator on their own
+machine. The network surface does not get one. `keryx` resolves project-locally
+against the server's `cwd` option, which defaults to the process's.
 
 Start it with `roomyx mcp` (default port `4320`, so it does not collide with
 `roomyx serve`'s `4319`). Same loopback / `--acknowledge-non-loopback` rules as
