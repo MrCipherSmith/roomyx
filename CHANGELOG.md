@@ -31,6 +31,22 @@ The security release. Every item here came out of a review of the published
 
   `src/cli/seed.ts` is removed, superseded by these.
 
+- **The `bin` entries are Node launchers.** They used to be the TypeScript
+  files themselves, carrying a `#!/usr/bin/env bun` shebang. On a machine
+  without Bun that failed as `/usr/bin/env: 'bun': No such file or directory` —
+  a kernel message with no roomyx text in it, and no way to add any, because a
+  shebang is an `execve` dispatch with no slot for a diagnostic.
+
+  `engines.bun` was not protecting anyone either: npm's engine check only ever
+  knew `node` and `npm`, so a package declaring `bun: ">=99.0.0"` installs
+  cleanly under `--engine-strict`.
+
+  roomyx now says what is missing and where to get it, and exits 1. **It does
+  not install Bun** — an install-time network fetch is what installer D-01
+  exists to refuse. Nothing is transpiled and `src/*.ts` is still the shipped
+  artifact. As a side effect, npm's generated Windows `.cmd` shim now has a
+  Node script to wrap rather than a `.ts` file.
+
 ### Removed — breaking
 
 - **`roomyx.skills.sync` no longer accepts `targetPath`.** The MCP tool took a
