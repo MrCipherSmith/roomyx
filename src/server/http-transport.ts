@@ -131,16 +131,30 @@ export async function serveMcpOverHttp(
   return {
     url: `http://${host}:${actualPort}/mcp`,
     port: actualPort,
-    close: () =>
-      new Promise<void>((resolve, reject) => {
-        httpServer.close(async (error) => {
-          // The management server used to skip this, so its sessions outlived
-          // the process that owned them. One implementation, one behaviour.
-          await closeSessions(sessions);
+    close: async () => {
+      // Order matters and it used to be inverted. `httpServer.close()`'s
+      // callback fires only once every connection has ended, and the code that
+      // ends them — `closeSessions` — was *inside* that callback. An MCP client
+      // holds a keep-alive socket, so with anyone attached the callback never
+      // fired: `roomyx serve` did not exit on SIGTERM at all, the port stayed
+      // bound, and the only way out was SIGKILL. Measured with a control: with
+      // a client attached, still running after 12s; with none, clean.
+      //
+      // The management server used to skip closing sessions entirely, so its
+      // sessions outlived the process. One implementation, one behaviour.
+      await closeSessions(sessions);
+
+      await new Promise<void>((resolve, reject) => {
+        httpServer.close((error) => {
           if (error) reject(error);
           else resolve();
         });
-      }),
+        // A client that ignores the stream ending must not be able to pin the
+        // process open. Closing sessions first is the polite half; this is the
+        // half that means shutdown is bounded whatever the client does.
+        httpServer.closeAllConnections();
+      });
+    },
   };
 }
 

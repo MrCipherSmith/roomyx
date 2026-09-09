@@ -212,7 +212,35 @@ export async function listLiveRooms(registryPath: string): Promise<RoomRegistryE
   return live;
 }
 
+/**
+ * Is the process that registered this room still running?
+ *
+ * Signal 0 performs the permission and existence checks without delivering
+ * anything. ESRCH means no such process; EPERM means it exists and belongs to
+ * someone else, which is still "alive" for our purposes.
+ */
+function isPidAlive(pid: number): boolean {
+  if (!Number.isInteger(pid) || pid <= 0) return true; // no pid recorded — fall back to the probe
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code !== "ESRCH";
+  }
+}
+
 async function isRoomLive(room: RoomRegistryEntry, timeoutMs = 500): Promise<boolean> {
+  // The probe below proves that *something* MCP-speaking answers on that port,
+  // never that it is this room. Every `roomyx serve` defaults to 4319, so a
+  // room that died without deregistering was resurrected as live by the next
+  // room to bind the port — and then `roomyx-client --room <dead-id>` silently
+  // rendered a different room's transcript under the dead room's id, while
+  // `room append` refused a log nothing was serving.
+  //
+  // The pid has been in the registry all along and was never read. Checking it
+  // first also skips a 500 ms network probe per dead entry.
+  if (!isPidAlive(room.pid)) return false;
+
   const client = new Client({ name: "roomyx-registry-check", version: "0.1.0" });
   const timeout = new Promise<never>((_, reject) => {
     setTimeout(() => reject(new Error("liveness check timed out")), timeoutMs);

@@ -65,6 +65,7 @@
     "test/client/renderable-lifetime.test.ts",
     "test/client/scroll.test.ts",
     "test/client/search-prompt.test.ts",
+    "test/client/tool-error.test.ts",
     "test/client/transcript.test.ts",
     "test/client/wrap-defect.test.ts",
     "test/installer/init.test.ts",

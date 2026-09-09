@@ -19,3 +19,4 @@
 - 2026-09-09T17:50:22.232Z - started
 - 2026-09-09T17:52:26.112Z - task-done: T5: B1 — one schema for both directions of the room log
 - 2026-09-09T17:53:46.009Z - task-done: T6: B2 — destroy detached renderables and skip unchanged roster rebuilds
+- 2026-09-09T17:57:02.005Z - task-done: T7: B3 — tool errors are not disconnects; single-flight reconnect

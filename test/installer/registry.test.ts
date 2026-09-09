@@ -187,3 +187,39 @@ describe("registry", () => {
     expect(existsSync(lockPath)).toBe(false);
   });
 });
+
+describe("liveness is about this room, not about that port", () => {
+  test("an entry whose process is gone is dead, even with a server answering on its port", async () => {
+    // Every `roomyx serve` defaults to 4319, so a room that died without
+    // deregistering used to be resurrected as live by the next room to bind the
+    // port — and then `roomyx-client --room <dead-id>` silently rendered a
+    // different room's transcript under the dead room's id, while `room append`
+    // refused a log nothing was serving. The pid was in the registry all along
+    // and was never read.
+    const dir = mkdtempSync(join(tmpdir(), "roomyx-liveness-"));
+    const registryPath = join(dir, "registry.json");
+    const handle = await serve(FIXTURE, { port: 0 });
+
+    try {
+      const alive = registerRoom(registryPath, {
+        port: handle.port,
+        logPath: "/rooms/live.jsonl",
+        pid: process.pid,
+      });
+      // Same port, a pid that cannot exist.
+      const dead = registerRoom(registryPath, {
+        port: handle.port,
+        logPath: "/rooms/dead.jsonl",
+        pid: 0x7ffffff0,
+      });
+
+      const live = await listLiveRooms(registryPath);
+      const ids = live.map((room) => room.id);
+      expect(ids).toContain(alive.id);
+      expect(ids).not.toContain(dead.id);
+    } finally {
+      await handle.close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 20000);
+});
