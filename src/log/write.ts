@@ -1,6 +1,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import type { z } from "zod";
+import { withLock } from "../lockfile";
 import { MESSAGE_KINDS, messageLineSchema } from "./schema";
 import type { GoalContract, MessageEnvelope, RosterEntry } from "./types";
 
@@ -77,6 +78,20 @@ export function appendMessage(path: string, options: AppendMessageOptions): Mess
   if (!existsSync(path)) {
     throw new Error(`${path} does not exist. Create it with \`roomyx room new\` first.`);
   }
+  // Allocating `seq` and writing the line is one critical section, not two.
+  // `nextSeq` reads the whole file and returns max+1, and nothing stood between
+  // that and the append: three concurrent `roomyx room append` calls all
+  // allocated `seq: 1` and all three landed on disk. `seq` is the transcript
+  // cursor, so a client polling between two colliding writes advances past both
+  // and never receives the second message — on disk, invisible in the TUI,
+  // permanently.
+  //
+  // The registry has had this discipline for three rounds of review. The data
+  // did not.
+  return withLock(path, () => writeMessage(path, options));
+}
+
+function writeMessage(path: string, options: AppendMessageOptions): MessageEnvelope & { type: "message" } {
   const message: MessageEnvelope & { type: "message" } = {
     type: "message",
     seq: nextSeq(path),

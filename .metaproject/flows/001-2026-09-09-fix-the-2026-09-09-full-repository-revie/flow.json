@@ -9,7 +9,7 @@
   "title": "Fix the 2026-09-09 full-repository review: 3 blockers and the major findings",
   "status": "in-progress",
   "createdAt": "2026-09-09T17:48:55.941Z",
-  "updatedAt": "2026-09-09T17:57:02.005Z",
+  "updatedAt": "2026-09-09T18:01:57.954Z",
   "source": {
     "type": "description",
     "ref": null
@@ -137,7 +137,7 @@
       "id": "T8",
       "title": "M1+M4 — serve exits on signals with a client attached; identity-checked liveness",
       "kind": "implement",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -145,7 +145,8 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T9",
@@ -330,6 +331,11 @@
       "at": "2026-09-09T17:57:02.005Z",
       "event": "task-done",
       "detail": "T7: B3 — tool errors are not disconnects; single-flight reconnect"
+    },
+    {
+      "at": "2026-09-09T18:01:57.954Z",
+      "event": "task-done",
+      "detail": "T8: M1+M4 — serve exits on signals with a client attached; identity-checked liveness"
     }
   ]
 }

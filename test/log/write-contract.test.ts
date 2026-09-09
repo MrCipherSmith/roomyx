@@ -98,3 +98,42 @@ describe("the room log's write contract", () => {
     expect(messages).toHaveLength(accepted.length);
   });
 });
+
+describe("concurrent appends", () => {
+  test("never allocate the same seq twice", async () => {
+    // `nextSeq` reads the whole file and returns max+1, and nothing used to
+    // stand between that and the append. Three writers racing a shared start
+    // instant all got seq 1 and all three landed on disk. `seq` is the
+    // transcript cursor, so a client polling between two colliding writes
+    // advances past both and never receives the second message.
+    const path = freshLog();
+    const start = Date.now() + 800;
+    const writers = Array.from({ length: 5 }, (_, i) =>
+      Bun.spawn(
+        [
+          "bun",
+          "-e",
+          `import { appendMessage } from "${join(import.meta.dir, "..", "..", "src", "log", "write.ts")}";
+           while (Date.now() < ${start}) {}
+           console.log(appendMessage("${path}", { from: "a", body: "writer ${i}" }).seq);`,
+        ],
+        { stdout: "pipe", stderr: "pipe" },
+      ),
+    );
+
+    const seqs = await Promise.all(
+      writers.map(async (proc) => {
+        const text = await new Response(proc.stdout).text();
+        await proc.exited;
+        return Number(text.trim());
+      }),
+    );
+
+    expect(new Set(seqs).size).toBe(writers.length);
+
+    // And on disk, which is what actually matters.
+    const { messages } = loadRoomLog(path);
+    expect(messages).toHaveLength(writers.length);
+    expect(new Set(messages.map((m) => m.seq)).size).toBe(writers.length);
+  }, 30000);
+});
