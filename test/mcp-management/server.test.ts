@@ -86,4 +86,19 @@ describe("MCP management server", () => {
 
     expect(readFileSync(BUNDLED_SKILL, "utf8")).toBe(beforeBundled);
   });
+
+  test("supports multiple sequential client sessions against one long-lived instance", async () => {
+    setup();
+    managementHandle = await serveManagement({ registryPath, bundledSkillPath: BUNDLED_SKILL, configPath }, { port: 0 });
+
+    const first = await connectClient(managementHandle.url);
+    await first.callTool({ name: "roomyx.rooms.list", arguments: {} });
+    await first.close();
+
+    const second = await connectClient(managementHandle.url);
+    const result = await second.callTool({ name: "roomyx.rooms.list", arguments: {} });
+    const text = (result.content as Array<{ type: string; text: string }>)[0]?.text ?? "";
+    expect(JSON.parse(text)).toEqual([]);
+    await second.close();
+  });
 });

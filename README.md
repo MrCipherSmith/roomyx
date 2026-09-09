@@ -88,9 +88,17 @@ Lists rooms that are **confirmed live**, not merely present in the registry —
 each entry is verified with a real MCP round-trip, and entries that don't answer
 are pruned from the registry file as a side effect.
 
+### `roomyx mcp [flags]`
+
+Starts the management MCP server (room listing + skill-sync). Default port
+`4320`. See **Management server** below for tools and flags.
+
 ### `roomyx-client [flags]`
 
-The terminal UI.
+The terminal UI. `roomyx client` (space, not hyphen) is the same entry — an
+alias so a single `roomyx` binary can attach without a second command on PATH.
+`roomyx-client` remains the dedicated binary: a separate process, independent
+lifetime from `serve`/`mcp`.
 
 | Flag | Meaning |
 | --- | --- |
@@ -121,9 +129,18 @@ and skill-sync — to any MCP client.
 | `roomyx.rooms.list` | — | Live, liveness-checked rooms. |
 | `roomyx.skills.sync` | `targetPath: string`, `dryRun?: boolean`, `yes?: boolean` | Sync outcome: whether it would write, whether it did, and where the backup went. |
 
-This server currently has **no CLI command** — it is exposed as a library entry
-point (`serveManagement` in `src/mcp-management/server.ts`) for embedding hosts
-to bind.
+Start it with `roomyx mcp` (default port `4320`, so it does not collide with
+`roomyx serve`'s `4319`). Same loopback / `--acknowledge-non-loopback` rules as
+`serve`. It is also a library entry point (`serveManagement` in
+`src/mcp-management/server.ts`) for embedding hosts to bind.
+
+| Flag | Default | Meaning |
+| --- | --- | --- |
+| `--port <n>` | `4320` | Listen port. `0` picks an ephemeral one. |
+| `--host <addr>` | `127.0.0.1` | Bind address. |
+| `--acknowledge-non-loopback` | off | Required to bind anything other than loopback. |
+| `--registry <path>` | `.roomyx/rooms/registry.json` | Registry file to list rooms from. |
+| `--config <path>` | `.roomyx/config.json` | Config file skill-sync records hashes in. |
 
 ## Skill sync safety
 

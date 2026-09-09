@@ -19,8 +19,8 @@ function parseFlags(args: string[]): Record<string, string> {
   return flags;
 }
 
-async function main(): Promise<void> {
-  const flags = parseFlags(process.argv.slice(2));
+export async function runClient(argv: string[] = process.argv.slice(2)): Promise<void> {
+  const flags = parseFlags(argv);
   const registryPath = flags["registry"] ?? join(process.cwd(), ".roomyx", "rooms", "registry.json");
 
   const resolved = await resolveConnectionUrl({
@@ -90,10 +90,12 @@ async function main(): Promise<void> {
   });
 }
 
-main().catch((error) => {
-  // The message, not the object: a stack trace dumped at someone who simply
-  // hasn't started a room yet reads as a crash, and matches how cli.ts already
-  // reports its own failures.
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(1);
-});
+if (import.meta.main) {
+  runClient().catch((error) => {
+    // The message, not the object: a stack trace dumped at someone who simply
+    // hasn't started a room yet reads as a crash, and matches how cli.ts already
+    // reports its own failures.
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  });
+}

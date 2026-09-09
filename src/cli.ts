@@ -3,15 +3,14 @@ import { join } from "node:path";
 import { serve } from "./server/serve";
 import { init } from "./installer/init";
 import { registerRoom, deregisterRoom, listLiveRooms } from "./installer/registry";
+import { serveManagement } from "./mcp-management/server";
 
 /**
- * `roomyx init` / `roomyx serve <logPath> [...]` / `roomyx rooms list`.
- * The TUI is `roomyx-client`, its own binary over src/client/index.ts — the
- * orchestrator and the TUI are independent processes by design (decisions.md
- * D-06), so they are separate binaries, not subcommands of one process that
- * would tie their lifetimes together. Hence the hyphen: `roomyx client`
- * would have to be dispatched from here, which is exactly the coupling D-06
- * rules out.
+ * `roomyx init` / `roomyx serve` / `roomyx rooms list` / `roomyx mcp`.
+ * The TUI is primarily `roomyx-client` (its own binary over src/client/index.ts)
+ * so the orchestrator and the TUI stay independent processes (decisions.md
+ * D-06). `roomyx client` is a thin alias that starts that same TUI in this
+ * process — a separate invocation from `serve`/`mcp`, not a shared lifetime.
  */
 
 function parseFlags(args: string[]): Record<string, string | boolean> {
@@ -36,9 +35,18 @@ function defaultRegistryPath(): string {
   return join(process.cwd(), ".roomyx", "rooms", "registry.json");
 }
 
+function defaultConfigPath(): string {
+  return join(process.cwd(), ".roomyx", "config.json");
+}
+
+function bundledSkillPath(): string {
+  return join(import.meta.dir, "bundled-skills", "startup-room", "SKILL.md");
+}
+
+const USAGE = "Usage: roomyx <init|serve <logPath>|client|mcp|rooms list>";
+
 async function runInit(): Promise<void> {
-  const bundledSkillPath = join(import.meta.dir, "bundled-skills", "startup-room", "SKILL.md");
-  const result = init({ cwd: process.cwd(), bundledSkillPath });
+  const result = init({ cwd: process.cwd(), bundledSkillPath: bundledSkillPath() });
   console.log(result.created ? `Created ${result.roomyxDir}` : `${result.roomyxDir} already initialized`);
 }
 
@@ -79,6 +87,31 @@ async function runRoomsList(): Promise<void> {
   }
 }
 
+async function runMcp(rest: string[]): Promise<void> {
+  const flags = parseFlags(rest);
+  const handle = await serveManagement(
+    {
+      registryPath: typeof flags.registry === "string" ? flags.registry : defaultRegistryPath(),
+      bundledSkillPath: bundledSkillPath(),
+      configPath: typeof flags.config === "string" ? flags.config : defaultConfigPath(),
+    },
+    {
+      port: flags.port !== undefined ? Number(flags.port) : undefined,
+      host: typeof flags.host === "string" ? flags.host : undefined,
+      acknowledgeNonLoopback: flags["acknowledge-non-loopback"] === true,
+    },
+  );
+
+  console.log(`roomyx mcp listening at ${handle.url}`);
+  console.log("tools: roomyx.rooms.list, roomyx.skills.sync");
+
+  const shutdown = () => {
+    void handle.close().then(() => process.exit(0));
+  };
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+}
+
 async function main(): Promise<void> {
   const [command, ...rest] = process.argv.slice(2);
 
@@ -86,11 +119,16 @@ async function main(): Promise<void> {
     await runInit();
   } else if (command === "serve") {
     await runServe(rest[0], rest.slice(1));
+  } else if (command === "client") {
+    const { runClient } = await import("./client/index");
+    await runClient(rest);
+  } else if (command === "mcp") {
+    await runMcp(rest);
   } else if (command === "rooms" && rest[0] === "list") {
     await runRoomsList();
   } else {
-    console.error("Usage: roomyx <init|serve <logPath>|rooms list>");
-    console.error("The terminal UI is a separate binary: roomyx-client [--room <id>]");
+    console.error(USAGE);
+    console.error("The terminal UI is also a separate binary: roomyx-client [--room <id>]");
     process.exit(1);
   }
 }
