@@ -269,9 +269,14 @@ keryx: /tmp/roomyx-trial/.metaproject/project-skills/startup-room/SKILL.md
   would write (pass --yes to apply)
 ```
 
-Nothing was written. Two separate guards did that: `--yes` is required for any
-write at all, and on top of that roomyx refuses to overwrite content it has no
-record of having written, even with `--yes`, until you say so again.
+Nothing was written, and the warning tells you which of two distinct refusals
+you hit: `--yes` is required for any write at all, and separately roomyx names
+the targets whose content it has no record of having written.
+
+**One flag clears both.** `--yes` is a single gate, not two in series — pass it
+and an unrecorded target is overwritten (with a `.bak-<timestamp>` alongside it)
+in the same run. If you want the second refusal to be genuinely separate, that
+is a change to `skill-sync.ts`, not something this walkthrough can promise.
 
 Verify it really didn't touch anything:
 
