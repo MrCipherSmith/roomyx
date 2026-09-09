@@ -15,7 +15,7 @@ function urlFor(room: RoomRegistryEntry): string {
 }
 
 /**
- * Decides which roomyx server `roomyx client` should connect to.
+ * Decides which roomyx server `roomyx-client` should connect to.
  * `--connect` always wins outright (explicit URL, registry not consulted).
  * `--room <id>` looks up that specific room among the LIVE ones (a
  * registered-but-dead id is treated the same as unknown, not a stale

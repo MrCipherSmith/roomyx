@@ -6,10 +6,12 @@ import { registerRoom, deregisterRoom, listLiveRooms } from "./installer/registr
 
 /**
  * `roomyx init` / `roomyx serve <logPath> [...]` / `roomyx rooms list`.
- * `roomyx client [...]` is a separate entry point (src/client/index.ts) —
- * the orchestrator and the TUI are independent processes by design
- * (decisions.md D-06), so they are separate binaries, not subcommands of
- * one process that would tie their lifetimes together.
+ * The TUI is `roomyx-client`, its own binary over src/client/index.ts — the
+ * orchestrator and the TUI are independent processes by design (decisions.md
+ * D-06), so they are separate binaries, not subcommands of one process that
+ * would tie their lifetimes together. Hence the hyphen: `roomyx client`
+ * would have to be dispatched from here, which is exactly the coupling D-06
+ * rules out.
  */
 
 function parseFlags(args: string[]): Record<string, string | boolean> {
@@ -56,7 +58,7 @@ async function runServe(logPath: string | undefined, rest: string[]): Promise<vo
   const entry = registerRoom(registryPath, { port: handle.port, logPath, pid: process.pid });
 
   console.log(`roomyx serving ${logPath} at ${handle.url}`);
-  console.log(`room ID: ${entry.id} — attach with \`roomyx client --room ${entry.id}\``);
+  console.log(`room ID: ${entry.id} — attach with \`roomyx-client --room ${entry.id}\``);
 
   const shutdown = () => {
     deregisterRoom(registryPath, entry.id);
@@ -88,6 +90,7 @@ async function main(): Promise<void> {
     await runRoomsList();
   } else {
     console.error("Usage: roomyx <init|serve <logPath>|rooms list>");
+    console.error("The terminal UI is a separate binary: roomyx-client [--room <id>]");
     process.exit(1);
   }
 }
