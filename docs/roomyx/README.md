@@ -1,6 +1,6 @@
 # room-tui
 
-Version: 0.3.0
+Version: 0.4.0
 
 ## Purpose
 
@@ -8,7 +8,7 @@ Version: 0.3.0
 
 ## Status
 
-**`implemented`** for the MCP server read-side (R2-R4 tools) as of flow `001-2026-09-08-room-tui-mcp-server-mvp-room-status-chat`, 2026-09-08 — code at `arena/room-tui/`, 18/18 tests pass, independently verified, all completion gates green (see that flow's journal). **`spec ready`** for everything added in `specification.md` v0.3.0 (2026-09-09): the loopback HTTP transport (`room-tui serve`) that actually binds the server to a socket (today's `createRoomMcpServer()` builds the MCP server object but nothing calls `.connect(transport)` yet — that's the gap this version closes), and the full TUI client (`room-tui client`) — chat view, per-agent modal, roster sidebar, polling-based data flow, keybindings. `room.post_owner_command` (R5) and live dispatcher integration remain `spec ready`, explicitly out of scope for the next implementation flow too.
+**`implemented`**: MCP server read-side (R2-R4 tools, flow 001) AND the loopback HTTP transport + full TUI client (flow `002-2026-09-09-room-tui-transport-tui-client-chat-view-`, 2026-09-09) — `bun src/cli.ts serve <logPath>` binds and prints the address; `bun src/client/index.ts --connect <url>` renders a real chat view (roster + scrolling transcript + status bar) and a per-agent modal, verified with real captured terminal frames via `@opentui/core`'s own headless test renderer (`test/client/render.test.ts`), not just "doesn't crash." 30/30 tests pass, independently reviewed (found and fixed 4 real issues, including a modal that silently never rendered as an overlay — see flow 002's journal for the full account), all completion gates green. `room.post_owner_command` (R5), auto-launch of the TUI as an orchestrator child process, and live dispatcher integration (SKILL.md writing to a real log during an actual room) remain `spec ready`, explicitly out of scope for both flows so far.
 
 ## Document Index
 
