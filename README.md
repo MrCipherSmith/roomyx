@@ -7,9 +7,11 @@ run at once and be found by id, and a skill-sync path that installs the bundled
 `startup-room` skill into a project without ever silently overwriting local
 edits.
 
-roomyx is **read-only** with respect to a room log. Nothing here writes messages
-into a room; the write path (`room.post_owner_command`) lives in the
-`startup-room` framework, not in this package.
+roomyx never writes to a room log. Owner commands do exist —
+`room.post_owner_command` takes a veto, constraint, added participant or goal
+edit — but the tool only forwards them to the dispatcher that runs the room.
+The log keeps exactly one writer, which is what the room's consistency rests
+on.
 
 ## Requirements
 
@@ -53,10 +55,11 @@ modal, `Esc` closes it, `q` or `Ctrl-C` quits.
 
 ## Commands
 
-The orchestrator and the TUI are **separate binaries on purpose** — they are
-independent processes, and making the TUI a subcommand of `roomyx` would tie
-their lifetimes together. That is why it is `roomyx-client`, with a hyphen, and
-not `roomyx client`.
+The TUI ships as its own binary, `roomyx-client`, because it is a separate
+process with a lifetime independent of `serve` and `mcp` — closing it does
+nothing to the room. `roomyx client`, with a space, starts that same TUI from
+the single `roomyx` binary; it is an alias for convenience, not a second
+implementation, and it does not tie the TUI's lifetime to anything.
 
 ### `roomyx init`
 
@@ -93,6 +96,32 @@ are pruned from the registry file as a side effect.
 Starts the management MCP server (room listing + skill-sync). Default port
 `4320`. See **Management server** below for tools and flags.
 
+### `roomyx skills sync --target <claude|codex|keryx|all|path> [flags]`
+
+Installs the bundled `startup-room` skill into a runtime's skill location.
+
+| Target | Path |
+| --- | --- |
+| `claude` | `~/.claude/skills/startup-room/SKILL.md` |
+| `codex` | `~/.codex/skills/startup-room/SKILL.md` |
+| `keryx` | `<cwd>/.metaproject/project-skills/startup-room/SKILL.md` |
+| `all` | all three of the above |
+| anything else | taken as a literal path |
+
+| Flag | Default | Meaning |
+| --- | --- | --- |
+| `--yes` | off | Actually write. **Without it nothing is written** — the run reports what it would do and stops. |
+| `--dry-run` | — | Says the same thing explicitly. Redundant unless paired with `--yes`, which it overrides. |
+| `--config <path>` | `.roomyx/config.json` | Where the last-synced hashes are recorded. |
+
+Requires `roomyx init` to have run, since that is what creates the config the
+sync records into.
+
+**This copies over the target; it does not merge into it.** If you already
+maintain a fuller `startup-room` skill, fold the bundled text into it by hand
+rather than pointing `--yes` at it. See **Skill sync safety** below for what
+roomyx refuses outright.
+
 ### `roomyx-client [flags]`
 
 The terminal UI. `roomyx client` (space, not hyphen) is the same entry — an
@@ -118,6 +147,12 @@ list of candidate ids when more than one is.
 | `room.get_state` | — | Roster and current goal contract. |
 | `room.get_transcript` | `since_seq: number` | Messages with `seq` greater than `since_seq`, in order. |
 | `room.get_agent_detail` | `agent_id: string` | One participant's own messages and last-seen status. |
+| `room.post_owner_command` | `kind: veto \| constraint \| add_participant \| goal_edit`, `body: string` | `{ accepted, reason? }` from the dispatcher. |
+
+`room.post_owner_command` forwards; it never writes. A dispatcher supplies a
+handler when it embeds the server (`onOwnerCommand` in `serve()`). A room served
+by bare `roomyx serve` has no dispatcher, so the tool answers `accepted: false`
+and says so — better than accepting a command nothing will act on.
 
 ### Management server
 
@@ -127,7 +162,7 @@ and skill-sync — to any MCP client.
 | Tool | Input | Returns |
 | --- | --- | --- |
 | `roomyx.rooms.list` | — | Live, liveness-checked rooms. |
-| `roomyx.skills.sync` | `targetPath: string`, `dryRun?: boolean`, `yes?: boolean` | Sync outcome: whether it would write, whether it did, and where the backup went. |
+| `roomyx.skills.sync` | `target?: claude \| codex \| keryx \| all` or `targetPath?: string`, `dryRun?: boolean`, `yes?: boolean` | One result per target: whether it would write, whether it did, and where the backup went. |
 
 Start it with `roomyx mcp` (default port `4320`, so it does not collide with
 `roomyx serve`'s `4319`). Same loopback / `--acknowledge-non-loopback` rules as
@@ -144,8 +179,9 @@ Start it with `roomyx mcp` (default port `4320`, so it does not collide with
 
 ## Skill sync safety
 
-`roomyx.skills.sync` will not silently discard local work. It refuses to write,
-and returns a warning instead, in two cases — unless `yes: true` is passed:
+Neither `roomyx skills sync` nor `roomyx.skills.sync` will silently discard
+local work. Both refuse to write, and report a warning instead, in two cases —
+unless `--yes` / `yes: true` is passed:
 
 - the target has changed since roomyx last synced it (hand-edited), or
 - the target already exists but roomyx has **no record of ever having written

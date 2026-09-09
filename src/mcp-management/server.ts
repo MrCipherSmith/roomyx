@@ -4,6 +4,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { z } from "zod";
 import { listLiveRooms } from "../installer/registry";
 import { syncSkill } from "../installer/skill-sync";
+import { NAMED_TARGETS, resolveTargets } from "../installer/skill-targets";
 
 export interface ManagementOptions {
   registryPath: string;
@@ -43,29 +44,47 @@ export function createManagementMcpServer(options: ManagementOptions): McpServer
     "roomyx.skills.sync",
     {
       title: "Sync the bundled startup-room skill",
-      description: "Diffs/backs-up/writes the bundled skill into a target path (see decisions.md D-02 for safety rules).",
+      description:
+        "Diffs/backs-up/writes the bundled skill into a target (see decisions.md D-02 for safety rules).",
       inputSchema: {
-        targetPath: z.string().min(1),
+        target: z
+          .enum([...NAMED_TARGETS, "all"])
+          .optional()
+          .describe("A runtime by name, or `all`. Use targetPath instead for a literal path."),
+        targetPath: z.string().min(1).optional().describe("A literal path. Takes precedence over target."),
         dryRun: z.boolean().optional(),
         yes: z.boolean().optional(),
       },
     },
-    async ({ targetPath, dryRun, yes }) => ({
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(
-            syncSkill({
-              bundledSkillPath: options.bundledSkillPath,
-              targetPath,
-              configPath: options.configPath,
-              dryRun,
-              yes,
-            }),
-          ),
-        },
-      ],
-    }),
+    async ({ target, targetPath, dryRun, yes }) => {
+      // One of the two is required, and neither can be marked required in the
+      // schema without excluding the other.
+      if (!target && !targetPath) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                error: `Pass either target (${[...NAMED_TARGETS, "all"].join(", ")}) or targetPath.`,
+              }),
+            },
+          ],
+        };
+      }
+      const targets = targetPath ? [{ name: targetPath, path: targetPath }] : resolveTargets(target as string);
+      const results = targets.map(({ name, path }) => ({
+        target: name,
+        path,
+        ...syncSkill({
+          bundledSkillPath: options.bundledSkillPath,
+          targetPath: path,
+          configPath: options.configPath,
+          dryRun,
+          yes,
+        }),
+      }));
+      return { content: [{ type: "text", text: JSON.stringify(results) }] };
+    },
   );
 
   return server;

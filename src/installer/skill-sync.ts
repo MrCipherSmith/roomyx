@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 
 export interface SyncOptions {
   bundledSkillPath: string;
@@ -84,6 +85,11 @@ export function syncSkill(options: SyncOptions): SyncResult {
     copyFileSync(options.targetPath, backedUpTo);
   }
 
+  // A named target's runtime may be installed without ever having had a
+  // startup-room skill, so its directory need not exist. Same failure mode the
+  // registry had: the write is ready for a missing file but not a missing
+  // directory.
+  mkdirSync(dirname(options.targetPath), { recursive: true });
   writeFileSync(options.targetPath, bundledContent);
   writeConfig(options.configPath, {
     ...config,

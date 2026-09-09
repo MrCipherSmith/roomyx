@@ -1,12 +1,12 @@
 # roomyx-installer — specification
 
-Version: 0.1.0
+Version: 0.2.0
 
 ## Module Identity
 
 - **Название:** `roomyx-installer` — packaging, project-local init, room registry, and skill-sync layer around the existing `roomyx` MCP server + TUI.
 - **Тип:** npm package (`@mrciphersmith/roomyx`) with a CLI; a project-local `.roomyx/` directory created by that CLI; a second, standalone MCP server for skill management.
-- **Статус:** `spec ready` — nothing implemented yet.
+- **Статус:** `implemented`. Пакет опубликован как `@mrciphersmith/roomyx`; `init`, реестр с проверкой живости, `skills sync` (CLI и MCP-тул), management-сервер (`roomyx mcp`) и бандлед-скилл — на месте и покрыты тестами. Открытым остаётся только сам текст полного `startup-room`-скилла: бандл содержит roomyx-фрагмент (авто-подъём сервера, привязка TUI), а не методологию целиком.
 
 ## Structure
 
@@ -67,9 +67,10 @@ roomyx/                          # existing package (server/client), extended:
 
 - `roomyx init` — creates `.roomyx/` in the current directory with default `config.json`, empty registry, and the bundled skill copied into `.roomyx/skills/startup-room/SKILL.md` (a project-local staging copy — NOT yet the real `~/.claude/skills/...`; see `skills sync` below).
 - `roomyx serve <logPath> [--port N] [--host H] [--acknowledge-non-loopback]` — unchanged from `roomyx`'s existing `serve`, extended to also register/deregister itself in `.roomyx/rooms/registry.json`.
-- `roomyx client [--room <id>] [--connect <url>]` — unchanged connection behavior when `--connect` is given; new: `--room <id>` looks up the registry; no arguments at all triggers the auto-attach flow (find the one live room).
-- `roomyx skills sync --target <claude|codex|keryx|all> [--dry-run] [--yes]` — copies `.roomyx/skills/startup-room/SKILL.md` into the target's real skill location. **Requires `--yes` to actually write** when the target is a real, non-fixture path (see `decisions.md` D-02) — without it, prints what it would do (equivalent to `--dry-run`) and exits without writing.
+- `roomyx client [--room <id>] [--connect <url>]` — unchanged connection behavior when `--connect` is given; new: `--room <id>` looks up the registry; no arguments at all triggers the auto-attach flow (find the one live room). Реализовано и как отдельный бинарник `roomyx-client` (основной путь — независимый процесс, D-06), и как подкоманда-алиас `roomyx client`.
+- `roomyx skills sync --target <claude|codex|keryx|all> [--dry-run] [--yes]` — copies the bundled `startup-room/SKILL.md` into the target's real skill location. **Requires `--yes` to actually write** (see `decisions.md` D-02) — without it, prints what it would do (equivalent to `--dry-run`) and exits without writing. Имена целей разрешаются так: `claude` → `~/.claude/skills/startup-room/SKILL.md`, `codex` → `~/.codex/skills/startup-room/SKILL.md`, `keryx` → `<cwd>/.metaproject/project-skills/startup-room/SKILL.md` (именно `project-skills`, а не `skills` — последнее принадлежит самому keryx). Всё, что не является известным именем или `all`, трактуется как буквальный путь — этим и пользуются тесты.
 - `roomyx rooms list` — prints the live (liveness-checked) rooms from the registry.
+- `roomyx mcp [--port N] [--host H] [--acknowledge-non-loopback] [--registry P] [--config P]` — поднимает management-сервер. Порт по умолчанию `4320`, чтобы не сталкиваться с `4319` у `roomyx serve`.
 
 ## MCP Management Server (NEW — R4)
 
@@ -77,7 +78,7 @@ A second MCP server, independent of the per-room server in `roomyx`'s own `speci
 
 | Tool | Input | Output |
 |---|---|---|
-| `roomyx.skills.sync` | `{ target: "claude" \| "codex" \| "keryx", dryRun?: boolean }` | `{ wouldWrite: string[], backedUp: string \| null, warnings: string[] }` — same underlying logic as the CLI's `skills sync`, callable from within an agent session |
+| `roomyx.skills.sync` | `{ target?: "claude" \| "codex" \| "keryx" \| "all", targetPath?: string, dryRun?: boolean, yes?: boolean }` — ровно одно из `target`/`targetPath` | массив результатов, по одному на цель: `{ target, path, wouldWrite, written, backedUpTo, warnings }` — та же логика, что у CLI `skills sync`, вызываемая изнутри агентской сессии |
 | `roomyx.rooms.list` | — | current live (liveness-checked) room registry |
 
 This is the piece the operator described as "MCP который можно подключить к Claude или Codex или keryx" — connectable via each runtime's own MCP client config, same as any other MCP server (no special-casing needed; reuses the loopback HTTP transport already built for `roomyx`'s room server).
@@ -110,20 +111,20 @@ This exact wording is a first draft for the implementation phase to refine, not 
 
 | ID | Критерий | Статус |
 |---|---|---|
-| AC1 | `roomyx init` in an empty temp directory creates `.roomyx/config.json` and `.roomyx/rooms/registry.json` with valid default content | `spec ready` |
-| AC2 | `roomyx serve` registers itself in the registry on start and removes its entry on clean shutdown (SIGINT) | `spec ready` |
-| AC3 | `roomyx client` with no arguments attaches correctly when exactly one live room is registered, and gives a clear, distinguishable message for zero or multiple live rooms — verified with a real liveness check, not just registry presence (a registry entry for a killed process must not be treated as attachable) | `spec ready` |
-| AC4 | `roomyx skills sync --target <fixture-path>` (never a real `~/.claude/...` path in this flow's own tests) correctly diffs, backs up, and writes, and refuses to write without `--yes` when the target has independent hand-edits since the last recorded sync | `spec ready` |
-| AC5 | The MCP management server's `roomyx.skills.sync` and `roomyx.rooms.list` tools are reachable via a real MCP client round-trip (same testing pattern as `roomyx`'s own `serve.test.ts`) | `spec ready` |
-| AC6 | No code path in this package's test suite ever writes to a real `~/.claude`, `~/.codex`, or project `.metaproject`/`.keryx` directory, or runs `npm publish` — all tests operate against temp/fixture paths | `spec ready` |
+| AC1 | `roomyx init` in an empty temp directory creates `.roomyx/config.json` and `.roomyx/rooms/registry.json` with valid default content | `implemented` (`test/installer/init.test.ts`) |
+| AC2 | `roomyx serve` registers itself in the registry on start and removes its entry on clean shutdown (SIGINT) | `implemented` (`test/cli-serve-lifecycle.test.ts` — реальный запущенный процесс, не только unit-поведение `registry.ts`) |
+| AC3 | `roomyx client` with no arguments attaches correctly when exactly one live room is registered, and gives a clear, distinguishable message for zero or multiple live rooms — verified with a real liveness check, not just registry presence (a registry entry for a killed process must not be treated as attachable) | `implemented` (`test/installer/resolve-connection.test.ts`, `test/installer/registry.test.ts`, `test/cli-commands.test.ts`) |
+| AC4 | `roomyx skills sync --target <fixture-path>` (never a real `~/.claude/...` path in this flow's own tests) correctly diffs, backs up, and writes, and refuses to write without `--yes` when the target has independent hand-edits since the last recorded sync | `implemented` (`test/installer/skill-sync.test.ts`, `test/cli-commands.test.ts`) |
+| AC5 | The MCP management server's `roomyx.skills.sync` and `roomyx.rooms.list` tools are reachable via a real MCP client round-trip (same testing pattern as `roomyx`'s own `serve.test.ts`) | `implemented` (`test/mcp-management/server.test.ts`; `test/cli-commands.test.ts` — через реально запущенный `roomyx mcp`) |
+| AC6 | No code path in this package's test suite ever writes to a real `~/.claude`, `~/.codex`, or project `.metaproject`/`.keryx` directory, or runs `npm publish` — all tests operate against temp/fixture paths | `implemented` (все цели в тестах — временные каталоги; именованные цели проверяются разрешением пути, без записи) |
 
 ## Requirement Coverage Map
 
 | Требование | Раздел спецификации | Статус |
 |---|---|---|
-| R1 — installable package | CLI Surface | `spec ready` |
-| R2 — `.roomyx/` init | `.roomyx/config.json` shape, CLI Surface → `roomyx init` | `spec ready` |
-| R3 — room registry + one-command attach | `.roomyx/rooms/registry.json` shape, CLI Surface → `roomyx client` | `spec ready` |
-| R4 — MCP management server | MCP Management Server | `spec ready` |
-| R5 — bundled auto-launching skill | Bundled `startup-room` SKILL.md Changes | `spec ready` |
-| R6 — safe sync, not silent overwrite | Skill Sync Mechanism | `spec ready` |
+| R1 — installable package | CLI Surface | `implemented` — опубликован как `@mrciphersmith/roomyx`, два бинарника (`roomyx`, `roomyx-client`) |
+| R2 — `.roomyx/` init | `.roomyx/config.json` shape, CLI Surface → `roomyx init` | `implemented` |
+| R3 — room registry + one-command attach | `.roomyx/rooms/registry.json` shape, CLI Surface → `roomyx client` | `implemented` — `logPath` пишется абсолютным, как и показано в примере выше |
+| R4 — MCP management server | MCP Management Server | `implemented` — запускается командой `roomyx mcp`, порт по умолчанию `4320` |
+| R5 — bundled auto-launching skill | Bundled `startup-room` SKILL.md Changes | `partial` — шаг авто-подъёма сервера при kickoff написан и лежит в бандле; полный текст методологии `startup-room` в бандл не входит и остаётся за скиллом, в который этот фрагмент вливают |
+| R6 — safe sync, not silent overwrite | Skill Sync Mechanism | `implemented` — плюс отказ трогать содержимое, которого roomyx никогда не писал |
