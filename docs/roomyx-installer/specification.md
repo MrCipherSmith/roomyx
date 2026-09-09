@@ -6,7 +6,7 @@ Version: 0.2.0
 
 - **Название:** `roomyx-installer` — packaging, project-local init, room registry, and skill-sync layer around the existing `roomyx` MCP server + TUI.
 - **Тип:** npm package (`@mrciphersmith/roomyx`) with a CLI; a project-local `.roomyx/` directory created by that CLI; a second, standalone MCP server for skill management.
-- **Статус:** `implemented`. Пакет опубликован как `@mrciphersmith/roomyx`; `init`, реестр с проверкой живости, `skills sync` (CLI и MCP-тул), management-сервер (`roomyx mcp`) и бандлед-скилл — на месте и покрыты тестами. Открытым остаётся только сам текст полного `startup-room`-скилла: бандл содержит roomyx-фрагмент (авто-подъём сервера, привязка TUI), а не методологию целиком.
+- **Статус:** `implemented`. Пакет опубликован как `@mrciphersmith/roomyx`; `init`, реестр с проверкой живости, `skills sync` (CLI и MCP-тул), management-сервер (`roomyx mcp`) и бандлед-скилл — на месте и покрыты тестами. Бандл содержит полный текст `startup-room`-скилла с вплетённой roomyx-частью (шаг подъёма сервера в Setup, раздел про наблюдение за комнатой, команды владельца в owner-injection channel), а не заглушку и не отдельный фрагмент.
 
 ## Structure
 
@@ -126,5 +126,5 @@ This exact wording is a first draft for the implementation phase to refine, not 
 | R2 — `.roomyx/` init | `.roomyx/config.json` shape, CLI Surface → `roomyx init` | `implemented` |
 | R3 — room registry + one-command attach | `.roomyx/rooms/registry.json` shape, CLI Surface → `roomyx client` | `implemented` — `logPath` пишется абсолютным, как и показано в примере выше |
 | R4 — MCP management server | MCP Management Server | `implemented` — запускается командой `roomyx mcp`, порт по умолчанию `4320` |
-| R5 — bundled auto-launching skill | Bundled `startup-room` SKILL.md Changes | `partial` — шаг авто-подъёма сервера при kickoff написан и лежит в бандле; полный текст методологии `startup-room` в бандл не входит и остаётся за скиллом, в который этот фрагмент вливают |
+| R5 — bundled auto-launching skill | Bundled `startup-room` SKILL.md Changes | `implemented` — бандл несёт методологию целиком плюс roomyx-шаги; `skills sync` копирует её поверх цели, поэтому бандл сделан надмножеством, а не фрагментом |
 | R6 — safe sync, not silent overwrite | Skill Sync Mechanism | `implemented` — плюс отказ трогать содержимое, которого roomyx никогда не писал |

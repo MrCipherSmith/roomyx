@@ -51,7 +51,10 @@ roomyx-client --room r-a1b2c3
 ```
 
 In the TUI: `↑`/`↓` move through the roster, `Enter` opens the selected agent's
-modal, `Esc` closes it, `q` or `Ctrl-C` quits.
+modal, `Esc` closes it, `q` or `Ctrl-C` quits. `o` opens an owner command —
+pick `v`eto, `c`onstraint, `a`dd participant or `g`oal edit, type the body,
+`Enter` sends. While the prompt is open it owns the keyboard, so a `q` in a
+veto is text rather than a quit.
 
 ## Commands
 
@@ -248,6 +251,10 @@ release workflow verifies, packs, smoke-tests, and publishes to npm with
 provenance via trusted publishing.
 
 ## Further reading
+
+- [`docs/roomyx/testing-story.md`](https://github.com/MrCipherSmith/roomyx/blob/main/docs/roomyx/testing-story.md)
+  — a verified end-to-end walkthrough, from `npm install` to driving a live
+  room, including what keryx shell can and cannot do with roomyx.
 
 Full architecture and the reasoning behind each decision:
 

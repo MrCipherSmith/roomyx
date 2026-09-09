@@ -77,8 +77,9 @@ roomyx/
 | `Enter` | открыть модалку выбранного участника |
 | `Esc` | закрыть модалку / выйти из выделения |
 | `q` / `Ctrl+C` | выход из TUI (не останавливает сервер — независимые процессы) |
+| `o` | открыть команду владельца: `v`eto / `c`onstraint / `a`dd participant / `g`oal edit, затем текст и `Enter` |
 
-Клавиш для команд владельца (veto/constraint) в TUI пока нет. Серверная сторона R5 уже есть — `room.post_owner_command` принимает команду и передаёт её диспетчеру, — но привязать её к клавише имеет смысл только там, где диспетчер действительно подключён; у комнаты, поднятой голым `roomyx serve`, обработчика нет, и тул честно отвечает отказом. До тех пор TUI остаётся read-only просмотрщиком.
+Команды владельца доступны по `o`. Пока промпт открыт, он забирает клавиатуру себе — иначе `q`, набранное в тексте вето, закрыло бы клиент. Ответ печатается в статус-баре как есть: у комнаты, поднятой голым `roomyx serve`, диспетчера нет, и владелец увидит честный отказ с объяснением, а не молчаливое «принято».
 
 ## Data Contracts — MCP Tool Surface (proposed, v1)
 
@@ -121,5 +122,5 @@ roomyx/
 | R2 — MCP-сервер как источник состояния | Structure, CLI / Skill Surface | `implemented` — три read-only тула плюс транспорт `roomyx serve` |
 | R3 — общий чат-вид | Data Contracts → `room.get_state`, `room.get_transcript`; TUI Client Architecture → Chat view | `implemented` — и сервер, и UI (`test/client/render.test.ts` — реальный кадр терминала) |
 | R4 — модалка на агента | Data Contracts → `room.get_agent_detail`; TUI Client Architecture → Agent modal | `implemented` — и сервер, и UI |
-| R5 — интерактивные команды владельца | Data Contracts → `room.post_owner_command` | `partial` — серверная сторона реализована (тул принимает команду и передаёт диспетчеру); в TUI клавиш для отправки команд пока нет, он остаётся read-only просмотрщиком |
+| R5 — интерактивные команды владельца | Data Contracts → `room.post_owner_command`; TUI Client Architecture → Keybindings | `implemented` — сервер передаёт команду диспетчеру, TUI отправляет её по `o` (`test/client/owner-prompt.test.ts`, `test/server/owner-command.test.ts`) |
 | R6 — ручной и автоматический запуск | CLI / Skill Surface → `roomyx client`, `roomyx serve` | `partial` — ручной запуск реализован (`roomyx-client`, `roomyx client`); автоматический доведён до подсказки в бандлед-скилле, спавна дочернего процесса нет (D-06) |
