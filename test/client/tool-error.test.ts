@@ -107,3 +107,45 @@ describe("a server that answers with an error", () => {
     expect(statuses).toContain("disconnected");
   }, 20000);
 });
+
+describe("stopping the client", () => {
+  test("no event fires after stop(), even with a poll in flight", async () => {
+    // The three `if (this.stopped) return;` guards on the disconnect path are
+    // what make this true, and deleting all three left the subprocess shutdown
+    // test green — it asserts the absence of a stack trace, which a client that
+    // never reached the race also satisfies.
+    const dir = mkdtempSync(join(tmpdir(), "roomyx-stop-"));
+    dirs.push(dir);
+    const path = join(dir, "room.jsonl");
+    createRoomLog(path, { goalStatement: "stop under load", roster: [{ id: "a", name: "Ann" }] });
+    handle = await serve(path, { port: 0 });
+
+    let stopped = false;
+    const afterStop: string[] = [];
+    const record = (what: string) => {
+      if (stopped) afterStop.push(what);
+    };
+
+    const roomClient = new RoomClient(
+      { url: handle.url, stateIntervalMs: 5, transcriptIntervalMs: 5 },
+      {
+        onConnectionChange: () => record("connection"),
+        onStateUpdate: () => record("state"),
+        onNewMessages: () => record("messages"),
+        onToolError: () => record("toolError"),
+      },
+    );
+    roomClient.start();
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    // Kill the server first, so a poll is losing its connection at the moment
+    // stop() runs — the window the guards exist for.
+    await handle.close();
+    handle = undefined;
+    stopped = true;
+    await roomClient.stop();
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(afterStop).toEqual([]);
+  }, 20000);
+});

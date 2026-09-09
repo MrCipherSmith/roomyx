@@ -9,7 +9,7 @@
   "title": "Fix the 2026-09-09 full-repository review: 3 blockers and the major findings",
   "status": "in-progress",
   "createdAt": "2026-09-09T17:48:55.941Z",
-  "updatedAt": "2026-09-09T18:12:58.329Z",
+  "updatedAt": "2026-09-09T18:15:09.386Z",
   "source": {
     "type": "description",
     "ref": null
@@ -197,7 +197,7 @@
       "id": "T12",
       "title": "M8+M10 — help overlay fits; roster and status bar truncate",
       "kind": "implement",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -205,7 +205,8 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T13",
@@ -354,6 +355,11 @@
       "at": "2026-09-09T18:12:58.329Z",
       "event": "task-done",
       "detail": "T11: M6 — release MCP sessions"
+    },
+    {
+      "at": "2026-09-09T18:15:09.386Z",
+      "event": "task-done",
+      "detail": "T12: M8+M10 — help overlay fits; roster and status bar truncate"
     }
   ]
 }

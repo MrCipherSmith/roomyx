@@ -62,16 +62,35 @@ async function setUpChatView() {
   return { renderer, mockInput, renderOnce, waitFor, captureCharFrame, chatView };
 }
 
-async function settle(renderOnce: () => Promise<void>, ms = 200): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, ms));
-  await renderOnce();
+/**
+ * Waits for a condition, not for a duration.
+ *
+ * The fixed 200 ms this replaces had under a 2x margin on an idle machine —
+ * measured by lowering it: 150 ms passed, 100 ms failed one test, 60 ms failed
+ * two. A 2-vCPU CI runner is an ordinary 2x slowdown, and this is the one file
+ * that certifies the TUI actually paints, so the failure mode was a red CI run
+ * on a correct tree. The file already imported `waitFor` and then neutered it as
+ * `waitFor(() => true)`.
+ */
+async function until(
+  renderOnce: () => Promise<void>,
+  captureCharFrame: () => string,
+  predicate: (frame: string) => boolean,
+  what: string,
+): Promise<void> {
+  const deadline = Date.now() + 10_000;
+  for (;;) {
+    await renderOnce();
+    if (predicate(captureCharFrame())) return;
+    if (Date.now() > deadline) throw new Error(`timed out waiting for ${what}`);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
 }
 
 describe("TUI rendering (real @opentui/core headless renderer, real serve() instance)", () => {
   test("chat view renders the roster, messages, and goal statement", async () => {
-    const { waitFor, renderOnce, captureCharFrame } = await setUpChatView();
-    await waitFor(() => true); // let at least one poll cycle land
-    await settle(renderOnce);
+    const { renderOnce, captureCharFrame } = await setUpChatView();
+    await until(renderOnce, captureCharFrame, (f) => f.includes("polling"), "the first message body");
     const frame = captureCharFrame();
 
     expect(frame).toContain("Юки");
@@ -86,12 +105,11 @@ describe("TUI rendering (real @opentui/core headless renderer, real serve() inst
 
   test("selecting a participant filters the stream in place, and Esc brings the room back", async () => {
     const { mockInput, renderOnce, captureCharFrame, chatView } = await setUpChatView();
-    await settle(renderOnce);
-    expect(captureCharFrame()).toContain("Модалка");
+    await until(renderOnce, captureCharFrame, (f) => f.includes("Модалка"), "the whole transcript");
 
     mockInput.typeText("j"); // move off Юки onto Омар
     mockInput.pressEnter();
-    await settle(renderOnce, 100);
+    await until(renderOnce, captureCharFrame, () => chatView.transcript.filter() === "omar", "the filter to apply");
 
     // Омар's own turn stays; Зара's goes. The filter happens in the same pane,
     // so the roster is still readable beside it rather than covered by a window.
@@ -102,18 +120,17 @@ describe("TUI rendering (real @opentui/core headless renderer, real serve() inst
     expect(filtered).toContain("Зара"); // still in the roster
 
     mockInput.pressEscape();
-    await settle(renderOnce, 100);
-    expect(chatView.transcript.filter()).toBeNull();
+    await until(renderOnce, captureCharFrame, () => chatView.transcript.filter() === null, "the filter to clear");
     expect(captureCharFrame()).toContain("Модалка");
   });
 
   test("`?` shows the keymap, and it lists keys the footer has no room for", async () => {
-    const { mockInput, renderOnce, captureCharFrame } = await setUpChatView();
-    await settle(renderOnce);
+    const { mockInput, renderOnce, captureCharFrame, chatView } = await setUpChatView();
+    await until(renderOnce, captureCharFrame, (f) => f.includes("Модалка"), "the transcript");
     expect(captureCharFrame()).not.toContain("write out");
 
     mockInput.typeText("?");
-    await settle(renderOnce, 100);
+    await until(renderOnce, captureCharFrame, () => chatView.help.isVisible(), "the overlay to open");
     const open = captureCharFrame();
     expect(open).toContain("keys");
     expect(open).toContain("write out");
@@ -121,7 +138,7 @@ describe("TUI rendering (real @opentui/core headless renderer, real serve() inst
     expect(open).toContain("? or Esc closes");
 
     mockInput.typeText("?");
-    await settle(renderOnce, 100);
+    await until(renderOnce, captureCharFrame, () => !chatView.help.isVisible(), "the overlay to close");
     expect(captureCharFrame()).not.toContain("write out");
   });
 });

@@ -80,6 +80,29 @@ describe("the first message of a room", () => {
     }
   });
 
+  // The barrier heights, found by sweeping rather than guessed.
+  //
+  // The scrollbar steals one viewport row whether or not it has anything to
+  // scroll, so the defect only shows where the content exactly fills the pane —
+  // one row of slack anywhere and both versions look identical. Measured: with
+  // the fix, 2 messages need height 6, 3 need 9, 4 need 12; without it, each
+  // needs one more. Every case below sits on that boundary.
+  //
+  // This is why the earlier version of this file stopped being a barrier. It
+  // was a real one when written, then it was rewritten for the taller
+  // typography layout — alternating speakers, three rows a turn — and every
+  // remaining case had slack. Nobody re-ran the mutation after the rewrite.
+  for (const [count, height] of [
+    [2, 6],
+    [3, 9],
+    [4, 12],
+  ] as const) {
+    test(`seq 1 survives where ${count} messages exactly fill a pane of height ${height}`, async () => {
+      const { first } = await render(height, count);
+      expect(first).toBe(true);
+    });
+  }
+
   test("a room longer than the viewport still sticks to the bottom", async () => {
     const { first, last } = await render(10, 40);
     expect(last).toBe(true);
