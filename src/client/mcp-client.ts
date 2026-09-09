@@ -16,7 +16,25 @@ export interface RoomClientEvents {
   onStateUpdate?(state: RoomState): void;
   onNewMessages?(messages: MessageEnvelope[]): void;
   onConnectionChange?(status: ConnectionStatus): void;
+  /**
+   * The server answered, and the answer was an error. Distinct from a
+   * connection change on purpose: the room is reachable and the poll loop keeps
+   * running, so reporting this as a disconnect told the operator to check the
+   * network when the actual problem — usually a malformed line in their log —
+   * was named in text that was being thrown away.
+   */
+  onToolError?(message: string): void;
 }
+
+/**
+ * The server replied and the reply was an error. Carries the server's own text,
+ * which used to be discarded: `callTool` ran `JSON.parse` over it, the parse
+ * threw, and both poll loops caught it as a lost connection.
+ */
+export class ToolError extends Error {}
+
+/** Reconnect delay ceiling. Without one, a persistent fault polls forever at 1s. */
+const MAX_BACKOFF_MS = 30_000;
 
 /**
  * Polls a roomyx MCP server over HTTP for state and transcript updates.
@@ -36,11 +54,25 @@ export class RoomClient {
   private stopped = false;
   private stateTimer: ReturnType<typeof setTimeout> | undefined;
   private transcriptTimer: ReturnType<typeof setTimeout> | undefined;
+  private reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+  private backoffMs: number;
+  /**
+   * Bumped on every disconnect. Each poll loop captures the generation it was
+   * started under and exits silently once it is stale.
+   *
+   * Without it, one dropped connection produced two: `handleDisconnect` was
+   * reachable independently from both loops, each scheduled its own
+   * `connect()`, and each `connect()` started a *fresh* pair of loops without
+   * stopping the running ones — so the loop count doubled per fault. Measured
+   * from a single malformed log line: one connection became 510 in ten seconds.
+   */
+  private generation = 0;
 
   constructor(options: RoomClientOptions, events: RoomClientEvents) {
     this.url = options.url;
     this.stateIntervalMs = options.stateIntervalMs ?? 3000;
     this.transcriptIntervalMs = options.transcriptIntervalMs ?? 1000;
+    this.backoffMs = this.transcriptIntervalMs;
     this.events = events;
   }
 
@@ -51,19 +83,12 @@ export class RoomClient {
 
   async stop(): Promise<void> {
     this.stopped = true;
+    this.generation += 1;
     clearTimeout(this.stateTimer);
     clearTimeout(this.transcriptTimer);
+    clearTimeout(this.reconnectTimer);
     await this.client?.close().catch(() => undefined);
     this.client = undefined;
-  }
-
-  getLastSeenSeq(): number {
-    return this.sinceSeq;
-  }
-
-  /** On-demand call for the agent modal — not part of the poll loop. */
-  async getAgentDetail(agentId: string): Promise<import("../log/types").AgentDetail> {
-    return this.callTool("room.get_agent_detail", { agent_id: agentId });
   }
 
   private setStatus(status: ConnectionStatus): void {
@@ -72,9 +97,15 @@ export class RoomClient {
     this.events.onConnectionChange?.(status);
   }
 
+  /**
+   * Single-flight: a reconnect already pending is not scheduled again, and the
+   * handle is kept so `stop()` can cancel it. Both were missing — the timer was
+   * discarded, so nothing could tell that a reconnect was already on its way.
+   */
   private scheduleConnect(delayMs: number): void {
-    if (this.stopped) return;
-    setTimeout(() => {
+    if (this.stopped || this.reconnectTimer !== undefined) return;
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = undefined;
       void this.connect();
     }, delayMs);
   }
@@ -91,13 +122,21 @@ export class RoomClient {
         await client.close().catch(() => undefined);
         return;
       }
+      // Close whatever we were holding before replacing it. A reconnect used
+      // to drop the previous Client on the floor, leaking its socket.
+      const previous = this.client;
       this.client = client;
+      if (previous) void previous.close().catch(() => undefined);
+
+      this.backoffMs = this.transcriptIntervalMs;
       this.setStatus("connected");
-      this.pollState();
-      this.pollTranscript();
+      const generation = this.generation;
+      this.pollState(generation);
+      this.pollTranscript(generation);
     } catch {
       this.setStatus("disconnected");
-      this.scheduleConnect(this.transcriptIntervalMs);
+      this.scheduleConnect(this.backoffMs);
+      this.backoffMs = Math.min(this.backoffMs * 2, MAX_BACKOFF_MS);
     }
   }
 
@@ -113,46 +152,93 @@ export class RoomClient {
   private async callTool<T>(name: string, args: Record<string, unknown>): Promise<T> {
     if (!this.client) throw new Error("not connected");
     const result = await this.client.callTool({ name, arguments: args });
-    const content = result.content as Array<{ type: string; text: string }>;
-    return JSON.parse(content[0]?.text ?? "null") as T;
+    const content = result.content as Array<{ type: string; text: string }> | undefined;
+    const text = content?.[0]?.text;
+
+    // `isError` was never read, so a tool-level failure arrived as prose that
+    // `JSON.parse` then choked on — indistinguishable, to the caller, from the
+    // transport dropping.
+    if (result.isError === true) throw new ToolError(text ?? `${name} failed with no message`);
+    if (text === undefined) throw new ToolError(`${name} returned no content`);
+
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      // Not an error result, but not JSON either. Still the server's answer,
+      // not a lost connection.
+      throw new ToolError(`${name} returned a response that is not JSON: ${text.slice(0, 200)}`);
+    }
   }
 
-  private pollState(): void {
-    if (this.stopped) return;
+  /**
+   * A tool error leaves the loop running: the room is reachable, the poll can
+   * be retried, and the operator gets the server's own text instead of a
+   * connection diagnosis that is simply wrong.
+   */
+  private handleToolError(error: unknown, resume: () => void): boolean {
+    if (!(error instanceof ToolError)) return false;
+    this.events.onToolError?.(error.message);
+    resume();
+    return true;
+  }
+
+  private pollState(generation: number): void {
+    if (this.isStale(generation)) return;
+    const again = () => {
+      this.stateTimer = setTimeout(() => this.pollState(generation), this.stateIntervalMs);
+    };
     this.callTool<RoomState>("room.get_state", {})
       .then((state) => {
-        if (this.stopped) return;
+        if (this.isStale(generation)) return;
         this.events.onStateUpdate?.(state);
-        this.stateTimer = setTimeout(() => this.pollState(), this.stateIntervalMs);
+        again();
       })
-      .catch(() => {
-        if (this.stopped) return;
+      .catch((error: unknown) => {
+        if (this.isStale(generation)) return;
+        if (this.handleToolError(error, again)) return;
         this.handleDisconnect();
       });
   }
 
-  private pollTranscript(): void {
-    if (this.stopped) return;
+  private pollTranscript(generation: number): void {
+    if (this.isStale(generation)) return;
+    const again = () => {
+      this.transcriptTimer = setTimeout(() => this.pollTranscript(generation), this.transcriptIntervalMs);
+    };
     this.callTool<MessageEnvelope[]>("room.get_transcript", { since_seq: this.sinceSeq })
       .then((messages) => {
-        if (this.stopped) return;
+        if (this.isStale(generation)) return;
         if (messages.length > 0) {
           this.sinceSeq = Math.max(this.sinceSeq, ...messages.map((m) => m.seq));
           this.events.onNewMessages?.(messages);
         }
-        this.transcriptTimer = setTimeout(() => this.pollTranscript(), this.transcriptIntervalMs);
+        again();
       })
-      .catch(() => {
-        if (this.stopped) return;
+      .catch((error: unknown) => {
+        if (this.isStale(generation)) return;
+        if (this.handleToolError(error, again)) return;
         this.handleDisconnect();
       });
   }
 
+  /** Stopped, or superseded by a later connection. */
+  private isStale(generation: number): boolean {
+    return this.stopped || generation !== this.generation;
+  }
+
   private handleDisconnect(): void {
     if (this.stopped) return;
+    // Bumping the generation is what stops the sibling loop, which clearing a
+    // single-slot timer handle could not: after the first doubling the handle
+    // belonged to a different, still-healthy loop.
+    this.generation += 1;
     clearTimeout(this.stateTimer);
     clearTimeout(this.transcriptTimer);
+    const previous = this.client;
+    this.client = undefined;
+    if (previous) void previous.close().catch(() => undefined);
     this.setStatus("disconnected");
-    this.scheduleConnect(this.transcriptIntervalMs);
+    this.scheduleConnect(this.backoffMs);
+    this.backoffMs = Math.min(this.backoffMs * 2, MAX_BACKOFF_MS);
   }
 }

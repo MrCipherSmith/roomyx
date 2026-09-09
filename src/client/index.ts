@@ -112,6 +112,13 @@ export async function runClient(flags: FlagValues): Promise<void> {
         }
         refreshFooter();
       },
+      // The room answered and the answer was an error — usually a malformed
+      // line in the log. It reaches the transcript, where it is readable and
+      // survives a scroll, rather than being thrown away.
+      onToolError: (message) => {
+        chatView.appendSystemLine(message);
+        refreshFooter();
+      },
       onStateUpdate: (state) => {
         chatView.setGoalContract(state.goal_contract);
         chatView.setRoster(state.roster);

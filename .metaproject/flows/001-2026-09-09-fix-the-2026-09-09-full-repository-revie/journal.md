@@ -18,3 +18,4 @@
 - 2026-09-09T17:50:22.116Z - frozen: 12 criteria; checksum recorded
 - 2026-09-09T17:50:22.232Z - started
 - 2026-09-09T17:52:26.112Z - task-done: T5: B1 — one schema for both directions of the room log
+- 2026-09-09T17:53:46.009Z - task-done: T6: B2 — destroy detached renderables and skip unchanged roster rebuilds
