@@ -59,9 +59,18 @@ describe("the keymap", () => {
   });
 
   test("an unbound key resolves to nothing rather than to the nearest match", () => {
-    for (const k of ["z", "1", "/", "?"]) {
+    for (const k of ["z", "1", "x", "%"]) {
       expect(resolveAction(key({ name: k, sequence: k }))).toBeNull();
     }
+  });
+
+  test("search, filter, help and export have keys, and they are the conventional ones", () => {
+    expect(resolveAction(key({ name: "/", sequence: "/" }))).toBe("search.open");
+    expect(resolveAction(key({ name: "n", sequence: "n" }))).toBe("search.next");
+    expect(resolveAction(key({ name: "n", sequence: "N", shift: true }))).toBe("search.previous");
+    expect(resolveAction(key({ name: "escape" }))).toBe("filter.clear");
+    expect(resolveAction(key({ name: "?", sequence: "?" }))).toBe("help.toggle");
+    expect(resolveAction(key({ name: "w", sequence: "w" }))).toBe("transcript.export");
   });
 
   test("no two bindings claim the same key", () => {

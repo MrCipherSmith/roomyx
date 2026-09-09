@@ -23,7 +23,13 @@ export type Action =
   | "roster.prev"
   | "roster.next"
   | "roster.open"
+  | "filter.clear"
+  | "search.open"
+  | "search.next"
+  | "search.previous"
   | "owner.prompt"
+  | "transcript.export"
+  | "help.toggle"
   | "app.quit";
 
 /**
@@ -71,13 +77,33 @@ export const BINDINGS: Binding[] = [
   // what the same fingers already use for lists in vim, lazygit and k9s.
   { action: "roster.prev", patterns: [{ seq: "k" }], keys: "j/k", hint: "roster", footer: true, footerRank: 2 },
   { action: "roster.next", patterns: [{ seq: "j" }], keys: "j/k", hint: "roster", footer: false },
-  { action: "roster.open", patterns: [{ name: "return" }], keys: "Enter", hint: "open", footer: true, footerRank: 4 },
+  // Enter filters the stream to the selected participant in place, rather than
+  // opening a window over it. A modal costs a keypress to leave, cannot be
+  // scrolled, does not compose with search, and — as the review found — was
+  // pinned at hardcoded coordinates across the roster it was opened from.
+  { action: "roster.open", patterns: [{ name: "return" }], keys: "Enter", hint: "filter", footer: true, footerRank: 4 },
+  { action: "filter.clear", patterns: [{ name: "escape" }], keys: "Esc", hint: "clear", footer: false },
+
+  // `/` then `n`/`N` is the search anyone already has in their fingers, from
+  // less, vim, tmux copy-mode and every pager in between.
+  { action: "search.open", patterns: [{ seq: "/" }], keys: "/", hint: "search", footer: true, footerRank: 6 },
+  { action: "search.next", patterns: [{ seq: "n" }], keys: "n/N", hint: "next match", footer: false },
+  { action: "search.previous", patterns: [{ seq: "N" }], keys: "n/N", hint: "next match", footer: false },
 
   // `:` is the free key and already means "I am about to type a command"
   // everywhere. `o` means *open* everywhere, so it was borrowed rather than
   // chosen; it still works, undocumented, so a script or a habit from 0.5.0
   // does not break on upgrade — but the footer teaches `:`.
   { action: "owner.prompt", patterns: [{ seq: ":" }, { seq: "o" }], keys: ":", hint: "command", footer: true, footerRank: 3 },
+
+  // Writes what is on screen to a file. Claude Code's transcript viewer dumps
+  // into the terminal's own scrollback so tmux copy-mode and the terminal's
+  // find can reach it; roomyx cannot leave the alternate screen safely mid-run,
+  // so it writes a file and names the path instead. Same purpose — get the text
+  // somewhere the reader's existing tools work on it.
+  { action: "transcript.export", patterns: [{ seq: "w" }], keys: "w", hint: "write out", footer: false },
+
+  { action: "help.toggle", patterns: [{ seq: "?" }], keys: "?", hint: "keys", footer: true, footerRank: 7 },
 
   { action: "app.quit", patterns: [{ seq: "q" }, { name: "c", ctrl: true }], keys: "q", hint: "quit", footer: true, footerRank: 1 },
 ];

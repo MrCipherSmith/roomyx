@@ -76,6 +76,21 @@ are below.
   the full width and the footer says how many participants are in the room;
   widen the terminal and the list comes back.
 
+- **Search, with `/` and `n`/`N`.** Matched case-insensitively against what is
+  on screen — the speaker's display name, the kind tag and the body — so
+  searching for `Ann` finds messages headed `Ann` rather than every message
+  from the id `a`. The footer names the live query and the match position, and
+  says `no matches` rather than standing still, because a search that finds
+  nothing must not look like one that found something.
+
+- **`?` shows the full keymap,** generated from the same table the dispatcher
+  and the footer use. The footer teaches the handful of keys worth permanent
+  space; everything else lives here rather than in the source.
+
+- **`w` writes what is on screen to a file** and names it. A terminal is a bad
+  place to search and a good place to read. It never overwrites — the next free
+  numbered name is used — and a filtered view gets its own file.
+
 - **Connection changes are written into the transcript, not only the footer.**
   A footer repainted at a fixed row, with the cursor parked in another pane, is
   never spoken by a screen reader and never survives a `tee`. A `— disconnected,
@@ -195,6 +210,19 @@ The security release. Every item here came out of a review of the published
   Flags are declared per command now. Unknown ones are refused with a
   did-you-mean, missing and non-numeric values are refused, `--help` exits 0 on
   stdout, a bad command exits 1 on stderr, and `--` ends flag parsing.
+
+### Changed — breaking
+
+- **`Enter` filters the stream instead of opening a modal, and the modal is
+  gone.** `AgentModal` could not be scrolled, did not compose with search, cost
+  a keypress to leave, and was pinned at `top: 2, left: 2` — so, being 70% of
+  the terminal wide, it lay across the roster it had been opened from and left
+  a selection arrow pointing at a name it had covered.
+
+  Filtering shows the same data from the transcript the client already has, in
+  the pane the reader is already in, and `Esc` clears it. The server's
+  `agent.detail` tool is unchanged; the client no longer needs it to answer
+  "show me this participant".
 
 ### Removed — breaking
 

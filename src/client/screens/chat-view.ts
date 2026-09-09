@@ -1,10 +1,13 @@
 import { BoxRenderable, ScrollBoxRenderable, TextRenderable } from "@opentui/core";
-import type { RenderContext } from "@opentui/core";
+import type { Renderable, RenderContext } from "@opentui/core";
 import type { GoalContract, MessageEnvelope, RosterEntry } from "../../log/types";
 import { StatusBar } from "../components/status-bar";
 import { RosterSidebar } from "../components/roster-sidebar";
 import { Footer } from "../components/footer";
+import { HelpOverlay } from "../components/help-overlay";
 import { createMessageRow } from "../components/message-row";
+import { Transcript } from "../transcript";
+import type { Entry } from "../transcript";
 import type { ConnectionStatus } from "../mcp-client";
 
 /**
@@ -15,17 +18,25 @@ export const ROSTER_BREAKPOINT = 80;
 
 /**
  * Main screen: StatusBar on top, RosterSidebar on the left, a scrolling
- * message stream on the right, Footer along the bottom.
+ * message stream on the right, Footer along the bottom, help overlay on top of
+ * everything when asked for.
+ *
+ * The view renders from a `Transcript` rather than owning its messages, which
+ * is what makes filtering and searching possible at all — it used to push
+ * renderables into the scroll box and keep no record of what it had drawn, so
+ * there was nothing to filter and nothing to search.
  */
 export class ChatView {
   readonly node: BoxRenderable;
   readonly statusBar: StatusBar;
   readonly roster: RosterSidebar;
   readonly footer: Footer;
+  readonly help: HelpOverlay;
+  readonly transcript = new Transcript();
   private readonly scroll: ScrollBoxRenderable;
   private readonly ctx: RenderContext;
   private rosterById = new Map<string, RosterEntry>();
-  private lastSpeaker: string | null = null;
+  private rows: Renderable[] = [];
   private readonly rosterVisible: boolean;
 
   constructor(ctx: RenderContext, options: { width: number; height: number; onSelectAgent?: (agent: RosterEntry) => void }) {
@@ -71,6 +82,9 @@ export class ChatView {
 
     this.footer = new Footer(ctx, { width: options.width });
     this.node.add(this.footer.node);
+
+    this.help = new HelpOverlay(ctx, { width: options.width, height: options.height });
+    this.node.add(this.help.node);
   }
 
   setConnectionStatus(status: ConnectionStatus): void {
@@ -88,19 +102,11 @@ export class ChatView {
 
   appendMessages(messages: MessageEnvelope[]): void {
     for (const message of messages) {
-      const fromName = this.rosterById.get(message.from)?.name ?? message.from;
-      // Consecutive turns from one speaker share a header. `long.png` had the
-      // same nine-character prefix nine times running, which reads as noise
-      // and hides the one thing a header is for — telling you the speaker
-      // changed.
-      const sameSpeaker = this.lastSpeaker === message.from;
-      this.scroll.add(
-        createMessageRow(this.ctx, message, fromName, {
-          showHeader: !sameSpeaker,
-          separate: this.lastSpeaker !== null,
-        }),
-      );
-      this.lastSpeaker = message.from;
+      this.appendEntry({
+        kind: "message",
+        message,
+        fromName: this.rosterById.get(message.from)?.name ?? message.from,
+      });
     }
   }
 
@@ -112,10 +118,26 @@ export class ChatView {
    * the stream lands in speech, in scrollback and in the log at once.
    */
   appendSystemLine(text: string): void {
-    this.scroll.add(new TextRenderable(this.ctx, { content: `— ${text} —`, wrapMode: "word", marginTop: 1 }));
-    // The run of one speaker is broken by anything that comes between, so the
-    // next message re-states who is talking.
-    this.lastSpeaker = null;
+    this.appendEntry({ kind: "system", text });
+  }
+
+  /** Null clears the filter and brings the whole room back. */
+  setFilter(participantId: string | null): void {
+    this.transcript.setFilter(participantId);
+    this.rebuild();
+  }
+
+  /** Empty clears the search. */
+  setQuery(query: string): void {
+    this.transcript.setQuery(query);
+  }
+
+  /** Puts the entry at `index` in the transcript's visible list at the top of the viewport. */
+  scrollToEntry(index: number): void {
+    const row = this.rows[index];
+    if (row === undefined) return;
+    const offset = row.y - this.scroll.content.y;
+    this.scroll.scrollTop = Math.max(0, Math.min(this.maxScrollTop(), offset));
   }
 
   /** False on a terminal too narrow to justify the 24-column gutter. */
@@ -143,6 +165,48 @@ export class ChatView {
   /** Viewport height in rows, for page-sized movement. */
   pageSize(): number {
     return Math.max(1, this.scroll.viewport.height);
+  }
+
+  private appendEntry(entry: Entry): void {
+    const before = this.transcript.visible().length;
+    this.transcript.append(entry);
+    const after = this.transcript.visible();
+    // Appending stays incremental while the new entry is visible under the
+    // current filter, and touches nothing when it is not. Rebuilding the whole
+    // pane on every poll would recreate every row in the room once a second.
+    if (after.length === before + 1) this.addRow(after.length - 1);
+  }
+
+  private addRow(index: number): void {
+    const entry = this.transcript.visible()[index];
+    if (entry === undefined) return;
+
+    const separate = index > 0;
+    const row =
+      entry.kind === "system"
+        ? new TextRenderable(this.ctx, {
+            content: `— ${entry.text} —`,
+            wrapMode: "word",
+            marginTop: separate ? 1 : 0,
+          })
+        : createMessageRow(this.ctx, entry.message, entry.fromName, {
+            // Consecutive turns from one speaker share a header. A real room
+            // had the same nine-character prefix nine times running, which
+            // hides the one thing a header is for: telling you the speaker
+            // changed.
+            showHeader: this.transcript.startsRun(index),
+            separate,
+          });
+
+    this.rows.push(row);
+    this.scroll.add(row);
+  }
+
+  private rebuild(): void {
+    for (const row of this.rows) this.scroll.remove(row);
+    this.rows = [];
+    const count = this.transcript.visible().length;
+    for (let index = 0; index < count; index += 1) this.addRow(index);
   }
 
   private maxScrollTop(): number {

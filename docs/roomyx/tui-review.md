@@ -18,7 +18,10 @@ tied to a named screenshot were not taken.
 
 ## Status
 
-All three shipped, plus the roster breakpoint from below the line. Before-and-after
+All three shipped, and everything below the line with them: the modal is gone
+and `Enter` now filters the stream in place, `/` searches with `n`/`N`, `?`
+shows the full keymap, `w` writes what is on screen to a file, and the roster
+gives up its gutter below 80 columns. Before-and-after
 frames are `screenshots/long.png` → `screenshots/after-typography.png`,
 `screenshots/narrow.png` → `screenshots/after-narrow.png`, and
 `screenshots/empty.png` → `screenshots/after-empty.png`.
@@ -105,8 +108,9 @@ forever.
 - **The modal is the wrong shape.** `modal.png` is a mostly-empty box over
   eighteen ruled blank rows, covering the roster it was opened from, with no
   scroll, no next-participant and no hint that Escape exits. What "show me this
-  participant" wants is a filter on the stream — Enter filters in place, Enter
-  again unfilters, composing with scroll and search.
+  participant" wants is a filter on the stream — Enter filters in place, `Esc`
+  clears, composing with scroll and search. *Done: `AgentModal` is deleted;
+  see `screenshots/after-filter.png`.*
 - **`o` is a stolen key.** `o` means *open* nearly everywhere; `:` is free and
   already means "I am about to type a command". Also, `prompt.png` shows the
   mode line replacing the status bar, so the goal disappears at exactly the

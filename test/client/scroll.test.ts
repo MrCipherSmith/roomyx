@@ -144,3 +144,86 @@ describe("the roster at narrow widths", () => {
     expect(await widestBodyLine(79)).toBeGreaterThan(await widestBodyLine(80) - 24 + 20);
   });
 });
+
+describe("jumping to a search match", () => {
+  test("scrollToEntry brings an off-screen entry into view", async () => {
+    const { renderer, renderOnce, captureCharFrame } = await createTestRenderer({ width: 80, height: 20 });
+    const chat = new ChatView(renderer, { width: 80, height: 20 });
+    renderer.root.add(chat.node);
+    chat.setRoster([{ id: "a", name: "Ann" }]);
+    chat.appendMessages(
+      Array.from({ length: 40 }, (_, i) => ({
+        seq: i + 1,
+        from: i % 2 === 0 ? "a" : "b",
+        body: i === 3 ? "NEEDLEMARKER buried near the top" : `filler ${i}`,
+      })),
+    );
+    await renderOnce();
+    // Sticky-bottom means it starts far below the marker.
+    expect(captureCharFrame()).not.toContain("NEEDLEMARKER");
+
+    chat.setQuery("NEEDLEMARKER");
+    const match = chat.transcript.nextMatch(-1);
+    expect(match).toBe(3);
+    chat.scrollToEntry(match!);
+    await renderOnce();
+    expect(captureCharFrame()).toContain("NEEDLEMARKER");
+    renderer.destroy();
+  });
+
+  test("filtering rebuilds the pane and drops everyone else's turns", async () => {
+    const { renderer, renderOnce, captureCharFrame } = await createTestRenderer({ width: 80, height: 24 });
+    const chat = new ChatView(renderer, { width: 80, height: 24 });
+    renderer.root.add(chat.node);
+    chat.setRoster([
+      { id: "a", name: "Ann" },
+      { id: "b", name: "Bob" },
+    ]);
+    chat.appendMessages([
+      { seq: 1, from: "a", body: "ANNSAID" },
+      { seq: 2, from: "b", body: "BOBSAID" },
+    ]);
+    await renderOnce();
+    expect(captureCharFrame()).toContain("BOBSAID");
+
+    chat.setFilter("a");
+    await renderOnce();
+    const filtered = captureCharFrame();
+    expect(filtered).toContain("ANNSAID");
+    expect(filtered).not.toContain("BOBSAID");
+
+    chat.setFilter(null);
+    await renderOnce();
+    expect(captureCharFrame()).toContain("BOBSAID");
+    renderer.destroy();
+  });
+
+  test("messages arriving while a filter is on do not leak past it", async () => {
+    // The incremental-append path has to respect the filter too, otherwise a
+    // filtered pane slowly refills with everyone else as new messages land.
+    const { renderer, renderOnce, captureCharFrame } = await createTestRenderer({ width: 80, height: 24 });
+    const chat = new ChatView(renderer, { width: 80, height: 24 });
+    renderer.root.add(chat.node);
+    chat.setRoster([
+      { id: "a", name: "Ann" },
+      { id: "b", name: "Bob" },
+    ]);
+    chat.appendMessages([{ seq: 1, from: "a", body: "ANNFIRST" }]);
+    chat.setFilter("a");
+    chat.appendMessages([
+      { seq: 2, from: "b", body: "BOBLATER" },
+      { seq: 3, from: "a", body: "ANNLATER" },
+    ]);
+    await renderOnce();
+    const frame = captureCharFrame();
+    expect(frame).toContain("ANNFIRST");
+    expect(frame).toContain("ANNLATER");
+    expect(frame).not.toContain("BOBLATER");
+
+    // And they are still there when the filter comes off.
+    chat.setFilter(null);
+    await renderOnce();
+    expect(captureCharFrame()).toContain("BOBLATER");
+    renderer.destroy();
+  });
+});
