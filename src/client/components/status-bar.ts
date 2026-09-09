@@ -12,7 +12,11 @@ export class StatusBar {
   private notice: string | null = null;
 
   constructor(ctx: RenderContext) {
-    this.node = new TextRenderable(ctx, { content: "", height: 1 });
+    // Same reason as the roster rows: with the default word wrapping, an
+    // over-long line went to a second row that `height: 1` clipped, taking the
+    // whole trailing word with it. This line carries the goal statement and
+    // every owner-command result, including the reason an export failed.
+    this.node = new TextRenderable(ctx, { content: "", height: 1, wrapMode: "none" });
     this.render();
   }
 

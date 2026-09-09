@@ -84,6 +84,7 @@
     "test/server/owner-command.test.ts",
     "test/server/rebinding-guard.test.ts",
     "test/server/serve.test.ts",
+    "test/server/session-lifetime.test.ts",
     "test/server/shutdown.test.ts",
     "test/server/tools.test.ts"
   ]
