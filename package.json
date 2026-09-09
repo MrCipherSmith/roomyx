@@ -23,8 +23,8 @@
     "cli"
   ],
   "bin": {
-    "roomyx": "./src/cli.ts",
-    "roomyx-client": "./src/client/index.ts"
+    "roomyx": "./src/bin/roomyx.mjs",
+    "roomyx-client": "./src/bin/roomyx-client.mjs"
   },
   "files": [
     "src",
