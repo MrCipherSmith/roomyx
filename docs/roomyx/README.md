@@ -1,6 +1,6 @@
 # room-tui
 
-Version: 0.2.0
+Version: 0.3.0
 
 ## Purpose
 
@@ -8,7 +8,7 @@ Version: 0.2.0
 
 ## Status
 
-`spec ready` for R1/R5/R6 and the TUI client; **`implemented`** for the MCP server read-side (R2, R3, R4 — `room.get_state`, `room.get_transcript`, `room.get_agent_detail`) as of flow `001-2026-09-08-room-tui-mcp-server-mvp-room-status-chat`, 2026-09-08. Code lives at `arena/room-tui/` (Bun + TypeScript + `@modelcontextprotocol/sdk`), tested against a fixture room log (`bun test`: 16/16 pass; `bunx tsc --noEmit`: clean). `room.post_owner_command` (R5), the TUI client itself, and live dispatcher integration (writing to the log during a real room) are still `spec ready`, not implemented — see `prd.md`'s Out of Scope for this flow.
+**`implemented`** for the MCP server read-side (R2-R4 tools) as of flow `001-2026-09-08-room-tui-mcp-server-mvp-room-status-chat`, 2026-09-08 — code at `arena/room-tui/`, 18/18 tests pass, independently verified, all completion gates green (see that flow's journal). **`spec ready`** for everything added in `specification.md` v0.3.0 (2026-09-09): the loopback HTTP transport (`room-tui serve`) that actually binds the server to a socket (today's `createRoomMcpServer()` builds the MCP server object but nothing calls `.connect(transport)` yet — that's the gap this version closes), and the full TUI client (`room-tui client`) — chat view, per-agent modal, roster sidebar, polling-based data flow, keybindings. `room.post_owner_command` (R5) and live dispatcher integration remain `spec ready`, explicitly out of scope for the next implementation flow too.
 
 ## Document Index
 
