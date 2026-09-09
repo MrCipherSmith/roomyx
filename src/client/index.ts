@@ -1,9 +1,11 @@
 #!/usr/bin/env bun
+import { join } from "node:path";
 import { createCliRenderer } from "@opentui/core";
 import { RoomClient } from "./mcp-client";
 import { ChatView } from "./screens/chat-view";
 import { AgentModal } from "./screens/agent-modal";
 import type { RosterEntry } from "../log/types";
+import { resolveConnectionUrl } from "../installer/resolve-connection";
 
 function parseFlags(args: string[]): Record<string, string> {
   const flags: Record<string, string> = {};
@@ -19,7 +21,26 @@ function parseFlags(args: string[]): Record<string, string> {
 
 async function main(): Promise<void> {
   const flags = parseFlags(process.argv.slice(2));
-  const url = flags.connect ?? "http://127.0.0.1:4319/mcp";
+  const registryPath = flags["registry"] ?? join(process.cwd(), ".roomyx", "rooms", "registry.json");
+
+  const resolved = await resolveConnectionUrl({
+    connect: flags.connect,
+    room: flags.room,
+    registryPath,
+  });
+
+  if (!resolved.ok) {
+    if (resolved.reason === "no-rooms") {
+      console.error("No live roomyx rooms found. Start one with `roomyx serve <logPath>` first.");
+    } else if (resolved.reason === "room-not-found") {
+      console.error(`No live room with id "${flags.room}". Run \`roomyx rooms list\` to see what's running.`);
+    } else {
+      const ids = (resolved.candidates ?? []).map((r) => r.id).join(", ");
+      console.error(`Multiple live rooms found (${ids}). Pick one with --room <id>.`);
+    }
+    process.exit(1);
+  }
+  const url = resolved.url;
 
   const renderer = await createCliRenderer({ targetFps: 30 });
 

@@ -19,12 +19,17 @@ export interface ServeHandle {
 
 /**
  * Binds `createRoomMcpServer(logPath)` to a loopback HTTP transport
- * (StreamableHTTP, one session per connected client — the SDK's stateless
- * mode rejects the initial notification round-trip in this SDK version,
- * so session-per-connection is used instead; harmless for the single-room,
- * single-or-few-clients use case). Refuses non-loopback hosts unless
- * explicitly acknowledged (mirrors `keryx serve`'s own convention — see
- * docs/requirements/roomyx/decisions.md D-06).
+ * (StreamableHTTP). Supports multiple, fully independent client sessions
+ * against one long-lived server process — a single `StreamableHTTPServerTransport`
+ * only ever completes ONE `initialize` handshake for its whole lifetime (an
+ * independent review reproduced this concretely: a second client, even a
+ * short-lived liveness check, gets "Server already initialized" and the
+ * transport is permanently unusable afterward). Each new session (a request
+ * with no `mcp-session-id` header) gets its own transport + `McpServer` pair,
+ * tracked by session id via `onsessioninitialized`/`onsessionclosed`;
+ * subsequent requests carrying that header are routed to the existing pair.
+ * Refuses non-loopback hosts unless explicitly acknowledged (mirrors `keryx
+ * serve`'s own convention — see docs/requirements/roomyx/decisions.md D-06).
  */
 export async function serve(logPath: string, options: ServeOptions): Promise<ServeHandle> {
   const host = options.host ?? "127.0.0.1";
@@ -34,17 +39,37 @@ export async function serve(logPath: string, options: ServeOptions): Promise<Ser
     );
   }
 
-  const mcpServer = createRoomMcpServer(logPath);
-  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => crypto.randomUUID() });
-  await mcpServer.connect(transport);
+  const sessions = new Map<string, StreamableHTTPServerTransport>();
+
+  async function createSession(): Promise<StreamableHTTPServerTransport> {
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => crypto.randomUUID(),
+      onsessioninitialized: (sessionId) => {
+        sessions.set(sessionId, transport);
+      },
+      onsessionclosed: (sessionId) => {
+        sessions.delete(sessionId);
+      },
+    });
+    const mcpServer = createRoomMcpServer(logPath);
+    await mcpServer.connect(transport);
+    return transport;
+  }
 
   const httpServer = createServer((req, res) => {
-    transport.handleRequest(req, res).catch((error) => {
-      if (!res.headersSent) {
-        res.writeHead(500, { "content-type": "application/json" });
-      }
-      res.end(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }));
-    });
+    const sessionIdHeader = req.headers["mcp-session-id"];
+    const sessionId = typeof sessionIdHeader === "string" ? sessionIdHeader : undefined;
+    const existing = sessionId ? sessions.get(sessionId) : undefined;
+
+    const transportPromise = existing ? Promise.resolve(existing) : createSession();
+    transportPromise
+      .then((transport) => transport.handleRequest(req, res))
+      .catch((error) => {
+        if (!res.headersSent) {
+          res.writeHead(500, { "content-type": "application/json" });
+        }
+        res.end(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }));
+      });
   });
 
   const port = options.port ?? 4319;
@@ -54,7 +79,7 @@ export async function serve(logPath: string, options: ServeOptions): Promise<Ser
       httpServer.listen(port, host, () => resolve());
     });
   } catch (error) {
-    await mcpServer.close().catch(() => undefined);
+    await Promise.all([...sessions.values()].map((t) => t.close().catch(() => undefined)));
     throw error;
   }
 
@@ -66,7 +91,11 @@ export async function serve(logPath: string, options: ServeOptions): Promise<Ser
     port: actualPort,
     close: () =>
       new Promise<void>((resolve, reject) => {
-        httpServer.close((error) => (error ? reject(error) : resolve()));
+        httpServer.close(async (error) => {
+          await Promise.all([...sessions.values()].map((t) => t.close().catch(() => undefined)));
+          if (error) reject(error);
+          else resolve();
+        });
       }),
   };
 }
