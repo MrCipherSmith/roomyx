@@ -8,7 +8,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com). Versions
 are [semantic](https://semver.org), with the `0.x` convention that breaking
 changes land in the minor position.
 
-## [Unreleased] — 0.5.0
+## [0.5.0] — 2026-09-09
 
 The security release. Every item here came out of a review of the published
 0.4.0 that reproduced each finding before recording it; the full list is in
@@ -112,9 +112,11 @@ The security release. Every item here came out of a review of the published
 - **The release smoke test can now fail.** It ran
   `roomyx --help > /dev/null 2>&1 || true`, discarding the output, the exit code
   and then any remaining signal. It passed every release while `--help` was
-  exiting 1. It now asserts that the packed, installed artifact reports a
-  version equal to the tag — stricter than the manifest check beside it, which
-  compares the repository rather than what the artifact says when it runs.
+  exiting 1 — reporting success on a defect it was standing next to. It now
+  asserts that the packed, installed artifact runs `--help` with exit 0 and
+  reports a version equal to the tag. The second half is stricter than the
+  manifest check beside it: that one compares what the repository says, this
+  compares what the artifact says when it runs.
 
 - **The management server closes its sessions on shutdown.** The HTTP transport
   had been written twice and the copies had drifted; one of them skipped this.
