@@ -39,6 +39,37 @@ function bundledSkillPath(): string {
 
 const REGISTRY_FLAG = { type: "string", describe: "Registry file (default .roomyx/rooms/registry.json)" } as const;
 
+/**
+ * Runs a long-lived server until a signal, then shuts it down once.
+ *
+ * Written once because there were three copies and they had drifted: the two
+ * here handled SIGINT and SIGTERM and guarded nothing, while the client handled
+ * SIGHUP as well and guarded re-entry. So closing a terminal (SIGHUP) killed
+ * `roomyx serve` outright, skipping deregistration and leaving a stale registry
+ * entry — which a recycled port then resurrects as a live room.
+ *
+ * `cleanup` runs *after* the close resolves, not before. Deregistering first
+ * meant a shutdown that hung — and it hung whenever a client was attached —
+ * removed the room from the registry while the process kept running and kept
+ * the port. The room became invisible while still being served.
+ */
+function runUntilSignal(close: () => Promise<void>, cleanup: () => void = () => undefined): void {
+  let shuttingDown = false;
+  const shutdown = (): void => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    void close()
+      .catch((error: unknown) => {
+        console.error(`shutdown failed: ${error instanceof Error ? error.message : String(error)}`);
+      })
+      .finally(() => {
+        cleanup();
+        process.exit(0);
+      });
+  };
+  for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) process.on(signal, shutdown);
+}
+
 interface Command {
   usage: string;
   summary: string;
@@ -186,12 +217,10 @@ const COMMANDS: Record<string, Command> = {
       console.log(`roomyx serving ${absoluteLogPath} at ${handle.url}`);
       console.log(`room ID: ${entry.id} — attach with \`roomyx-client --room ${entry.id}\``);
 
-      const shutdown = () => {
-        deregisterRoom(registryPath, entry.id);
-        void handle.close().then(() => process.exit(0));
-      };
-      process.on("SIGINT", shutdown);
-      process.on("SIGTERM", shutdown);
+      runUntilSignal(
+        () => handle.close(),
+        () => deregisterRoom(registryPath, entry.id),
+      );
     },
   },
 
@@ -254,11 +283,7 @@ const COMMANDS: Record<string, Command> = {
       console.log(`roomyx mcp listening at ${handle.url}`);
       console.log("tools: roomyx.rooms.list, roomyx.skills.sync");
 
-      const shutdown = () => {
-        void handle.close().then(() => process.exit(0));
-      };
-      process.on("SIGINT", shutdown);
-      process.on("SIGTERM", shutdown);
+      runUntilSignal(() => handle.close());
     },
   },
 
