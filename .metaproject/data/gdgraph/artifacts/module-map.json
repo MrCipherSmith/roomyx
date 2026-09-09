@@ -1,0 +1,80 @@
+{
+  "eslint.config.js": [
+    "eslint.config.js"
+  ],
+  "cli.ts": [
+    "src/cli.ts"
+  ],
+  "cli": [
+    "src/cli/args.ts",
+    "src/cli/specs.ts"
+  ],
+  "client": [
+    "src/client/components/footer.ts",
+    "src/client/components/help-overlay.ts",
+    "src/client/components/message-row.ts",
+    "src/client/components/roster-sidebar.ts",
+    "src/client/components/status-bar.ts",
+    "src/client/index.ts",
+    "src/client/keymap.ts",
+    "src/client/liveness.ts",
+    "src/client/mcp-client.ts",
+    "src/client/owner-prompt.ts",
+    "src/client/screens/chat-view.ts",
+    "src/client/search-prompt.ts",
+    "src/client/transcript.ts"
+  ],
+  "installer": [
+    "src/installer/init.ts",
+    "src/installer/registry.ts",
+    "src/installer/resolve-connection.ts",
+    "src/installer/skill-sync.ts",
+    "src/installer/skill-targets.ts"
+  ],
+  "log": [
+    "src/log/store.ts",
+    "src/log/types.ts",
+    "src/log/write.ts"
+  ],
+  "mcp-management": [
+    "src/mcp-management/server.ts"
+  ],
+  "server": [
+    "src/server/http-transport.ts",
+    "src/server/index.ts",
+    "src/server/serve.ts",
+    "src/server/tools/get-agent-detail.ts",
+    "src/server/tools/get-state.ts",
+    "src/server/tools/get-transcript.ts"
+  ],
+  "test": [
+    "test/cli-commands.test.ts",
+    "test/cli-launcher.test.ts",
+    "test/cli-room.test.ts",
+    "test/cli-serve-lifecycle.test.ts",
+    "test/cli/args.test.ts",
+    "test/client-shutdown.test.ts",
+    "test/client/first-message.test.ts",
+    "test/client/keymap.test.ts",
+    "test/client/liveness.test.ts",
+    "test/client/mcp-client.test.ts",
+    "test/client/message-row.test.ts",
+    "test/client/owner-prompt.test.ts",
+    "test/client/render.test.ts",
+    "test/client/scroll.test.ts",
+    "test/client/search-prompt.test.ts",
+    "test/client/transcript.test.ts",
+    "test/client/wrap-defect.test.ts",
+    "test/installer/init.test.ts",
+    "test/installer/registry.test.ts",
+    "test/installer/resolve-connection.test.ts",
+    "test/installer/skill-sync.test.ts",
+    "test/installer/skill-targets.test.ts",
+    "test/log/store.test.ts",
+    "test/mcp-management/server.test.ts",
+    "test/server/owner-command.test.ts",
+    "test/server/rebinding-guard.test.ts",
+    "test/server/serve.test.ts",
+    "test/server/tools.test.ts"
+  ]
+}

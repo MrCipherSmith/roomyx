@@ -1,0 +1,97 @@
+{
+  "generatedAt": "2026-09-09T16:55:46.870Z",
+  "scopes": {
+    "component:src/client/components": {
+      "health_score": 100,
+      "risk_score": 0
+    },
+    "component:src/client/screens": {
+      "health_score": 100,
+      "risk_score": 0
+    },
+    "component:src/server/tools": {
+      "health_score": 100,
+      "risk_score": 0
+    },
+    "component:test/cli": {
+      "health_score": 100,
+      "risk_score": 0
+    },
+    "component:test/client": {
+      "health_score": 100,
+      "risk_score": 0
+    },
+    "component:test/installer": {
+      "health_score": 100,
+      "risk_score": 0
+    },
+    "component:test/log": {
+      "health_score": 100,
+      "risk_score": 0
+    },
+    "component:test/mcp-management": {
+      "health_score": 100,
+      "risk_score": 0
+    },
+    "component:test/server": {
+      "health_score": 100,
+      "risk_score": 0
+    },
+    "file:src/cli.ts": {
+      "health_score": 93,
+      "risk_score": 5
+    },
+    "file:src/cli/args.ts": {
+      "health_score": 93,
+      "risk_score": 5
+    },
+    "file:src/client/index.ts": {
+      "health_score": 93,
+      "risk_score": 5
+    },
+    "file:src/installer/skill-sync.ts": {
+      "health_score": 93,
+      "risk_score": 5
+    },
+    "module:src": {
+      "health_score": 93,
+      "risk_score": 5
+    },
+    "module:src/bin": {
+      "health_score": 100,
+      "risk_score": 0
+    },
+    "module:src/cli": {
+      "health_score": 93,
+      "risk_score": 5
+    },
+    "module:src/client": {
+      "health_score": 96,
+      "risk_score": 5
+    },
+    "module:src/installer": {
+      "health_score": 93,
+      "risk_score": 5
+    },
+    "module:src/log": {
+      "health_score": 100,
+      "risk_score": 0
+    },
+    "module:src/mcp-management": {
+      "health_score": 100,
+      "risk_score": 0
+    },
+    "module:src/server": {
+      "health_score": 100,
+      "risk_score": 0
+    },
+    "module:test": {
+      "health_score": 100,
+      "risk_score": 0
+    },
+    "project": {
+      "health_score": 96,
+      "risk_score": 20
+    }
+  }
+}
