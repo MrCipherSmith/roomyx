@@ -5,7 +5,7 @@ import { serve } from "../../src/server/serve";
 import type { ServeHandle } from "../../src/server/serve";
 import { RoomClient } from "../../src/client/mcp-client";
 import { ChatView } from "../../src/client/screens/chat-view";
-import { AgentModal } from "../../src/client/screens/agent-modal";
+import { resolveAction } from "../../src/client/keymap";
 
 const FIXTURE = join(import.meta.dir, "..", "fixtures", "sample-room.jsonl");
 
@@ -26,16 +26,12 @@ async function setUpChatView() {
     height: 30,
   });
 
-  const modal = new AgentModal(renderer, { width: 70, height: 20 });
   const chatView = new ChatView(renderer, {
     width: 100,
     height: 30,
-    onSelectAgent: (agent) => {
-      void activeClient!.getAgentDetail(agent.id).then((detail) => modal.show(detail));
-    },
+    onSelectAgent: (agent) => chatView.setFilter(agent.id),
   });
   renderer.root.add(chatView.node);
-  renderer.root.add(modal.node);
 
   activeClient = new RoomClient(
     { url: activeHandle.url, stateIntervalMs: 20, transcriptIntervalMs: 20 },
@@ -50,57 +46,82 @@ async function setUpChatView() {
   );
   activeClient.start();
 
-  // Mirrors src/client/index.ts's actual keypress wiring — the test exercises
-  // real user-facing behavior, not just the components in isolation.
+  // Dispatches through the real keymap rather than a hand-copied if/else, so
+  // this test cannot pass against a keymap the client does not have. The
+  // previous version mirrored the wiring by hand and said so in a comment,
+  // which is the same promise without the enforcement.
   renderer.keyInput.on("keypress", (event) => {
-    if (modal.isVisible()) {
-      if (event.name === "escape") modal.hide();
-      return;
-    }
-    if (event.name === "up") chatView.roster.moveSelection(-1);
-    else if (event.name === "down") chatView.roster.moveSelection(1);
-    else if (event.name === "return") chatView.roster.confirmSelection();
+    const action = resolveAction(event);
+    if (action === "roster.prev") chatView.roster.moveSelection(-1);
+    else if (action === "roster.next") chatView.roster.moveSelection(1);
+    else if (action === "roster.open") chatView.roster.confirmSelection();
+    else if (action === "filter.clear") chatView.setFilter(null);
+    else if (action === "help.toggle") chatView.help.toggle();
   });
 
-  return { renderer, mockInput, renderOnce, waitFor, captureCharFrame, chatView, modal };
+  return { renderer, mockInput, renderOnce, waitFor, captureCharFrame, chatView };
+}
+
+async function settle(renderOnce: () => Promise<void>, ms = 200): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+  await renderOnce();
 }
 
 describe("TUI rendering (real @opentui/core headless renderer, real serve() instance)", () => {
-  test("chat view renders the roster, messages, and goal statement (AC1, R3)", async () => {
+  test("chat view renders the roster, messages, and goal statement", async () => {
     const { waitFor, renderOnce, captureCharFrame } = await setUpChatView();
     await waitFor(() => true); // let at least one poll cycle land
-    // Poll cycles are async; wait for real content to actually appear.
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    await renderOnce();
+    await settle(renderOnce);
     const frame = captureCharFrame();
 
     expect(frame).toContain("Юки");
     expect(frame).toContain("Омар");
     expect(frame).toContain("Зара");
     expect(frame).toContain("roomyx MCP server MVP");
-    expect(frame).toContain("connected");
+    // A message body, not only the chrome. The suite used to assert the frame
+    // and never the picture, which is how a pane that drew no messages at all
+    // reached a published release.
+    expect(frame).toContain("polling");
   });
 
-  test("agent modal overlays the chat view with only that agent's messages, and closes on Escape (AC2, AC8-adjacent)", async () => {
-    const { mockInput, renderOnce, captureCharFrame } = await setUpChatView();
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    await renderOnce();
+  test("selecting a participant filters the stream in place, and Esc brings the room back", async () => {
+    const { mockInput, renderOnce, captureCharFrame, chatView } = await setUpChatView();
+    await settle(renderOnce);
+    expect(captureCharFrame()).toContain("Модалка");
 
-    mockInput.pressArrow("down"); // move off Юки onto Омар
+    mockInput.typeText("j"); // move off Юки onto Омар
     mockInput.pressEnter();
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    await renderOnce();
+    await settle(renderOnce, 100);
 
-    const openFrame = captureCharFrame();
-    // The modal's own title ("<agent> — last seen at seq N") is unique to
-    // the modal — unlike the message body text, which also legitimately
-    // appears in the background chat view regardless of modal visibility.
-    expect(openFrame).toContain("Омар — last seen at seq");
+    // Омар's own turn stays; Зара's goes. The filter happens in the same pane,
+    // so the roster is still readable beside it rather than covered by a window.
+    expect(chatView.transcript.filter()).toBe("omar");
+    const filtered = captureCharFrame();
+    expect(filtered).toContain("polling");
+    expect(filtered).not.toContain("Модалка");
+    expect(filtered).toContain("Зара"); // still in the roster
 
     mockInput.pressEscape();
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    await renderOnce();
-    const closedFrame = captureCharFrame();
-    expect(closedFrame).not.toContain("last seen at seq");
+    await settle(renderOnce, 100);
+    expect(chatView.transcript.filter()).toBeNull();
+    expect(captureCharFrame()).toContain("Модалка");
+  });
+
+  test("`?` shows the keymap, and it lists keys the footer has no room for", async () => {
+    const { mockInput, renderOnce, captureCharFrame } = await setUpChatView();
+    await settle(renderOnce);
+    expect(captureCharFrame()).not.toContain("write out");
+
+    mockInput.typeText("?");
+    await settle(renderOnce, 100);
+    const open = captureCharFrame();
+    expect(open).toContain("keys");
+    expect(open).toContain("write out");
+    expect(open).toContain("top/bottom");
+    expect(open).toContain("? or Esc closes");
+
+    mockInput.typeText("?");
+    await settle(renderOnce, 100);
+    expect(captureCharFrame()).not.toContain("write out");
   });
 });

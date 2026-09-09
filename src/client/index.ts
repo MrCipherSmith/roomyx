@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createCliRenderer } from "@opentui/core";
 import { RoomClient } from "./mcp-client";
 import { ChatView } from "./screens/chat-view";
-import { AgentModal } from "./screens/agent-modal";
 import type { RosterEntry } from "../log/types";
 import { resolveConnectionUrl } from "../installer/resolve-connection";
 import { IDLE, OPENED, ownerPromptLine, stepOwnerPrompt } from "./owner-prompt";
@@ -11,6 +11,8 @@ import type { OwnerPromptState } from "./owner-prompt";
 import { resolveAction } from "./keymap";
 import type { Action } from "./keymap";
 import { livenessLine } from "./liveness";
+import { CLOSED, opened, searchPromptLine, stepSearchPrompt } from "./search-prompt";
+import type { SearchPromptState } from "./search-prompt";
 import type { ConnectionStatus } from "./mcp-client";
 import { ArgError, parseArgs, renderFlags } from "../cli/args";
 import type { FlagValues } from "../cli/args";
@@ -48,21 +50,28 @@ export async function runClient(flags: FlagValues): Promise<void> {
 
   const renderer = await createCliRenderer({ targetFps: 30 });
 
-  const modal = new AgentModal(renderer, {
-    width: Math.floor(renderer.terminalWidth * 0.7),
-    height: Math.floor(renderer.terminalHeight * 0.7),
-  });
-
+  // Selecting a participant filters the stream in place instead of opening a
+  // window over it. The modal this replaces could not be scrolled, did not
+  // compose with search, cost a keypress to leave, and was pinned at hardcoded
+  // coordinates across the roster it had been opened from.
   const chatView = new ChatView(renderer, {
     width: renderer.terminalWidth,
     height: renderer.terminalHeight,
-    onSelectAgent: (agent: RosterEntry) => {
-      void roomClient.getAgentDetail(agent.id).then((detail) => modal.show(detail));
-    },
+    onSelectAgent: (agent: RosterEntry) => applyFilter(agent),
   });
 
   renderer.root.add(chatView.node);
-  renderer.root.add(modal.node);
+
+  let filtered: RosterEntry | null = null;
+  let matchCursor = -1;
+
+  function applyFilter(agent: RosterEntry | null): void {
+    filtered = agent;
+    chatView.setFilter(agent?.id ?? null);
+    matchCursor = -1;
+    chatView.scrollToBottom();
+    refreshFooter();
+  }
 
   let messageCount = 0;
   let lastMessageAt: number | null = null;
@@ -74,7 +83,15 @@ export async function runClient(flags: FlagValues): Promise<void> {
     // On a terminal too narrow for the roster, the footer is the only place
     // that still says how many people are in the room.
     const here = chatView.isRosterVisible() || participants === 0 ? "" : `${participants} here · `;
-    chatView.footer.setLiveness(`${here}${liveness}`);
+    // A filter or a search that is on but invisible is the worst of both: the
+    // pane looks like a quiet room. `less` prints a single `&` for the same
+    // reason, and k9s puts the live filter in the view title.
+    const filterNote = filtered === null ? "" : `filter: ${filtered.name} · `;
+    const query = chatView.transcript.currentQuery();
+    const total = chatView.transcript.matches().length;
+    const searchNote =
+      query === "" ? "" : `/${query} ${total === 0 ? "no matches" : `${matchCursor + 1}/${total}`} · `;
+    chatView.footer.setLiveness(`${filterNote}${searchNote}${here}${liveness}`);
     // Only say something when the reader is *not* where new messages land —
     // a permanent "at bottom" would be another word that always says the same
     // thing, which is the habit this footer exists to break.
@@ -157,9 +174,94 @@ export async function runClient(flags: FlagValues): Promise<void> {
     process.on(signal, () => shutdown(0));
   }
 
+  let search: SearchPromptState = CLOSED;
+
+  function showSearch(): void {
+    chatView.statusBar.setNotice(searchPromptLine(search));
+  }
+
+  function jumpTo(index: number | null, direction: string): void {
+    if (index === null) {
+      chatView.statusBar.setNotice(`no match for "${chatView.transcript.currentQuery()}"`);
+      matchCursor = -1;
+    } else {
+      matchCursor = chatView.transcript.matches().indexOf(index);
+      chatView.scrollToEntry(index);
+      chatView.statusBar.setNotice(null);
+    }
+    void direction;
+    refreshFooter();
+  }
+
+  /**
+   * Where `n` and `N` start counting from: the match cursor if a search is
+   * already underway, otherwise the end of the transcript, so the first `n`
+   * after a fresh `/` wraps to the earliest match rather than jumping from
+   * wherever the last search happened to leave off.
+   */
+  function currentEntryIndex(): number {
+    const matches = chatView.transcript.matches();
+    const at = matches[matchCursor];
+    return at ?? -1;
+  }
+
+  /**
+   * Writes what is on screen to a file and names the path.
+   *
+   * Claude Code's transcript viewer dumps into the terminal's own scrollback so
+   * tmux copy-mode and the terminal's find can reach it. roomyx cannot leave
+   * the alternate screen safely while the room is still streaming into it, so
+   * it writes a file instead — same purpose, which is to get the text somewhere
+   * the reader's existing tools already work.
+   *
+   * It never overwrites: `wx` fails if the path exists and the loop takes the
+   * next free suffix. Silently replacing an export someone took a minute ago is
+   * exactly the kind of small theft a keystroke should not be able to commit.
+   */
+  function exportTranscript(): void {
+    const base = `roomyx-transcript${filtered === null ? "" : `-${filtered.id}`}`;
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      const name = `${base}${attempt === 0 ? "" : `-${attempt}`}.txt`;
+      const path = join(process.cwd(), name);
+      try {
+        writeFileSync(path, `${chatView.transcript.toText()}\n`, { encoding: "utf8", flag: "wx" });
+        // The name, not the absolute path: the status bar is one line and
+        // truncates, and an absolute path under a deep working directory gets
+        // cut exactly where the filename would have been. The file is in the
+        // directory the client was started from.
+        chatView.statusBar.setNotice(`written to ./${name}`);
+        return;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "EEXIST") continue;
+        chatView.statusBar.setNotice(
+          `could not write ${path} — ${error instanceof Error ? error.message : String(error)}`,
+        );
+        return;
+      }
+    }
+    chatView.statusBar.setNotice(`${base}.txt and 99 numbered siblings all exist — nothing written`);
+  }
+
   renderer.keyInput.on("keypress", (event) => {
-    if (modal.isVisible()) {
-      if (event.name === "escape") modal.hide();
+    // The help overlay swallows the keyboard, so a key pressed at a screen
+    // explaining the keys does not also fire the thing it explains.
+    if (chatView.help.isVisible()) {
+      if (event.name === "escape" || event.sequence === "?") chatView.help.hide();
+      return;
+    }
+
+    if (search.open) {
+      const stepped = stepSearchPrompt(search, event);
+      search = stepped.state;
+      showSearch();
+      if (stepped.action.type === "search") {
+        chatView.setQuery(stepped.action.query);
+        chatView.statusBar.setNotice(null);
+        if (stepped.action.query !== "") jumpTo(chatView.transcript.nextMatch(-1), "next");
+        else refreshFooter();
+      } else if (stepped.action.type === "cancel") {
+        chatView.statusBar.setNotice(null);
+      }
       return;
     }
 
@@ -212,7 +314,16 @@ export async function runClient(flags: FlagValues): Promise<void> {
       "roster.prev": () => chatView.roster.moveSelection(-1),
       "roster.next": () => chatView.roster.moveSelection(1),
       "roster.open": () => chatView.roster.confirmSelection(),
+      "filter.clear": () => applyFilter(null),
+      "search.open": () => {
+        search = opened();
+        showSearch();
+      },
+      "search.next": () => jumpTo(chatView.transcript.nextMatch(currentEntryIndex()), "next"),
+      "search.previous": () => jumpTo(chatView.transcript.previousMatch(currentEntryIndex()), "previous"),
       "owner.prompt": () => openOwnerPrompt(),
+      "transcript.export": () => exportTranscript(),
+      "help.toggle": () => chatView.help.toggle(),
       "app.quit": () => shutdown(0),
     };
     handlers[action]();

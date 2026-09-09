@@ -66,9 +66,22 @@ In the TUI, the transcript owns the arrows and the roster has its own keys:
 | `PgUp` `PgDn` | scroll a page; `Ctrl-U` / `Ctrl-D` a half page |
 | `g` `G` | jump to the top, or back to following the newest message |
 | `j` `k` | move the roster selection |
-| `Enter` | open the selected participant's messages; `Esc` closes |
+| `Enter` | filter the stream to the selected participant; `Esc` clears |
+| `/` | search, then `n` / `N` for next and previous match |
 | `:` | owner command — then `v`eto, `c`onstraint, `a`dd participant or `g`oal edit, type the body, `Enter` sends |
+| `w` | write what is on screen to a file in the working directory |
+| `?` | the full keymap |
 | `q` `Ctrl-C` | quit |
+
+Selecting a participant filters the stream where it is rather than opening a
+window over it, so the filter composes with scrolling and with search, and
+leaving it is `Esc` rather than a mode you have to remember you are in. A live
+filter or search is named in the footer — a filter that is on but invisible
+makes a busy room look like a quiet one.
+
+`w` exists because a terminal is a bad place to search and a good place to
+read. It never overwrites: the next free numbered name is used, and a filtered
+view gets its own file.
 
 The bottom line carries the same keys, so nothing here has to be memorised, and
 next to them the room's liveness: a message count and the age of the newest
@@ -78,9 +91,13 @@ tells you so, and tells you how to get back.
 While the owner prompt is open it owns the keyboard, so a `q` in a veto is text
 rather than a quit.
 
-Up to 0.5.0 the arrows moved the roster and nothing scrolled at all, and `o`
-opened the owner prompt. `o` still works, so a habit does not break on upgrade,
-but `:` is the documented key.
+Below 80 columns the roster gives up its gutter to the transcript and the
+footer carries the participant count instead; widen the terminal and the list
+comes back.
+
+Up to 0.5.0 the arrows moved the roster and nothing scrolled at all, `o` opened
+the owner prompt, and `Enter` opened a modal window over the roster. `o` still
+works, so a habit does not break on upgrade, but `:` is the documented key.
 
 ## Commands
 
