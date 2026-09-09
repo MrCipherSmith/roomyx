@@ -131,6 +131,79 @@ are below.
   message to it. Fixed because it is one line and a trap for whoever later
   makes the client paint after its first batch rather than before.
 
+### Fixed — from the full-repository review
+
+A nine-reviewer pass over `src` and `test` found three blockers and thirteen
+major defects; the report is [`docs/roomyx/review-2026-09-09.md`](docs/roomyx/review-2026-09-09.md)
+and the work is flow 001. Every fix below was reproduced before and verified as
+a regression barrier after — the fix is removed again and the test is required
+to fail.
+
+- **`roomyx room append` could make a room unreadable forever.** The reader
+  validated with zod; the writer had only TypeScript types, erased at the CLI
+  boundary where `--kind` was cast. `--kind bogus-kind` exited 0, wrote the
+  line, and every later read of that room threw — on an append-only log with no
+  repair command, while `serve` kept binding and `rooms list` kept calling the
+  room live. One schema, in `src/log/schema.ts`, is now imported by both
+  directions.
+
+- **An idle attached client killed itself in about 2.7 hours.** `remove()` in
+  `@opentui/core` unlinks without freeing, and the roster was rebuilt on every
+  three-second state poll whether or not it had changed: five leaked renderables
+  a poll against a finite native pool. Detached rows are destroyed, and an
+  unchanged roster is not rebuilt.
+
+- **One malformed log line turned a client into a request storm.** `callTool`
+  never read `isError`, so a tool error was indistinguishable from a dropped
+  transport, and each failing poll scheduled its own reconnect without stopping
+  the running loops — 510 connections in ten seconds, measured. Tool errors now
+  reach the transcript and the poll continues; reconnect is single-flight with a
+  generation counter and backs off to 30s.
+
+- **`roomyx serve` would not exit on a signal while a client was attached** —
+  the normal state of a served room. The code that ended the connections sat
+  inside the callback that waits for them. Sessions close first,
+  `closeAllConnections()` bounds it, `SIGHUP` is handled, and deregistration
+  happens after the close rather than before, so a hung shutdown can no longer
+  hide a still-served room from the registry.
+
+- **Concurrent `room append` produced duplicate `seq` values.** `seq` is the
+  transcript cursor, so a client polling between two colliding writes never
+  received the second message. The lockfile that had guarded the registry for
+  three rounds now guards the data too.
+
+- **MCP sessions were never released.** Nothing sent the DELETE the SDK needs,
+  so every session a server ever accepted was retained — and stayed routable.
+  The client terminates its sessions, an unknown session id gets 404 instead of
+  a new transport, and an idle sweeper closes what a crashed client could not.
+
+- **A roster id could direct the transcript export outside the working
+  directory** while the status bar reported otherwise. The id is sanitised and
+  the resolved path is checked against `cwd`.
+
+- **`roomyx.skills.sync` over MCP wrote without the gate its own CLI help
+  promises.** `yes` and `dryRun` are off that tool's schema; the gate lives in
+  `syncSkill`, computed once and failing closed.
+
+- **A dead room could be resurrected by a recycled port.** `isRoomLive` proved
+  only that something answered; the pid in the registry was never read. It is
+  now checked first.
+
+- **The help overlay drew into its own border below 20 rows** — the clamp added
+  while fixing its height reintroduced the defect it fixed. It fits whatever
+  height it is given, and the `? or Esc closes` line is never what gets dropped.
+
+- **A participant name of 23 characters rendered an empty roster row.** Word
+  wrapping moved it to a line that `height: 1` clipped, so the whole word
+  vanished while `j`/`k` still moved onto the row. Labels are clipped with a
+  marker.
+
+- **Three regression tests no longer failed when their fix was removed.** Found
+  by mutation, restored the same way: the scrollbar fix is pinned at the
+  boundary heights where content exactly fills the pane, and the shutdown
+  ordering moved out of `runClient` — which no test can reach — into a unit that
+  asserts the order directly.
+
 ### Known
 
 - **A word ending exactly at the wrap column loses its last character** —
@@ -140,6 +213,21 @@ are below.
   60, 72, 108 and 120 and leaves it at 90, which would turn a reproducible
   defect into an intermittent one. `test/client/wrap-defect.test.ts` holds the
   reproduction as a tripwire that starts failing the day it is fixed upstream.
+
+- **Nothing responds to a terminal resize.** Every dimension is read once at
+  construction, so a resized terminal leaves the footer off-screen, `PgUp`
+  overshooting, and the roster breakpoint stuck at its old answer. Deferred
+  deliberately: it is a feature rather than a repair, and it should land with
+  the display-cell width arithmetic below, which needs the same primitive.
+
+- **The footer measures code units and calls them columns**, so a CJK
+  participant name eats the key hints — including the only on-screen statement
+  of how to quit. Deferred with the resize work for the same reason.
+
+- **`room.get_transcript` has no `limit`,** and its consumer on the management
+  path is a language model: a cold attach at `since_seq: 0` is the whole log in
+  one block. A protocol change deserving a decision record, not a patch inside a
+  fix flow.
 
 ### Fixed (continued)
 
