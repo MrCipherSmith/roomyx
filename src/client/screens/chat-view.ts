@@ -8,6 +8,12 @@ import { createMessageRow } from "../components/message-row";
 import type { ConnectionStatus } from "../mcp-client";
 
 /**
+ * Terminal width at or above which the roster gets its 24 columns. Below it,
+ * those columns are worth more to the transcript than to a list of names.
+ */
+export const ROSTER_BREAKPOINT = 80;
+
+/**
  * Main screen: StatusBar on top, RosterSidebar on the left, a scrolling
  * message stream on the right, Footer along the bottom.
  */
@@ -19,6 +25,8 @@ export class ChatView {
   private readonly scroll: ScrollBoxRenderable;
   private readonly ctx: RenderContext;
   private rosterById = new Map<string, RosterEntry>();
+  private lastSpeaker: string | null = null;
+  private readonly rosterVisible: boolean;
 
   constructor(ctx: RenderContext, options: { width: number; height: number; onSelectAgent?: (agent: RosterEntry) => void }) {
     this.ctx = ctx;
@@ -29,8 +37,20 @@ export class ChatView {
     const body = new BoxRenderable(ctx, { flexDirection: "row", flexGrow: 1 });
     this.node.add(body);
 
+    // Below the breakpoint the roster is hidden and the stream takes the whole
+    // width. At 72 columns the roster was spending a third of the terminal on
+    // three short names while the messages wrapped to 46 — and a fixed
+    // 24-column gutter is also where non-Latin names die, since three CJK
+    // characters are six cells and not three.
+    //
+    // A breakpoint rather than a hard minimum, and auto rather than a flag:
+    // atuin degrades its own layout on a short terminal the same way, and
+    // charm's crush hides its sidebar below 120x30 outright. The participants
+    // are still reachable — the footer says how many there are, and widening
+    // the terminal brings the list back.
+    this.rosterVisible = options.width >= ROSTER_BREAKPOINT;
     this.roster = new RosterSidebar(ctx, { width: 24, onSelect: options.onSelectAgent });
-    body.add(this.roster.node);
+    if (this.rosterVisible) body.add(this.roster.node);
 
     // `horizontalScrollbarOptions: { visible: false }` is the whole fix for
     // the first message vanishing. The horizontal scrollbar occupies a
@@ -69,7 +89,18 @@ export class ChatView {
   appendMessages(messages: MessageEnvelope[]): void {
     for (const message of messages) {
       const fromName = this.rosterById.get(message.from)?.name ?? message.from;
-      this.scroll.add(createMessageRow(this.ctx, message, fromName));
+      // Consecutive turns from one speaker share a header. `long.png` had the
+      // same nine-character prefix nine times running, which reads as noise
+      // and hides the one thing a header is for — telling you the speaker
+      // changed.
+      const sameSpeaker = this.lastSpeaker === message.from;
+      this.scroll.add(
+        createMessageRow(this.ctx, message, fromName, {
+          showHeader: !sameSpeaker,
+          separate: this.lastSpeaker !== null,
+        }),
+      );
+      this.lastSpeaker = message.from;
     }
   }
 
@@ -81,7 +112,15 @@ export class ChatView {
    * the stream lands in speech, in scrollback and in the log at once.
    */
   appendSystemLine(text: string): void {
-    this.scroll.add(new TextRenderable(this.ctx, { content: `— ${text} —`, wrapMode: "word" }));
+    this.scroll.add(new TextRenderable(this.ctx, { content: `— ${text} —`, wrapMode: "word", marginTop: 1 }));
+    // The run of one speaker is broken by anything that comes between, so the
+    // next message re-states who is talking.
+    this.lastSpeaker = null;
+  }
+
+  /** False on a terminal too narrow to justify the 24-column gutter. */
+  isRosterVisible(): boolean {
+    return this.rosterVisible;
   }
 
   /** True when the reader is parked at the newest message. */

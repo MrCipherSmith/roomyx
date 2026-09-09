@@ -16,6 +16,25 @@ tied to a named screenshot were not taken.
 | **2** | **A permanent footer** — liveness, message count, keys — **in the same change as the rebind.** | Two reviewers arrived at the footer independently. Mira's objection is why it is second and not first: a footer is a keymap's confession, and shipping it alone prints `up/down move the roster` on the screen as documented behaviour someone will later defend. |
 | **3** | **Transcript hierarchy.** Bright name, dim body, blank line between turns, hanging indent on wraps, collapse repeated same-speaker headers. | *"Scrolling without hierarchy is still a grey wall, but hierarchy without scrolling is a wall you can't leave."* — Mira |
 
+## Status
+
+All three shipped, plus the roster breakpoint from below the line. Before-and-after
+frames are `screenshots/long.png` → `screenshots/after-typography.png`,
+`screenshots/narrow.png` → `screenshots/after-narrow.png`, and
+`screenshots/empty.png` → `screenshots/after-empty.png`.
+
+Two ideas came from a survey of other terminal UIs run alongside the review, and
+both changed a decision rather than decorating one. **tig** has no follow-mode
+flag at all: it tails while the cursor sits on the last line and stops when you
+move off — so roomyx has no `Autoscroll: on/off` state that can disagree with
+where the reader actually is. And **charm's crush** hides its sidebar outright
+below a 120×30 breakpoint while **atuin** ships a `style = auto` that degrades on
+a short terminal; that precedent is why the roster now disappears below 80
+columns instead of merely becoming collapsible.
+
+The wrap defect below is **not** fixed and deliberately not worked around — see
+`test/client/wrap-defect.test.ts`.
+
 ## Two things the room agreed on that nobody proposed at the start
 
 **The `[connected]` chip should go, and be replaced by a fact that moves.**
@@ -65,6 +84,15 @@ loss happens with three messages and no scrollbar just as it does with sixteen.
 
 This is the only correctness bug in the set. Everything else is layout or
 interaction.
+
+**Left unfixed on purpose.** The obvious workaround — a one-column right margin
+on the body — was measured: the text then reconstructs at 60, 72, 108 and 120
+columns and still loses a character at 90. It moves the boundary rather than
+removing the cause, which would turn a reproducible defect into an intermittent
+one and make it much harder to find later. `test/client/wrap-defect.test.ts`
+holds the reproduction as a `test.failing` tripwire, so the day the wrapping is
+fixed upstream the suite says so instead of leaving a workaround in place
+forever.
 
 ## Below the ranked three
 

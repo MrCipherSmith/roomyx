@@ -55,6 +55,27 @@ are below.
   confession: shipping it first would have printed `↑/↓ roster` on the screen
   as documented behaviour, and made the correction more expensive.
 
+- **The transcript has a hierarchy.** A message is a bright speaker name with a
+  dim `kind re #n` tag beside it, and the body indented underneath in a dimmer
+  ink, with a blank line between turns. Consecutive turns from one speaker
+  share a header — a real room had the same nine-character prefix nine times
+  running, which hides the one thing a header is for.
+
+  Before this every message was one line, one colour, one weight, and a wrapped
+  continuation began at the same column as a new turn, so sixteen messages were
+  a single grey wall. The indent is what makes a wrap read as a continuation.
+
+  It costs vertical space: a turn is three rows where it was one, so fewer
+  turns fit on a short terminal. The shared headers pay most of that back in a
+  room where people speak in runs.
+
+- **The roster gives up its 24 columns below 80.** At 72 columns it was
+  spending a third of the terminal on a few short names while the messages
+  wrapped to 46. A fixed gutter is also where non-Latin names die — three CJK
+  characters are six cells, not three. Below the breakpoint the stream takes
+  the full width and the footer says how many participants are in the room;
+  widen the terminal and the list comes back.
+
 - **Connection changes are written into the transcript, not only the footer.**
   A footer repainted at a fixed row, with the cursor parked in another pane, is
   never spoken by a screen reader and never survives a `tee`. A `— disconnected,
@@ -94,6 +115,18 @@ are below.
   poll returns, so it never triggered this. No 0.4.0 or 0.5.0 user lost a
   message to it. Fixed because it is one line and a trap for whoever later
   makes the client paint after its first batch rather than before.
+
+### Known
+
+- **A word ending exactly at the wrap column loses its last character** —
+  `whether scrolling or` draws as `whether scrollin` / `or`, with the `g` gone
+  rather than wrapped. Width-dependent: 120 columns is clean, 90 is not. Not
+  worked around, on purpose: a one-column right margin makes it disappear at
+  60, 72, 108 and 120 and leaves it at 90, which would turn a reproducible
+  defect into an intermittent one. `test/client/wrap-defect.test.ts` holds the
+  reproduction as a tripwire that starts failing the day it is fixed upstream.
+
+### Fixed (continued)
 
 - **`room append`'s refusal no longer asks you to assert something false.** It
   ended "Pass `--force` if you know it isn't" — but the ordinary way to meet

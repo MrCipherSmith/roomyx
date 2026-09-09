@@ -67,11 +67,14 @@ export async function runClient(flags: FlagValues): Promise<void> {
   let messageCount = 0;
   let lastMessageAt: number | null = null;
   let connection: ConnectionStatus = "connecting";
+  let participants = 0;
 
   function refreshFooter(): void {
-    chatView.footer.setLiveness(
-      livenessLine({ status: connection, messageCount, lastMessageAt, now: Date.now() }),
-    );
+    const liveness = livenessLine({ status: connection, messageCount, lastMessageAt, now: Date.now() });
+    // On a terminal too narrow for the roster, the footer is the only place
+    // that still says how many people are in the room.
+    const here = chatView.isRosterVisible() || participants === 0 ? "" : `${participants} here · `;
+    chatView.footer.setLiveness(`${here}${liveness}`);
     // Only say something when the reader is *not* where new messages land —
     // a permanent "at bottom" would be another word that always says the same
     // thing, which is the habit this footer exists to break.
@@ -95,6 +98,8 @@ export async function runClient(flags: FlagValues): Promise<void> {
       onStateUpdate: (state) => {
         chatView.setGoalContract(state.goal_contract);
         chatView.setRoster(state.roster);
+        participants = state.roster.length;
+        refreshFooter();
       },
       onNewMessages: (messages) => {
         chatView.appendMessages(messages);

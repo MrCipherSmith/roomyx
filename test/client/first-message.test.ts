@@ -17,9 +17,12 @@ import type { MessageEnvelope } from "../../src/log/types";
  */
 
 function messages(count: number): MessageEnvelope[] {
+  // Speakers alternate so that each message keeps its own header — consecutive
+  // turns from one speaker deliberately share one, which would otherwise make
+  // "one header per message" the wrong thing to count.
   return Array.from({ length: count }, (_, i) => ({
     seq: i + 1,
-    from: "a",
+    from: i % 2 === 0 ? "a" : "b",
     body: i === 0 ? "FIRSTMARKER" : i === count - 1 ? "LASTMARKER" : `filler ${i}`,
   }));
 }
@@ -28,7 +31,10 @@ async function render(height: number, count: number) {
   const { renderer, renderOnce, captureCharFrame } = await createTestRenderer({ width: 60, height });
   const view = new ChatView(renderer, { width: 60, height });
   renderer.root.add(view.node);
-  view.setRoster([{ id: "a", name: "Ann" }]);
+  view.setRoster([
+    { id: "a", name: "Ann" },
+    { id: "b", name: "Bob" },
+  ]);
   view.appendMessages(messages(count));
   await renderOnce();
   const frame = captureCharFrame();
@@ -38,20 +44,26 @@ async function render(height: number, count: number) {
   return {
     first: frame.includes("FIRSTMARKER"),
     last: frame.includes("LASTMARKER"),
-    rows: frame.split("\n").filter((line) => line.includes("Ann:")).length,
+    bodies: ["FIRSTMARKER", "LASTMARKER", ...Array.from({ length: count - 2 }, (_, i) => `filler ${i + 1}`)].filter(
+      (marker) => frame.includes(marker),
+    ).length,
   };
 }
 
 describe("the first message of a room", () => {
   test("a room with exactly one message shows that message", async () => {
     // The worst case, and the one a person meets first: seed a room, attach,
-    // and see an empty pane. Before the fix this drew zero rows.
-    const { first, rows } = await render(20, 1);
+    // and see an empty pane. Before the fix this drew nothing at all.
+    const { first } = await render(20, 1);
     expect(first).toBe(true);
-    expect(rows).toBe(1);
   });
 
-  for (const height of [6, 10, 20]) {
+  // A turn now costs three rows — header, body, separating blank — where it
+  // used to cost one, so three of them need a pane of eleven rows before the
+  // oldest is legitimately scrolled off the top. That is the price of the
+  // hierarchy pass, and it is paid back by consecutive same-speaker turns
+  // sharing a header.
+  for (const height of [12, 16, 20]) {
     test(`seq 1 survives at height ${height}`, async () => {
       const { first, last } = await render(height, 3);
       expect(first).toBe(true);
@@ -59,12 +71,12 @@ describe("the first message of a room", () => {
     });
   }
 
-  test("no viewport row is lost: a short room draws one line per message", async () => {
-    // The symptom underneath the symptom — the pane always drew one row fewer
-    // than it had messages, because the horizontal scrollbar took a row.
-    for (const count of [1, 2, 3, 5]) {
-      const { rows } = await render(20, count);
-      expect(rows).toBe(count);
+  test("a short room draws every message it has, not one fewer", async () => {
+    // The symptom underneath the symptom — the pane always dropped the oldest
+    // message, because the horizontal scrollbar took a viewport row.
+    for (const count of [1, 2, 3]) {
+      const { bodies } = await render(24, count);
+      expect(bodies).toBe(count);
     }
   });
 
