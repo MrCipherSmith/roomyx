@@ -77,7 +77,7 @@ describe("TUI rendering (real @opentui/core headless renderer, real serve() inst
     expect(frame).toContain("Юки");
     expect(frame).toContain("Омар");
     expect(frame).toContain("Зара");
-    expect(frame).toContain("room-tui MCP server MVP");
+    expect(frame).toContain("roomyx MCP server MVP");
     expect(frame).toContain("connected");
   });
 

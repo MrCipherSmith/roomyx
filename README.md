@@ -1,6 +1,6 @@
-# room-tui (MCP server MVP)
+# roomyx (MCP server MVP)
 
-Implements the read-side (R2/R3/R4) of `docs/requirements/room-tui/specification.md`.
+Implements the read-side (R2/R3/R4) of `docs/requirements/roomyx/specification.md`.
 See that spec for the full architecture; this README documents only the
 concrete on-disk log format the tests in this package assume, since it isn't
 fully pinned down by the JSON Schemas alone (those describe one message and
@@ -22,7 +22,7 @@ record; every subsequent line is a `message` record.
 - `roster` entries are `{ id, name }` — `id` is what `room.get_agent_detail` takes as `agent_id`; `name` is the display name used in `from`.
 
 This format is this package's own design choice (not dictated by either JSON
-Schema) — see `docs/requirements/room-tui/specification.md`'s Manifest/Config
+Schema) — see `docs/requirements/roomyx/specification.md`'s Manifest/Config
 Shape section, which defers the on-disk representation to implementation.
 
 ## Status

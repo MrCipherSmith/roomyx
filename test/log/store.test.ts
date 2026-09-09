@@ -7,7 +7,7 @@ import { loadRoomLog, getTranscript, getAgentDetail } from "../../src/log/store"
 const FIXTURE = join(import.meta.dir, "..", "fixtures", "sample-room.jsonl");
 
 function writeTempLog(contents: string): string {
-  const dir = mkdtempSync(join(tmpdir(), "room-tui-test-"));
+  const dir = mkdtempSync(join(tmpdir(), "roomyx-test-"));
   const path = join(dir, "log.jsonl");
   writeFileSync(path, contents);
   return path;
@@ -17,7 +17,7 @@ describe("loadRoomLog", () => {
   test("parses the state header (goal contract + roster)", () => {
     const { state } = loadRoomLog(FIXTURE);
     expect(state.goal_contract.version).toBe(1);
-    expect(state.goal_contract.goal_statement).toContain("room-tui MCP server MVP");
+    expect(state.goal_contract.goal_statement).toContain("roomyx MCP server MVP");
     expect(state.goal_contract.threshold).toEqual({ fail_below: 60, pass_at_or_above: 80 });
     expect(state.roster).toEqual([
       { id: "yuki", name: "Юки" },

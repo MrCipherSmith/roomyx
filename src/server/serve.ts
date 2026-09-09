@@ -24,13 +24,13 @@ export interface ServeHandle {
  * so session-per-connection is used instead; harmless for the single-room,
  * single-or-few-clients use case). Refuses non-loopback hosts unless
  * explicitly acknowledged (mirrors `keryx serve`'s own convention — see
- * docs/requirements/room-tui/decisions.md D-06).
+ * docs/requirements/roomyx/decisions.md D-06).
  */
 export async function serve(logPath: string, options: ServeOptions): Promise<ServeHandle> {
   const host = options.host ?? "127.0.0.1";
   if (!LOOPBACK_HOSTS.has(host) && !options.acknowledgeNonLoopback) {
     throw new Error(
-      `Refusing to bind room-tui serve to non-loopback host "${host}" without --acknowledge-non-loopback.`,
+      `Refusing to bind roomyx serve to non-loopback host "${host}" without --acknowledge-non-loopback.`,
     );
   }
 

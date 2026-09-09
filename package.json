@@ -1,8 +1,8 @@
 {
-  "name": "room-tui",
+  "name": "@mrciphersmith/roomyx",
   "version": "0.1.0",
   "private": true,
-  "description": "MCP server exposing startup-room state (status, chat delta, per-agent detail) for a terminal UI client. See docs/requirements/room-tui/ in the arena repo for the specification.",
+  "description": "MCP server + terminal UI for startup-room: live room status, chat, per-agent modal. See docs/requirements/roomyx/ in the arena repo for the specification. private:true until explicit go-ahead to publish.",
   "type": "module",
   "scripts": {
     "test": "bun test",

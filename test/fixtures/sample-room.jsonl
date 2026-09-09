@@ -1,4 +1,4 @@
-{"type":"state","goal_contract":{"version":1,"goal_statement":"Decide whether the room-tui MCP server MVP is ready to review.","criteria":"AC1-AC5 in the flow's acceptance-criteria.md","threshold":{"fail_below":60,"pass_at_or_above":80}},"roster":[{"id":"yuki","name":"Юки"},{"id":"omar","name":"Омар"},{"id":"zara","name":"Зара"}]}
+{"type":"state","goal_contract":{"version":1,"goal_statement":"Decide whether the roomyx MCP server MVP is ready to review.","criteria":"AC1-AC5 in the flow's acceptance-criteria.md","threshold":{"fail_below":60,"pass_at_or_above":80}},"roster":[{"id":"yuki","name":"Юки"},{"id":"omar","name":"Омар"},{"id":"zara","name":"Зара"}]}
 {"type":"message","seq":1,"from":"yuki","kind":"pitch","body":"Начнём с самого простого набора инструментов — статус, дельта, детали агента."}
 {"type":"message","seq":2,"from":"omar","in_reply_to":1,"kind":"question","body":"А как сервер узнаёт про новые сообщения — polling файла или fs watch?"}
 {"type":"message","seq":3,"from":"yuki","in_reply_to":2,"kind":"answer","body":"В MVP — просто перечитываем файл по каждому вызову инструмента, живого watch нет."}

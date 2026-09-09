@@ -7,7 +7,7 @@ import { serve } from "../../src/server/serve";
 const FIXTURE = join(import.meta.dir, "..", "fixtures", "sample-room.jsonl");
 
 async function connectClient(url: string): Promise<Client> {
-  const client = new Client({ name: "room-tui-test-client", version: "0.0.0" });
+  const client = new Client({ name: "roomyx-test-client", version: "0.0.0" });
   await client.connect(new StreamableHTTPClientTransport(new URL(url)));
   return client;
 }

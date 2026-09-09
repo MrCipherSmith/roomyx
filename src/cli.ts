@@ -2,8 +2,8 @@
 import { serve } from "./server/serve";
 
 /**
- * `room-tui serve <logPath> [--port N] [--host H] [--acknowledge-non-loopback]`
- * `room-tui client [--connect <url>]` is a separate entry point
+ * `roomyx serve <logPath> [--port N] [--host H] [--acknowledge-non-loopback]`
+ * `roomyx client [--connect <url>]` is a separate entry point
  * (src/client/index.ts) — the orchestrator and the TUI are independent
  * processes by design (decisions.md D-06), so they are separate binaries,
  * not subcommands of one process that would tie their lifetimes together.
@@ -46,7 +46,7 @@ async function main(): Promise<void> {
     acknowledgeNonLoopback: flags["acknowledge-non-loopback"] === true,
   });
 
-  console.log(`room-tui serving ${logPath} at ${handle.url}`);
+  console.log(`roomyx serving ${logPath} at ${handle.url}`);
 
   const shutdown = () => {
     void handle.close().then(() => process.exit(0));

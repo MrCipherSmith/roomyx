@@ -42,7 +42,7 @@ const messageLineSchema = z.object({
 });
 
 /**
- * Reads the room log (see room-tui/README.md for the on-disk format) without
+ * Reads the room log (see roomyx/README.md for the on-disk format) without
  * ever writing to it. The first line is the state header; every following
  * line is a message.
  */

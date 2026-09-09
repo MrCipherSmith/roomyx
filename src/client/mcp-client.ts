@@ -19,9 +19,9 @@ export interface RoomClientEvents {
 }
 
 /**
- * Polls a room-tui MCP server over HTTP for state and transcript updates.
+ * Polls a roomyx MCP server over HTTP for state and transcript updates.
  * Deliberately polling, not a push subscription — mirrors the server's own
- * "re-read on every call, no fs-watch" simplicity (see room-tui/README.md).
+ * "re-read on every call, no fs-watch" simplicity (see roomyx/README.md).
  * Tracks `since_seq` locally so a reconnect never re-delivers old messages.
  */
 export class RoomClient {
@@ -83,7 +83,7 @@ export class RoomClient {
     if (this.stopped) return;
     this.setStatus("connecting");
     try {
-      const client = new Client({ name: "room-tui-client", version: "0.1.0" });
+      const client = new Client({ name: "roomyx-client", version: "0.1.0" });
       await client.connect(new StreamableHTTPClientTransport(new URL(this.url)));
       if (this.stopped) {
         // stop() ran while this connection was in flight; this.client was

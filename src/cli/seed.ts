@@ -5,7 +5,7 @@ import type { GoalContract, MessageEnvelope, RosterEntry } from "../log/types";
 /**
  * Manual-testing helper: initializes a room log with a state header, or
  * appends one message to an existing log. Not part of the MCP server itself
- * (D-01 in docs/requirements/room-tui/decisions.md — only the dispatcher
+ * (D-01 in docs/requirements/roomyx/decisions.md — only the dispatcher
  * writes the real log; this is a standalone fixture-seeding tool for local
  * development, not a live dispatcher integration).
  *

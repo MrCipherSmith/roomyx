@@ -1,4 +1,4 @@
-# room-tui — PRD
+# roomyx — PRD
 
 Version: 0.1.0
 

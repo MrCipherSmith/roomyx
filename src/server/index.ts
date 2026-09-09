@@ -5,13 +5,13 @@ import { getTranscriptTool } from "./tools/get-transcript";
 import { getAgentDetailTool } from "./tools/get-agent-detail";
 
 /**
- * Builds the room-tui MCP server for a given room log file. Read-only: none
+ * Builds the roomyx MCP server for a given room log file. Read-only: none
  * of the three registered tools ever writes to `logPath` (R2-R4, AC4 —
  * `room.post_owner_command`, the write path, is out of scope for this
- * package; see docs/requirements/room-tui/).
+ * package; see docs/requirements/roomyx/).
  */
 export function createRoomMcpServer(logPath: string): McpServer {
-  const server = new McpServer({ name: "room-tui", version: "0.1.0" });
+  const server = new McpServer({ name: "roomyx", version: "0.1.0" });
 
   server.registerTool(
     "room.get_state",
