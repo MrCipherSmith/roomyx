@@ -79,6 +79,32 @@ export async function runClient(flags: FlagValues): Promise<void> {
     chatView.statusBar.setNotice(ownerPromptLine(prompt));
   }
 
+  /**
+   * Order matters, and it is the whole fix: stop polling **before** tearing the
+   * renderer down. The other way round, an in-flight poll loses its connection
+   * during teardown, calls `handleDisconnect`, and writes "disconnected" into a
+   * text buffer the renderer has already destroyed — which throws
+   * `TextBuffer is destroyed` and dumps ten frames of stack at someone who
+   * just closed a window.
+   *
+   * `q` and Ctrl-C always went through this path. Signals did not go through
+   * anything at all, so `kill` on an attached client produced exactly that
+   * trace. They share one exit now.
+   */
+  let shuttingDown = false;
+  function shutdown(code: number): void {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    void roomClient.stop().finally(() => {
+      renderer.destroy();
+      process.exit(code);
+    });
+  }
+
+  for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
+    process.on(signal, () => shutdown(0));
+  }
+
   renderer.keyInput.on("keypress", (event) => {
     if (modal.isVisible()) {
       if (event.name === "escape") modal.hide();
@@ -118,12 +144,7 @@ export async function runClient(flags: FlagValues): Promise<void> {
     if (event.name === "up") chatView.roster.moveSelection(-1);
     else if (event.name === "down") chatView.roster.moveSelection(1);
     else if (event.name === "return") chatView.roster.confirmSelection();
-    else if (event.name === "q" || (event.name === "c" && event.ctrl)) {
-      void roomClient.stop().finally(() => {
-        renderer.destroy();
-        process.exit(0);
-      });
-    }
+    else if (event.name === "q" || (event.name === "c" && event.ctrl)) shutdown(0);
   });
 }
 
