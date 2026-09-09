@@ -39,3 +39,37 @@
 - 2026-09-09T18:23:58.201Z - ac-confirmed: AC10: Recorded mutation runs. Remove horizontalScrollbarOptions -> first-message.test.ts 3 fail (boundary heights 2/6, 3/9, 4/12, found by sweeping). Invert shutdown order -> shutdown-order.test.ts 1 fail. Drop the re-entry guard -> 1 fail. The stopped guards are the exception and it is recorded: four redundant guards, no single removal is caught, removing all four is.
 - 2026-09-09T18:23:58.313Z - ac-confirmed: AC11: test/installer/registry.test.ts 'liveness is about this room, not about that port': two entries on one live port, one with a pid that cannot exist; only the live one is returned.
 - 2026-09-09T18:23:58.425Z - ac-confirmed: AC12: bun run check: eslint clean, tsc clean, 255 tests pass. Removed: the duplicate ManagementServeOptions, jumpTo's direction, commandHelp's name, RoomClient.getAgentDetail and getLastSeenSeq, Footer.setWidth. The 0/N counter now reports 'N matches' before a position is known.
+
+## 2026-09-09 — work complete, flow left in-progress on purpose
+
+All 14 tasks done, all 12 frozen acceptance criteria confirmed with evidence,
+`bun run check` green at 255 tests, `keryx health run` 97 and passing. Every
+commit is on `main` and pushed.
+
+**The flow cannot reach `completed`, and that is a property of the record, not
+of the work.** `keryx flow complete` requires the status `implemented`, and
+`keryx flow implemented` requires a draft PR URL. This work went straight to
+`main` at the operator's direction, as the whole day's work has, so there is no
+pull request to name. The skill's non-PR completions — "verified handoff" and
+"keep open" — both explicitly keep a flow in-progress, so this state is the one
+the model actually provides for what happened.
+
+Passing something that is not a pull request to `--pr` would make the record say
+a thing that is not true, which costs more than an unclosed flow. Left
+in-progress with this entry as the evidence of completion.
+
+### Deferred, and why
+
+- **Resize handling.** Every dimension is read once at construction. A proper
+  fix is a resize path through `ChatView`, `Footer`, `HelpOverlay` and the
+  roster breakpoint — a feature, not a repair.
+- **Display-cell width arithmetic.** `Footer` and `footerHints` measure code
+  units, so a CJK participant name eats the key hints. Needs a grapheme +
+  East-Asian-Width primitive, which the resize work will also need; they should
+  land together.
+- **`room.get_transcript` has no `limit`.** A change to the MCP tool surface
+  plus a cursor, deserving a decision record rather than a patch inside a fix
+  flow.
+
+All three are in `docs/roomyx/review-2026-09-09.md` and in the changelog's
+Known section.
