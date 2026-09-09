@@ -91,29 +91,24 @@ jobs:
           ./.release/prefix/bin/roomyx --help > /dev/null 2>&1 || true
           echo "the installed binary is present and executable"
 
-      # BOOTSTRAP RUN ONLY — this step is authenticating with a token, not
-      # with this workflow's OIDC identity.
+      # No token. Authentication is the OIDC identity of this workflow,
+      # matched against the trusted publisher registered on the package
+      # (`MrCipherSmith/roomyx`, `release.yml`) at npmjs.com -> Packages ->
+      # @mrciphersmith/roomyx -> Settings -> Trusted publishing.
       #
-      # The steady state is trusted publishing: no token, authentication is
-      # the OIDC identity of this workflow matched against the trusted
-      # publisher registered at npmjs.com -> Packages -> @mrciphersmith/roomyx
-      # -> Settings -> Trusted publishing.
+      # Trusted publishing can only be registered for a package that already
+      # exists, so it could not bootstrap this one — the lesson that cost
+      # keryx four failed attempts. `0.1.0` therefore went out under a
+      # granular token scoped to `@mrciphersmith` with "Bypass two-factor
+      # authentication" checked, supplied as NODE_AUTH_TOKEN for that one
+      # run; the token was revoked and the NPM_TOKEN secret deleted as soon
+      # as the package existed and the trusted publisher was registered.
       #
-      # But trusted publishing can only be registered for a package that
-      # already exists, so it cannot bootstrap a brand-new one — the lesson
-      # that cost keryx four failed attempts. So `0.1.0` goes out under a
-      # token, and once the package exists on the registry the trusted
-      # publisher is registered and BOTH the `env:` block below and the
-      # NPM_TOKEN secret are deleted.
-      #
-      # The token is a granular one scoped to `@mrciphersmith` with "Bypass
-      # two-factor authentication" checked. keryx's release.yml still says a
-      # classic Automation token is the only type that clears the 2FA prompt
-      # a runner cannot answer; that stopped being true when npm removed
-      # classic tokens and added the bypass checkbox to granular ones.
+      # If a future package needs the same bootstrap: keryx's release.yml
+      # says a classic Automation token is the only type that clears the 2FA
+      # prompt a runner cannot answer. That is out of date — npm has since
+      # removed classic tokens and moved the bypass onto granular ones.
       - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --provenance --access public
 
       - name: Create the GitHub Release
