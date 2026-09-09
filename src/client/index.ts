@@ -8,26 +8,24 @@ import type { RosterEntry } from "../log/types";
 import { resolveConnectionUrl } from "../installer/resolve-connection";
 import { IDLE, ownerPromptLine, stepOwnerPrompt } from "./owner-prompt";
 import type { OwnerPromptState } from "./owner-prompt";
+import { ArgError, parseArgs, renderFlags } from "../cli/args";
+import type { FlagValues } from "../cli/args";
+import { CLIENT_FLAGS } from "../cli/specs";
 
-function parseFlags(args: string[]): Record<string, string> {
-  const flags: Record<string, string> = {};
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-    if (arg?.startsWith("--")) {
-      flags[arg.slice(2)] = args[i + 1] ?? "";
-      i++;
-    }
-  }
-  return flags;
-}
-
-export async function runClient(argv: string[] = process.argv.slice(2)): Promise<void> {
-  const flags = parseFlags(argv);
-  const registryPath = flags["registry"] ?? join(process.cwd(), ".roomyx", "rooms", "registry.json");
+/**
+ * Takes already-parsed flags rather than argv, so the two entry points — this
+ * file as a binary, and `roomyx client` — cannot disagree about what a flag
+ * means. They previously had one scanner each, which is how a bare
+ * `--registry` became `""` here (and `""` is not nullish, so it beat the
+ * default) while becoming `true` in the other.
+ */
+export async function runClient(flags: FlagValues): Promise<void> {
+  const registryPath =
+    typeof flags.registry === "string" ? flags.registry : join(process.cwd(), ".roomyx", "rooms", "registry.json");
 
   const resolved = await resolveConnectionUrl({
-    connect: flags.connect,
-    room: flags.room,
+    connect: typeof flags.connect === "string" ? flags.connect : undefined,
+    room: typeof flags.room === "string" ? flags.room : undefined,
     registryPath,
   });
 
@@ -129,12 +127,29 @@ export async function runClient(argv: string[] = process.argv.slice(2)): Promise
   });
 }
 
+const CLIENT_USAGE = ["roomyx-client [flags]", "", "  attach the terminal UI to a live room", "", renderFlags(CLIENT_FLAGS)].join(
+  "\n",
+);
+
 if (import.meta.main) {
-  runClient().catch((error) => {
-    // The message, not the object: a stack trace dumped at someone who simply
-    // hasn't started a room yet reads as a crash, and matches how cli.ts already
-    // reports its own failures.
-    console.error(error instanceof Error ? error.message : String(error));
-    process.exit(1);
-  });
+  void (async () => {
+    try {
+      const parsed = parseArgs(process.argv.slice(2), CLIENT_FLAGS);
+      if (parsed.help) {
+        console.log(CLIENT_USAGE);
+        return;
+      }
+      await runClient(parsed.flags);
+    } catch (error) {
+      // The message, not the object: a stack trace dumped at someone who
+      // simply hasn't started a room yet reads as a crash, and matches how
+      // cli.ts reports its own failures.
+      if (error instanceof ArgError) {
+        console.error(error.message);
+      } else {
+        console.error(error instanceof Error ? error.message : String(error));
+      }
+      process.exit(1);
+    }
+  })();
 }

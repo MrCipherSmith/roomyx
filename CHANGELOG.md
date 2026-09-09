@@ -47,6 +47,25 @@ The security release. Every item here came out of a review of the published
   artifact. As a side effect, npm's generated Windows `.cmd` shim now has a
   Node script to wrap rather than a `.ts` file.
 
+- **One argument grammar, and a real `--help` for every command.** The CLI had
+  two hand-rolled argv scanners with different semantics and no notion of what
+  a flag *is*, so it could not tell a value from a positional, a typo from an
+  option, or a number from a switch. Measured against 0.4.0:
+
+  | | did |
+  | --- | --- |
+  | `serve --port 0 room.jsonl` | served a file literally named `--port`, on the default port |
+  | `serve --help` | **started a server** and minted a room ID |
+  | `serve room.jsonl --port` | listened on port 1, via `Number(true)` |
+  | `serve room.jsonl --port abc` | `NaN`, so a silent ephemeral port |
+  | `skills sync … --dryrun` | ignored the typo and did the opposite of the ask |
+  | `roomyx --help` | printed usage to stderr and exited 1 |
+  | `rooms list --registry X` | read the default registry and reported on it |
+
+  Flags are declared per command now. Unknown ones are refused with a
+  did-you-mean, missing and non-numeric values are refused, `--help` exits 0 on
+  stdout, a bad command exits 1 on stderr, and `--` ends flag parsing.
+
 ### Removed — breaking
 
 - **`roomyx.skills.sync` no longer accepts `targetPath`.** The MCP tool took a
