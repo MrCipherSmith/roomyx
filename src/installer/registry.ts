@@ -171,18 +171,20 @@ async function isRoomLive(room: RoomRegistryEntry, timeoutMs = 500): Promise<boo
   if (!isPidAlive(room.pid)) return false;
 
   const client = new Client({ name: "roomyx-registry-check", version: "0.1.0" });
+  const transport = new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${room.port}/mcp`));
   const timeout = new Promise<never>((_, reject) => {
     setTimeout(() => reject(new Error("liveness check timed out")), timeoutMs);
   });
   try {
-    await Promise.race([
-      client.connect(new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${room.port}/mcp`))),
-      timeout,
-    ]);
+    await Promise.race([client.connect(transport), timeout]);
     return true;
   } catch {
     return false;
   } finally {
+    // This probe runs for every registered room on every `rooms list`, every
+    // `room append` and every client start. Closing without terminating left
+    // one abandoned server-side session behind each time.
+    await transport.terminateSession().catch(() => undefined);
     await client.close().catch(() => undefined);
   }
 }
