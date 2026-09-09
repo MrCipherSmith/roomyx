@@ -8,13 +8,26 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com). Versions
 are [semantic](https://semver.org), with the `0.x` convention that breaking
 changes land in the minor position.
 
-## [Unreleased]
+## [0.6.0] — 2026-09-09
 
-Found by running the published 0.5.0 by hand, then by putting ten screenshots
-of it in front of four reviewers — design, accessibility, CLI ergonomics,
-onboarding. Their ranked outcome is in
-[`docs/roomyx/tui-review.md`](docs/roomyx/tui-review.md); the first two items
-are below.
+Two passes over the published 0.5.0: running it by hand and putting ten
+screenshots of it in front of four reviewers, then a nine-reviewer read of the
+whole repository. The first produced the TUI work below; the second produced
+three blockers and thirteen major defects, and its report is
+[`docs/roomyx/review-2026-09-09.md`](docs/roomyx/review-2026-09-09.md).
+
+**The version is minor rather than patch because several things are breaking**,
+which in `0.x` is where breaking changes go. `Enter` filters the stream instead
+of opening a modal and `AgentModal` is deleted; `roomyx.skills.sync` over MCP no
+longer takes `yes` or `dryRun`; `syncSkill` now refuses to write unless asked,
+so an embedder that relied on the old default gets a refusal rather than a
+file; and `RoomClient` loses `getAgentDetail` and `getLastSeenSeq`, `Footer`
+loses `setWidth`.
+
+**If you are on 0.5.0 or earlier, upgrade.** Three of the defects below cost
+data or a session: a mistyped `--kind` makes a room unreadable forever, an idle
+attached client dies of its own accord in about 2.7 hours, and one malformed log
+line turns a client into a request storm.
 
 ### Added
 
