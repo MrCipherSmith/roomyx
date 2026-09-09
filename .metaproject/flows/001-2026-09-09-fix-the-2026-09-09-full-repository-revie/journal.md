@@ -17,3 +17,4 @@
 - 2026-09-09T17:50:21.999Z - task-done: T4: Self-review and prepare draft PR
 - 2026-09-09T17:50:22.116Z - frozen: 12 criteria; checksum recorded
 - 2026-09-09T17:50:22.232Z - started
+- 2026-09-09T17:52:26.112Z - task-done: T5: B1 — one schema for both directions of the room log
