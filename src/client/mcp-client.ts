@@ -112,10 +112,12 @@ export class RoomClient {
     if (this.stopped) return;
     this.callTool<RoomState>("room.get_state", {})
       .then((state) => {
+        if (this.stopped) return;
         this.events.onStateUpdate?.(state);
         this.stateTimer = setTimeout(() => this.pollState(), this.stateIntervalMs);
       })
       .catch(() => {
+        if (this.stopped) return;
         this.handleDisconnect();
       });
   }
@@ -124,6 +126,7 @@ export class RoomClient {
     if (this.stopped) return;
     this.callTool<MessageEnvelope[]>("room.get_transcript", { since_seq: this.sinceSeq })
       .then((messages) => {
+        if (this.stopped) return;
         if (messages.length > 0) {
           this.sinceSeq = Math.max(this.sinceSeq, ...messages.map((m) => m.seq));
           this.events.onNewMessages?.(messages);
@@ -131,6 +134,7 @@ export class RoomClient {
         this.transcriptTimer = setTimeout(() => this.pollTranscript(), this.transcriptIntervalMs);
       })
       .catch(() => {
+        if (this.stopped) return;
         this.handleDisconnect();
       });
   }
