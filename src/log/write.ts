@@ -1,7 +1,28 @@
-import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
-import { mkdirSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import type { z } from "zod";
+import { MESSAGE_KINDS, messageLineSchema } from "./schema";
 import type { GoalContract, MessageEnvelope, RosterEntry } from "./types";
+
+/**
+ * Thrown when a message would not survive its own reader. Separate from a
+ * generic Error so the CLI can report it as a refusal rather than a crash.
+ */
+export class LogWriteError extends Error {}
+
+/** The legal kinds, for an error message that says what to write instead. */
+export const LEGAL_KINDS = MESSAGE_KINDS.join(", ");
+
+function describeInvalid(error: z.ZodError): string {
+  return error.issues
+    .map((issue) => {
+      const field = issue.path.join(".") || "message";
+      if (field === "kind") return `kind must be one of: ${LEGAL_KINDS}`;
+      if (field === "in_reply_to") return "in-reply-to must be a whole number of at least 1";
+      return `${field}: ${issue.message}`;
+    })
+    .join("; ");
+}
 
 /**
  * The write side of a room log, which `store.ts` reads.
@@ -64,6 +85,17 @@ export function appendMessage(path: string, options: AppendMessageOptions): Mess
     ...(options.kind ? { kind: options.kind } : {}),
     ...(options.inReplyTo !== undefined ? { in_reply_to: options.inReplyTo } : {}),
   };
+
+  // Validated against the reader's own schema, before the write rather than
+  // after it. The log is append-only and roomyx ships no repair command, so a
+  // line the reader refuses is not a failed write — it is a room nobody can
+  // open again. Types alone did not hold this: they are erased at the CLI
+  // boundary, where `--kind` arrived as an unchecked string.
+  const parsed = messageLineSchema.safeParse(message);
+  if (!parsed.success) {
+    throw new LogWriteError(describeInvalid(parsed.error));
+  }
+
   appendFileSync(path, JSON.stringify(message) + "\n");
   return message;
 }

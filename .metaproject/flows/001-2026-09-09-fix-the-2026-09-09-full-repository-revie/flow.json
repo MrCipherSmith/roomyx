@@ -1,0 +1,317 @@
+{
+  "schemaVersion": 2,
+  "gates": {
+    "tasks": true,
+    "review": true
+  },
+  "id": "001",
+  "slug": "fix-the-2026-09-09-full-repository-revie",
+  "title": "Fix the 2026-09-09 full-repository review: 3 blockers and the major findings",
+  "status": "in-progress",
+  "createdAt": "2026-09-09T17:48:55.941Z",
+  "updatedAt": "2026-09-09T17:50:22.232Z",
+  "source": {
+    "type": "description",
+    "ref": null
+  },
+  "acChecksum": "sha256:c02bb1e30d73b248fa09e1a8eeabbfb6270d3ce1b410b41e8e5e67dd8562772d",
+  "acConfirmed": {},
+  "pr": {
+    "url": null
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Collect remaining context",
+      "kind": "context",
+      "origin": "scaffold",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "skipped",
+      "dispositionReason": "Context is the review report, already written and verified: docs/roomyx/review-2026-09-09.md"
+    },
+    {
+      "id": "T2",
+      "title": "Implement per plan",
+      "kind": "implement",
+      "origin": "scaffold",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "skipped",
+      "dispositionReason": "Superseded by T5-T14, one task per finding rather than one for all of them"
+    },
+    {
+      "id": "T3",
+      "title": "Add/adjust tests and make them pass",
+      "kind": "test",
+      "origin": "scaffold",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "skipped",
+      "dispositionReason": "Superseded by T13, and by the per-task tests each AC names"
+    },
+    {
+      "id": "T4",
+      "title": "Self-review and prepare draft PR",
+      "kind": "review",
+      "origin": "scaffold",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "skipped",
+      "dispositionReason": "Completion shape is not decided yet; the flow asks before opening a PR"
+    },
+    {
+      "id": "T5",
+      "title": "B1 — one schema for both directions of the room log",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T6",
+      "title": "B2 — destroy detached renderables and skip unchanged roster rebuilds",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T7",
+      "title": "B3 — tool errors are not disconnects; single-flight reconnect",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T8",
+      "title": "M1+M4 — serve exits on signals with a client attached; identity-checked liveness",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T9",
+      "title": "M2 — serialise seq allocation on append",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T10",
+      "title": "M3+M5 — export path containment and the MCP skill-sync gate",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T11",
+      "title": "M6 — release MCP sessions",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T12",
+      "title": "M8+M10 — help overlay fits; roster and status bar truncate",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T13",
+      "title": "M12+M13 — restore the regression barriers and replace fixed waits",
+      "kind": "test",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T14",
+      "title": "Minor cleanups from the review",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-09T17:48:55.941Z",
+      "event": "created"
+    },
+    {
+      "at": "2026-09-09T17:50:12.675Z",
+      "event": "task-added",
+      "detail": "T5: B1 — one schema for both directions of the room log"
+    },
+    {
+      "at": "2026-09-09T17:50:12.789Z",
+      "event": "task-added",
+      "detail": "T6: B2 — destroy detached renderables and skip unchanged roster rebuilds"
+    },
+    {
+      "at": "2026-09-09T17:50:12.901Z",
+      "event": "task-added",
+      "detail": "T7: B3 — tool errors are not disconnects; single-flight reconnect"
+    },
+    {
+      "at": "2026-09-09T17:50:13.015Z",
+      "event": "task-added",
+      "detail": "T8: M1+M4 — serve exits on signals with a client attached; identity-checked liveness"
+    },
+    {
+      "at": "2026-09-09T17:50:13.130Z",
+      "event": "task-added",
+      "detail": "T9: M2 — serialise seq allocation on append"
+    },
+    {
+      "at": "2026-09-09T17:50:13.243Z",
+      "event": "task-added",
+      "detail": "T10: M3+M5 — export path containment and the MCP skill-sync gate"
+    },
+    {
+      "at": "2026-09-09T17:50:13.360Z",
+      "event": "task-added",
+      "detail": "T11: M6 — release MCP sessions"
+    },
+    {
+      "at": "2026-09-09T17:50:13.470Z",
+      "event": "task-added",
+      "detail": "T12: M8+M10 — help overlay fits; roster and status bar truncate"
+    },
+    {
+      "at": "2026-09-09T17:50:13.584Z",
+      "event": "task-added",
+      "detail": "T13: M12+M13 — restore the regression barriers and replace fixed waits"
+    },
+    {
+      "at": "2026-09-09T17:50:13.695Z",
+      "event": "task-added",
+      "detail": "T14: Minor cleanups from the review"
+    },
+    {
+      "at": "2026-09-09T17:50:21.651Z",
+      "event": "task-done",
+      "detail": "T1: Collect remaining context"
+    },
+    {
+      "at": "2026-09-09T17:50:21.763Z",
+      "event": "task-done",
+      "detail": "T2: Implement per plan"
+    },
+    {
+      "at": "2026-09-09T17:50:21.882Z",
+      "event": "task-done",
+      "detail": "T3: Add/adjust tests and make them pass"
+    },
+    {
+      "at": "2026-09-09T17:50:21.999Z",
+      "event": "task-done",
+      "detail": "T4: Self-review and prepare draft PR"
+    },
+    {
+      "at": "2026-09-09T17:50:22.116Z",
+      "event": "frozen",
+      "detail": "12 criteria; checksum recorded"
+    },
+    {
+      "at": "2026-09-09T17:50:22.232Z",
+      "event": "started"
+    }
+  ]
+}

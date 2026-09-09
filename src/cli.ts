@@ -5,7 +5,9 @@ import { serve } from "./server/serve";
 import { init } from "./installer/init";
 import { registerRoom, deregisterRoom, listLiveRooms } from "./installer/registry";
 import { syncSkill } from "./installer/skill-sync";
-import { appendMessage, createRoomLog, parseRoster } from "./log/write";
+import { appendMessage, createRoomLog, LEGAL_KINDS, parseRoster } from "./log/write";
+import { MESSAGE_KINDS } from "./log/schema";
+import type { MessageEnvelope } from "./log/types";
 import { NAMED_TARGETS, resolveTargets } from "./installer/skill-targets";
 import { serveManagement } from "./mcp-management/server";
 import { ArgError, parseArgs, renderFlags } from "./cli/args";
@@ -128,11 +130,24 @@ const COMMANDS: Record<string, Command> = {
         }
       }
 
+      // Refused here, in the grammar, so the error names the flag the operator
+      // typed rather than a field name from the on-disk schema. `appendMessage`
+      // validates too — that is the guard that cannot be bypassed — but a
+      // message about `--kind` belongs to the CLI that owns the flag.
+      const kind = typeof flags.kind === "string" ? flags.kind : undefined;
+      if (kind !== undefined && !(MESSAGE_KINDS as readonly string[]).includes(kind)) {
+        throw new ArgError(`Unknown --kind "${kind}". Known kinds: ${LEGAL_KINDS}.`);
+      }
+      const inReplyTo = typeof flags["in-reply-to"] === "number" ? flags["in-reply-to"] : undefined;
+      if (inReplyTo !== undefined && (!Number.isInteger(inReplyTo) || inReplyTo < 1)) {
+        throw new ArgError(`--in-reply-to must be a whole number of at least 1, not ${inReplyTo}.`);
+      }
+
       const message = appendMessage(absolute, {
         from,
         body,
-        kind: typeof flags.kind === "string" ? (flags.kind as never) : undefined,
-        inReplyTo: typeof flags["in-reply-to"] === "number" ? flags["in-reply-to"] : undefined,
+        kind: kind as MessageEnvelope["kind"],
+        inReplyTo,
       });
       console.log(`Appended seq ${message.seq} from ${message.from}.`);
     },

@@ -1,0 +1,19 @@
+# Flow Journal
+
+- 2026-09-09T17:48:55.941Z - flow created
+- 2026-09-09T17:50:12.675Z - task-added: T5: B1 — one schema for both directions of the room log
+- 2026-09-09T17:50:12.789Z - task-added: T6: B2 — destroy detached renderables and skip unchanged roster rebuilds
+- 2026-09-09T17:50:12.901Z - task-added: T7: B3 — tool errors are not disconnects; single-flight reconnect
+- 2026-09-09T17:50:13.015Z - task-added: T8: M1+M4 — serve exits on signals with a client attached; identity-checked liveness
+- 2026-09-09T17:50:13.130Z - task-added: T9: M2 — serialise seq allocation on append
+- 2026-09-09T17:50:13.243Z - task-added: T10: M3+M5 — export path containment and the MCP skill-sync gate
+- 2026-09-09T17:50:13.360Z - task-added: T11: M6 — release MCP sessions
+- 2026-09-09T17:50:13.470Z - task-added: T12: M8+M10 — help overlay fits; roster and status bar truncate
+- 2026-09-09T17:50:13.584Z - task-added: T13: M12+M13 — restore the regression barriers and replace fixed waits
+- 2026-09-09T17:50:13.695Z - task-added: T14: Minor cleanups from the review
+- 2026-09-09T17:50:21.651Z - task-done: T1: Collect remaining context
+- 2026-09-09T17:50:21.763Z - task-done: T2: Implement per plan
+- 2026-09-09T17:50:21.882Z - task-done: T3: Add/adjust tests and make them pass
+- 2026-09-09T17:50:21.999Z - task-done: T4: Self-review and prepare draft PR
+- 2026-09-09T17:50:22.116Z - frozen: 12 criteria; checksum recorded
+- 2026-09-09T17:50:22.232Z - started

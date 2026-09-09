@@ -1,45 +1,6 @@
 import { readFileSync } from "node:fs";
-import { z } from "zod";
+import { messageLineSchema, stateLineSchema } from "./schema";
 import type { AgentDetail, MessageEnvelope, RoomState, RosterEntry } from "./types";
-
-const rosterEntrySchema = z.object({ id: z.string(), name: z.string() });
-
-const goalContractSchema = z.object({
-  version: z.number().int().min(1),
-  updated_in_round: z.number().int().min(0).optional(),
-  updated_by: z.literal("owner").optional(),
-  goal_statement: z.string(),
-  criteria: z.string(),
-  threshold: z.object({
-    fail_below: z.number(),
-    pass_at_or_above: z.number(),
-  }),
-});
-
-const messageKindSchema = z.enum([
-  "pitch",
-  "question",
-  "challenge",
-  "answer",
-  "vote",
-  "status",
-  "research",
-]);
-
-const stateLineSchema = z.object({
-  type: z.literal("state"),
-  goal_contract: goalContractSchema,
-  roster: z.array(rosterEntrySchema),
-});
-
-const messageLineSchema = z.object({
-  type: z.literal("message"),
-  seq: z.number().int().min(1),
-  from: z.string().min(1),
-  in_reply_to: z.number().int().min(1).optional(),
-  kind: messageKindSchema.optional(),
-  body: z.string(),
-});
 
 /**
  * Reads the room log (see roomyx/README.md for the on-disk format) without
