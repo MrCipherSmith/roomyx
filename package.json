@@ -39,7 +39,7 @@
     "check": "bun run lint && bun run typecheck && bun test"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.25.0",
     "@opentui/core": "^0.5.11",
     "zod": "^4.5.4"
   },

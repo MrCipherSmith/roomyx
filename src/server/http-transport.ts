@@ -56,9 +56,35 @@ export async function serveMcpOverHttp(
 
   const sessions = new Map<string, StreamableHTTPServerTransport>();
 
+  // Filled in after listen(). Sessions are only ever created while handling a
+  // request, so by the time createSession runs this is the real bound port —
+  // which matters because the allowlists below cannot be built without it.
+  let boundPort = 0;
+
   async function createSession(): Promise<StreamableHTTPServerTransport> {
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => crypto.randomUUID(),
+      // Both guards, built lazily, from the port we actually bound.
+      //
+      // `allowedHosts` is an exact match against the whole `Host` header,
+      // port included: a port-less allowlist returns 403 to roomyx's own
+      // client. And with `--port 0` the port is not knowable until listen()
+      // resolves, so an allowlist written at option-construction time would be
+      // wrong by construction.
+      //
+      // Both lists are required because they stop different attacks. A page at
+      // http://127.0.0.1:<port>/mcp sends a legitimate Host, so only
+      // `allowedOrigins` refuses it. A DNS-rebound page sends
+      // `Host: attacker.example` and, post-rebind, a same-origin Origin — so
+      // only `allowedHosts` refuses that one.
+      //
+      // Nothing legitimate sends an Origin at all: roomyx's own client, the
+      // liveness probe and every MCP client are not browsers. The SDK skips
+      // the Origin check when the header is absent, so the list below exists
+      // to be matched by nothing.
+      enableDnsRebindingProtection: true,
+      allowedHosts: [`127.0.0.1:${boundPort}`, `localhost:${boundPort}`, `[::1]:${boundPort}`],
+      allowedOrigins: [`http://127.0.0.1:${boundPort}`, `http://localhost:${boundPort}`],
       onsessioninitialized: (sessionId) => {
         sessions.set(sessionId, transport);
       },
@@ -100,6 +126,7 @@ export async function serveMcpOverHttp(
 
   const address = httpServer.address();
   const actualPort = typeof address === "object" && address !== null ? address.port : port;
+  boundPort = actualPort;
 
   return {
     url: `http://${host}:${actualPort}/mcp`,
