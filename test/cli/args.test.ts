@@ -104,3 +104,24 @@ describe("argument grammar — ordinary shapes", () => {
     expect(new Set(columns).size).toBe(1);
   });
 });
+
+describe("flag names that are not flags", () => {
+  test("a prototype member is not a known flag", () => {
+    // `specs[name]` resolved through the prototype chain, so `--toString`,
+    // `--constructor`, `--valueOf`, `--hasOwnProperty` and `--__proto__` all
+    // found a truthy spec, skipped the unknown-flag refusal, and consumed the
+    // next argv token as a value. No pollution was reachable — `flags` is never
+    // spread or used as a lookup table — but the module's stated invariant
+    // failed for exactly the inputs it was written to catch.
+    for (const name of ["toString", "constructor", "valueOf", "hasOwnProperty", "__proto__"]) {
+      expect(() => parseArgs([`--${name}`, "x"], {})).toThrow(ArgError);
+    }
+  });
+
+  test("a declared flag still resolves", () => {
+    const { flags } = parseArgs(["--registry", "/tmp/r.json"], {
+      registry: { type: "string", describe: "Registry file" },
+    });
+    expect(flags.registry).toBe("/tmp/r.json");
+  });
+});

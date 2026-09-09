@@ -91,8 +91,11 @@ export async function runClient(flags: FlagValues): Promise<void> {
     const filterNote = filtered === null ? "" : `filter: ${filtered.name} · `;
     const query = chatView.transcript.currentQuery();
     const total = chatView.transcript.matches().length;
-    const searchNote =
-      query === "" ? "" : `/${query} ${total === 0 ? "no matches" : `${matchCursor + 1}/${total}`} · `;
+    // `matchCursor` is -1 until a match has been jumped to, and `applyFilter`
+    // resets it — so this printed "0/2", a match number that does not exist.
+    // Before a position is known, say how many there are.
+    const position = matchCursor >= 0 ? `${matchCursor + 1}/${total}` : `${total} matches`;
+    const searchNote = query === "" ? "" : `/${query} ${total === 0 ? "no matches" : position} · `;
     chatView.footer.setLiveness(`${filterNote}${searchNote}${here}${liveness}`);
     // Only say something when the reader is *not* where new messages land —
     // a permanent "at bottom" would be another word that always says the same
@@ -178,7 +181,7 @@ export async function runClient(flags: FlagValues): Promise<void> {
     chatView.statusBar.setNotice(searchPromptLine(search));
   }
 
-  function jumpTo(index: number | null, direction: string): void {
+  function jumpTo(index: number | null): void {
     if (index === null) {
       chatView.statusBar.setNotice(`no match for "${chatView.transcript.currentQuery()}"`);
       matchCursor = -1;
@@ -187,7 +190,6 @@ export async function runClient(flags: FlagValues): Promise<void> {
       chatView.scrollToEntry(index);
       chatView.statusBar.setNotice(null);
     }
-    void direction;
     refreshFooter();
   }
 
@@ -258,7 +260,7 @@ export async function runClient(flags: FlagValues): Promise<void> {
       if (stepped.action.type === "search") {
         chatView.setQuery(stepped.action.query);
         chatView.statusBar.setNotice(null);
-        if (stepped.action.query !== "") jumpTo(chatView.transcript.nextMatch(-1), "next");
+        if (stepped.action.query !== "") jumpTo(chatView.transcript.nextMatch(-1));
         else refreshFooter();
       } else if (stepped.action.type === "cancel") {
         chatView.statusBar.setNotice(null);
@@ -320,8 +322,8 @@ export async function runClient(flags: FlagValues): Promise<void> {
         search = opened();
         showSearch();
       },
-      "search.next": () => jumpTo(chatView.transcript.nextMatch(currentEntryIndex()), "next"),
-      "search.previous": () => jumpTo(chatView.transcript.previousMatch(currentEntryIndex()), "previous"),
+      "search.next": () => jumpTo(chatView.transcript.nextMatch(currentEntryIndex())),
+      "search.previous": () => jumpTo(chatView.transcript.previousMatch(currentEntryIndex())),
       "owner.prompt": () => openOwnerPrompt(),
       "transcript.export": () => exportTranscript(),
       "help.toggle": () => chatView.help.toggle(),

@@ -7,7 +7,11 @@ export interface InitOptions {
 }
 
 export interface InitResult {
-  /** false when .roomyx/rooms/registry.json already existed and was left untouched. */
+  /**
+   * false only when the registry already lists at least one room. An existing
+   * but empty `.roomyx` still reports as created — the comment here used to
+   * claim otherwise, and `cli.ts` prints this straight to the operator.
+   */
   created: boolean;
   roomyxDir: string;
 }
@@ -41,7 +45,13 @@ export function init(options: InitOptions): InitResult {
   if (!existsSync(registryPath)) {
     writeFileSync(registryPath, JSON.stringify({ schemaVersion: 1, rooms: [] }, null, 2));
   }
-  copyFileSync(options.bundledSkillPath, join(skillDir, "SKILL.md"));
+  // Guarded like the config and the registry beside it. This copy used to be
+  // unconditional — no hash check, no backup, no gate — which is the operation
+  // `syncSkill` refuses outright, while this function's own comment promises
+  // "explicit, never-clobbering". Re-running `roomyx init` silently discarded
+  // hand edits to the staged copy.
+  const stagedSkill = join(skillDir, "SKILL.md");
+  if (!existsSync(stagedSkill)) copyFileSync(options.bundledSkillPath, stagedSkill);
 
   return { created: !registryAlreadyHasRooms, roomyxDir };
 }

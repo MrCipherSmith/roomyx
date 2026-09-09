@@ -51,3 +51,23 @@ describe("init", () => {
     expect(existsSync(join(dir, ".roomyx", "config.json"))).toBe(true);
   });
 });
+
+describe("re-running init", () => {
+  test("does not clobber a hand-edited staged skill", () => {
+    // The two writes beside it were guarded and this one was not, while the
+    // function's own comment promised "explicit, never-clobbering" — so a
+    // second `roomyx init` silently discarded edits to the staged copy, which
+    // is the operation `syncSkill` refuses outright.
+    const dir = mkdtempSync(join(tmpdir(), "roomyx-init-reinit-"));
+    try {
+      init({ cwd: dir, bundledSkillPath: BUNDLED_SKILL });
+      const staged = join(dir, ".roomyx", "skills", "startup-room", "SKILL.md");
+      writeFileSync(staged, "hand-edited staged copy");
+
+      init({ cwd: dir, bundledSkillPath: BUNDLED_SKILL });
+      expect(readFileSync(staged, "utf8")).toBe("hand-edited staged copy");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

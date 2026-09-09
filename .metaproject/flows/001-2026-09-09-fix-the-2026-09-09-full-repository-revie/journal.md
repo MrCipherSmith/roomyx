@@ -25,3 +25,4 @@
 - 2026-09-09T18:10:03.900Z - task-done: T10: M3+M5 — export path containment and the MCP skill-sync gate
 - 2026-09-09T18:12:58.329Z - task-done: T11: M6 — release MCP sessions
 - 2026-09-09T18:15:09.386Z - task-done: T12: M8+M10 — help overlay fits; roster and status bar truncate
+- 2026-09-09T18:20:14.458Z - task-done: T13: M12+M13 — restore the regression barriers and replace fixed waits
