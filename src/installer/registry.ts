@@ -1,13 +1,4 @@
-import {
-  closeSync,
-  existsSync,
-  openSync,
-  readFileSync,
-  renameSync,
-  statSync,
-  unlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { z } from "zod";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
@@ -46,13 +37,33 @@ const STALE_LOCK_MS = 30_000;
  * block the registry permanently for every future caller, not just the one
  * racing the crash. A lock older than STALE_LOCK_MS is reclaimed instead of
  * waited on.
+ *
+ * The lockfile's content is an owner token (pid + random), not empty: a
+ * third review caught that reclaiming by mtime alone is not enough — if the
+ * original holder was merely slow (not crashed) and finishes after being
+ * reclaimed, its unconditional release would delete whichever *other*
+ * process's lock now legitimately occupies that path. Release only unlinks
+ * when the file still holds the token this call itself wrote.
  */
+/** Exported narrowly so the ownership check can be unit-tested directly,
+ * without needing to choreograph real inter-process timing to hit it. */
+export function releaseLockIfOwned(lockPath: string, token: string): void {
+  try {
+    if (readFileSync(lockPath, "utf8") === token) {
+      unlinkSync(lockPath);
+    }
+  } catch {
+    // Already gone, or unreadable — nothing more to do.
+  }
+}
+
 function withLock<T>(registryPath: string, fn: () => T): T {
   const lockPath = `${registryPath}.lock`;
+  const token = `${process.pid}-${Math.random().toString(36).slice(2)}`;
   const deadline = Date.now() + 5000;
   for (;;) {
     try {
-      closeSync(openSync(lockPath, "wx"));
+      writeFileSync(lockPath, token, { flag: "wx" });
       break;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
@@ -78,11 +89,7 @@ function withLock<T>(registryPath: string, fn: () => T): T {
   try {
     return fn();
   } finally {
-    try {
-      unlinkSync(lockPath);
-    } catch {
-      // Already gone; nothing to clean up.
-    }
+    releaseLockIfOwned(lockPath, token);
   }
 }
 

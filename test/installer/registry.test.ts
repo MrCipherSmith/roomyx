@@ -1,10 +1,25 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { closeSync, mkdtempSync, openSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import {
+  closeSync,
+  existsSync,
+  mkdtempSync,
+  openSync,
+  readFileSync,
+  rmSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { serve } from "../../src/server/serve";
 import type { ServeHandle } from "../../src/server/serve";
-import { registerRoom, deregisterRoom, listRooms, listLiveRooms } from "../../src/installer/registry";
+import {
+  registerRoom,
+  deregisterRoom,
+  listRooms,
+  listLiveRooms,
+  releaseLockIfOwned,
+} from "../../src/installer/registry";
 
 const FIXTURE = join(import.meta.dir, "..", "fixtures", "sample-room.jsonl");
 
@@ -112,5 +127,27 @@ describe("registry", () => {
     // Reclaimed quickly, not stuck out to the 5s wait-for-lock deadline.
     expect(elapsed).toBeLessThan(2000);
     expect(listRooms(registryPath).map((r) => r.id)).toEqual([entry.id]);
+  });
+
+  test("release does not delete a lock reclaimed by someone else while the original holder was merely slow (regression)", () => {
+    setup();
+    const lockPath = `${registryPath}.lock`;
+    writeFileSync(lockPath, "some-other-processes-token");
+
+    // A holder finishing after its own lock was reclaimed as "stale" must not
+    // blow away whichever different process now legitimately holds it.
+    releaseLockIfOwned(lockPath, "our-own-stale-token");
+
+    expect(readFileSync(lockPath, "utf8")).toBe("some-other-processes-token");
+  });
+
+  test("release does remove the lock when it still holds our own token", () => {
+    setup();
+    const lockPath = `${registryPath}.lock`;
+    writeFileSync(lockPath, "our-token");
+
+    releaseLockIfOwned(lockPath, "our-token");
+
+    expect(existsSync(lockPath)).toBe(false);
   });
 });
