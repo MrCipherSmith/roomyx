@@ -25,7 +25,7 @@ async function gutterFor(name: string): Promise<string> {
 
 describe("a roster row", () => {
   test("is never blank, at any name length", async () => {
-    for (const length of [1, 5, 21, 22, 23, 24, 30, 40, 80]) {
+    for (let length = 1; length <= 40; length += 1) {
       const gutter = await gutterFor("N".repeat(length));
       // Before the fix, 23 and above rendered nothing but the selection marker.
       expect(gutter.trim().replace(/^>\s*/, "").length).toBeGreaterThan(0);
