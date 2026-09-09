@@ -36,6 +36,9 @@ const KIND_BY_LETTER: Record<string, OwnerCommandKind> = {
 
 export const IDLE: OwnerPromptState = { stage: "idle" };
 
+/** The state the prompt starts in once the keymap has decided to open it. */
+export const OPENED: OwnerPromptState = { stage: "kind" };
+
 /** The status line to show for a state, or null to leave the bar alone. */
 export function ownerPromptLine(state: OwnerPromptState): string | null {
   if (state.stage === "idle") return null;
@@ -56,8 +59,12 @@ export function stepOwnerPrompt(
   const none = (next: OwnerPromptState) => ({ state: next, action: { type: "none" } as OwnerPromptAction });
 
   if (state.stage === "idle") {
-    // `o` opens the prompt. Everything else belongs to the view's own keys.
-    return key.name === "o" && !key.ctrl ? none({ stage: "kind" }) : none(state);
+    // Idle never opens itself. Which key opens the prompt is the keymap's
+    // decision and it is written down in exactly one place (`keymap.ts`); this
+    // machine used to hardcode `o` as well, so the two could disagree — and
+    // when the opening key changed, one of them would have been left behind
+    // still answering to the old one.
+    return none(state);
   }
 
   if (key.name === "escape") {

@@ -58,11 +58,29 @@ roomyx-client                # auto-attaches when exactly one room is live
 roomyx-client --room r-a1b2c3
 ```
 
-In the TUI: `↑`/`↓` move through the roster, `Enter` opens the selected agent's
-modal, `Esc` closes it, `q` or `Ctrl-C` quits. `o` opens an owner command —
-pick `v`eto, `c`onstraint, `a`dd participant or `g`oal edit, type the body,
-`Enter` sends. While the prompt is open it owns the keyboard, so a `q` in a
-veto is text rather than a quit.
+In the TUI, the transcript owns the arrows and the roster has its own keys:
+
+| Key | |
+| --- | --- |
+| `↑` `↓` | scroll the transcript a line |
+| `PgUp` `PgDn` | scroll a page; `Ctrl-U` / `Ctrl-D` a half page |
+| `g` `G` | jump to the top, or back to following the newest message |
+| `j` `k` | move the roster selection |
+| `Enter` | open the selected participant's messages; `Esc` closes |
+| `:` | owner command — then `v`eto, `c`onstraint, `a`dd participant or `g`oal edit, type the body, `Enter` sends |
+| `q` `Ctrl-C` | quit |
+
+The bottom line carries the same keys, so nothing here has to be memorised, and
+next to them the room's liveness: a message count and the age of the newest
+message, or a `DISCONNECTED` that stays put. Scroll away from the bottom and it
+tells you so, and tells you how to get back.
+
+While the owner prompt is open it owns the keyboard, so a `q` in a veto is text
+rather than a quit.
+
+Up to 0.5.0 the arrows moved the roster and nothing scrolled at all, and `o`
+opened the owner prompt. `o` still works, so a habit does not break on upgrade,
+but `:` is the documented key.
 
 ## Commands
 

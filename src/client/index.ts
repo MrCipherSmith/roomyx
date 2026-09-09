@@ -6,8 +6,12 @@ import { ChatView } from "./screens/chat-view";
 import { AgentModal } from "./screens/agent-modal";
 import type { RosterEntry } from "../log/types";
 import { resolveConnectionUrl } from "../installer/resolve-connection";
-import { IDLE, ownerPromptLine, stepOwnerPrompt } from "./owner-prompt";
+import { IDLE, OPENED, ownerPromptLine, stepOwnerPrompt } from "./owner-prompt";
 import type { OwnerPromptState } from "./owner-prompt";
+import { resolveAction } from "./keymap";
+import type { Action } from "./keymap";
+import { livenessLine } from "./liveness";
+import type { ConnectionStatus } from "./mcp-client";
 import { ArgError, parseArgs, renderFlags } from "../cli/args";
 import type { FlagValues } from "../cli/args";
 import { CLIENT_FLAGS } from "../cli/specs";
@@ -60,23 +64,65 @@ export async function runClient(flags: FlagValues): Promise<void> {
   renderer.root.add(chatView.node);
   renderer.root.add(modal.node);
 
+  let messageCount = 0;
+  let lastMessageAt: number | null = null;
+  let connection: ConnectionStatus = "connecting";
+
+  function refreshFooter(): void {
+    chatView.footer.setLiveness(
+      livenessLine({ status: connection, messageCount, lastMessageAt, now: Date.now() }),
+    );
+    // Only say something when the reader is *not* where new messages land —
+    // a permanent "at bottom" would be another word that always says the same
+    // thing, which is the habit this footer exists to break.
+    chatView.footer.setScrollNote(chatView.isAtBottom() ? null : "scrolled up · G to follow");
+  }
+
   const roomClient = new RoomClient(
     { url },
     {
-      onConnectionChange: (status) => chatView.setConnectionStatus(status),
+      onConnectionChange: (status) => {
+        const previous = connection;
+        connection = status;
+        chatView.setConnectionStatus(status);
+        // Also into the transcript, not only the footer: a repainted footer
+        // row is never spoken by a screen reader and never survives a `tee`.
+        if (previous !== status && previous !== "connecting") {
+          chatView.appendSystemLine(status === "connected" ? "reconnected" : "disconnected, retrying");
+        }
+        refreshFooter();
+      },
       onStateUpdate: (state) => {
         chatView.setGoalContract(state.goal_contract);
         chatView.setRoster(state.roster);
       },
-      onNewMessages: (messages) => chatView.appendMessages(messages),
+      onNewMessages: (messages) => {
+        chatView.appendMessages(messages);
+        if (messages.length > 0) {
+          messageCount += messages.length;
+          lastMessageAt = Date.now();
+        }
+        refreshFooter();
+      },
     },
   );
   roomClient.start();
+
+  // The footer carries an age, so it has to repaint on its own — otherwise
+  // "last 4s ago" would sit there unchanged through a silence, which is the
+  // exact failure it was added to prevent.
+  const footerTimer = setInterval(refreshFooter, 1000);
+  refreshFooter();
 
   let prompt: OwnerPromptState = IDLE;
 
   function showPrompt(): void {
     chatView.statusBar.setNotice(ownerPromptLine(prompt));
+  }
+
+  function openOwnerPrompt(): void {
+    prompt = OPENED;
+    showPrompt();
   }
 
   /**
@@ -95,6 +141,7 @@ export async function runClient(flags: FlagValues): Promise<void> {
   function shutdown(code: number): void {
     if (shuttingDown) return;
     shuttingDown = true;
+    clearInterval(footerTimer);
     void roomClient.stop().finally(() => {
       renderer.destroy();
       process.exit(code);
@@ -113,7 +160,7 @@ export async function runClient(flags: FlagValues): Promise<void> {
 
     // The prompt owns the keyboard while it is open — otherwise typing "q"
     // into a veto would quit the client.
-    if (prompt.stage !== "idle" || (event.name === "o" && !event.ctrl)) {
+    if (prompt.stage !== "idle") {
       const stepped = stepOwnerPrompt(prompt, event);
       prompt = stepped.state;
       showPrompt();
@@ -141,10 +188,30 @@ export async function runClient(flags: FlagValues): Promise<void> {
     // Any other key clears a leftover result line and falls through.
     chatView.statusBar.setNotice(null);
 
-    if (event.name === "up") chatView.roster.moveSelection(-1);
-    else if (event.name === "down") chatView.roster.moveSelection(1);
-    else if (event.name === "return") chatView.roster.confirmSelection();
-    else if (event.name === "q" || (event.name === "c" && event.ctrl)) shutdown(0);
+    const action = resolveAction(event);
+    if (action === null) return;
+
+    // One row per action rather than a chain of conditions, so the set of
+    // things a key can do is a list you can read, and adding one cannot
+    // accidentally shadow an earlier branch.
+    const half = Math.max(1, Math.floor(chatView.pageSize() / 2));
+    const handlers: Record<Action, () => void> = {
+      "scroll.lineUp": () => chatView.scrollByLines(-1),
+      "scroll.lineDown": () => chatView.scrollByLines(1),
+      "scroll.pageUp": () => chatView.scrollByLines(-chatView.pageSize()),
+      "scroll.pageDown": () => chatView.scrollByLines(chatView.pageSize()),
+      "scroll.halfUp": () => chatView.scrollByLines(-half),
+      "scroll.halfDown": () => chatView.scrollByLines(half),
+      "scroll.top": () => chatView.scrollToTop(),
+      "scroll.bottom": () => chatView.scrollToBottom(),
+      "roster.prev": () => chatView.roster.moveSelection(-1),
+      "roster.next": () => chatView.roster.moveSelection(1),
+      "roster.open": () => chatView.roster.confirmSelection(),
+      "owner.prompt": () => openOwnerPrompt(),
+      "app.quit": () => shutdown(0),
+    };
+    handlers[action]();
+    refreshFooter();
   });
 }
 
