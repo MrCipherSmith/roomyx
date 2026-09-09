@@ -97,4 +97,26 @@ describe("serve", () => {
     expect(after).toBe(before);
     expect(afterMtime).toBe(beforeMtime);
   });
+
+  test("supports multiple sequential client sessions against one long-lived instance (regression: liveness-check-then-attach)", async () => {
+    // Reproduces the exact failure an independent reviewer found: a first
+    // client connecting and disconnecting (e.g. a liveness check) must not
+    // burn the transport for every client after it. Two fully independent
+    // connect->call->close cycles, one after the other, both to the SAME
+    // serve() instance, must both succeed.
+    const handle = await serve(FIXTURE, { port: 0 });
+    try {
+      const first = await connectClient(handle.url);
+      await first.callTool({ name: "room.get_state", arguments: {} });
+      await first.close();
+
+      const second = await connectClient(handle.url);
+      const result = await second.callTool({ name: "room.get_state", arguments: {} });
+      const text = (result.content as Array<{ type: string; text: string }>)[0]?.text ?? "";
+      expect(JSON.parse(text).roster).toHaveLength(3);
+      await second.close();
+    } finally {
+      await handle.close();
+    }
+  });
 });
