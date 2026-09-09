@@ -6,6 +6,8 @@ import { ChatView } from "./screens/chat-view";
 import { AgentModal } from "./screens/agent-modal";
 import type { RosterEntry } from "../log/types";
 import { resolveConnectionUrl } from "../installer/resolve-connection";
+import { IDLE, ownerPromptLine, stepOwnerPrompt } from "./owner-prompt";
+import type { OwnerPromptState } from "./owner-prompt";
 
 function parseFlags(args: string[]): Record<string, string> {
   const flags: Record<string, string> = {};
@@ -73,11 +75,48 @@ export async function runClient(argv: string[] = process.argv.slice(2)): Promise
   );
   roomClient.start();
 
+  let prompt: OwnerPromptState = IDLE;
+
+  function showPrompt(): void {
+    chatView.statusBar.setNotice(ownerPromptLine(prompt));
+  }
+
   renderer.keyInput.on("keypress", (event) => {
     if (modal.isVisible()) {
       if (event.name === "escape") modal.hide();
       return;
     }
+
+    // The prompt owns the keyboard while it is open — otherwise typing "q"
+    // into a veto would quit the client.
+    if (prompt.stage !== "idle" || (event.name === "o" && !event.ctrl)) {
+      const stepped = stepOwnerPrompt(prompt, event);
+      prompt = stepped.state;
+      showPrompt();
+      if (stepped.action.type === "send") {
+        const { kind, body } = stepped.action;
+        chatView.statusBar.setNotice(`${kind}: sending…`);
+        void roomClient
+          .postOwnerCommand(kind, body)
+          .then((result) => {
+            chatView.statusBar.setNotice(
+              result.accepted
+                ? `${kind} accepted${result.reason ? ` — ${result.reason}` : ""}`
+                : `${kind} not accepted — ${result.reason ?? "no reason given"}`,
+            );
+          })
+          .catch((error: unknown) => {
+            chatView.statusBar.setNotice(
+              `${kind} failed — ${error instanceof Error ? error.message : String(error)}`,
+            );
+          });
+      }
+      return;
+    }
+
+    // Any other key clears a leftover result line and falls through.
+    chatView.statusBar.setNotice(null);
+
     if (event.name === "up") chatView.roster.moveSelection(-1);
     else if (event.name === "down") chatView.roster.moveSelection(1);
     else if (event.name === "return") chatView.roster.confirmSelection();

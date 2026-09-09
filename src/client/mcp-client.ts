@@ -101,6 +101,15 @@ export class RoomClient {
     }
   }
 
+  /**
+   * Sends an owner command to the room's dispatcher. Not a write to the log —
+   * the server forwards it and answers with whatever the dispatcher said,
+   * including `accepted: false` when no dispatcher is attached at all.
+   */
+  async postOwnerCommand(kind: string, body: string): Promise<{ accepted: boolean; reason?: string }> {
+    return this.callTool<{ accepted: boolean; reason?: string }>("room.post_owner_command", { kind, body });
+  }
+
   private async callTool<T>(name: string, args: Record<string, unknown>): Promise<T> {
     if (!this.client) throw new Error("not connected");
     const result = await this.client.callTool({ name, arguments: args });

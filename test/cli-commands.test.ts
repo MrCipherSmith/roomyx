@@ -64,6 +64,18 @@ describe("cli subcommands", () => {
     expect(proc.exitCode).toBe(1);
   });
 
+  test("--version prints the manifest's version, which the release workflow checks against the tag", async () => {
+    const manifest = JSON.parse(
+      readFileSync(join(import.meta.dir, "..", "package.json"), "utf8"),
+    ) as { version: string };
+    const proc = Bun.spawn(["bun", CLI, "--version"], { stdout: "pipe", stderr: "pipe" });
+    procs.push(proc);
+    const stdout = await new Response(proc.stdout).text();
+    await proc.exited;
+    expect(stdout.trim()).toBe(manifest.version);
+    expect(proc.exitCode).toBe(0);
+  });
+
   test("roomyx client with no live rooms exits with a clear error (does not hang)", async () => {
     dir = mkdtempSync(join(tmpdir(), "roomyx-cli-client-"));
     const registryPath = join(dir, "registry.json");

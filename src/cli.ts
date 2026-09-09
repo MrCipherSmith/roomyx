@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { serve } from "./server/serve";
 import { init } from "./installer/init";
@@ -169,10 +169,20 @@ async function runMcp(rest: string[]): Promise<void> {
   process.on("SIGTERM", shutdown);
 }
 
+/** package.json ships in the tarball (see `files`), so this resolves for an installed copy too. */
+function version(): string {
+  const manifest = JSON.parse(readFileSync(join(import.meta.dir, "..", "package.json"), "utf8")) as {
+    version: string;
+  };
+  return manifest.version;
+}
+
 async function main(): Promise<void> {
   const [command, ...rest] = process.argv.slice(2);
 
-  if (command === "init") {
+  if (command === "--version" || command === "-v") {
+    console.log(version());
+  } else if (command === "init") {
     await runInit();
   } else if (command === "serve") {
     await runServe(rest[0], rest.slice(1));
