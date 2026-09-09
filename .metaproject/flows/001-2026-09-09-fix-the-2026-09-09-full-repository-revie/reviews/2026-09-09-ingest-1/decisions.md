@@ -1,0 +1,21 @@
+# Decisions
+
+- fix-01: acted-on — 7dde8b2 (valid_followup, post_flow_feedback).
+- fix-02: acted-on — 7dde8b2 (valid_followup, post_flow_feedback).
+- fix-03: acted-on — 7dde8b2; severity corrected downward, impact refuted by measurement (valid_followup, post_flow_feedback).
+- fix-04: acted-on — 7dde8b2 (valid_followup, post_flow_feedback).
+- fix-05: acted-on — 7dde8b2 (valid_followup, post_flow_feedback).
+- fix-06: acted-on — 4dd78b9 (valid_followup, post_flow_feedback).
+- fix-07: acted-on — 4dd78b9 (valid_followup, post_flow_feedback).
+- fix-08: acted-on — 4dd78b9 (valid_followup, post_flow_feedback).
+- fix-09: acted-on — 4dd78b9 (valid_followup, post_flow_feedback).
+- fix-10: dismissed-deprioritised — docs/roomyx/fix-round-2026-09-09.md, Open section (valid_followup, post_flow_feedback).
+- fix-11: dismissed-deprioritised — docs/roomyx/fix-round-2026-09-09.md, Open section (valid_followup, post_flow_feedback).
+- fix-12: dismissed-deprioritised — docs/roomyx/fix-round-2026-09-09.md, Open section (valid_followup, post_flow_feedback).
+- fix-13: dismissed-deprioritised — docs/roomyx/fix-round-2026-09-09.md, Open section (valid_followup, post_flow_feedback).
+- fix-14: dismissed-deprioritised — docs/roomyx/fix-round-2026-09-09.md, Open section (valid_followup, post_flow_feedback).
+- fix-15: dismissed-out-of-scope — outside the fix diff; recorded in docs/roomyx/fix-round-2026-09-09.md (valid_followup, post_flow_feedback).
+- fix-16: dismissed-out-of-scope — pre-existing behaviour, recorded (valid_followup, post_flow_feedback).
+- fix-17: acted-on — no change required (valid_followup, post_flow_feedback).
+- fix-18: acted-on — docs/roomyx/fix-round-2026-09-09.md (valid_followup, post_flow_feedback).
+- fix-19: acted-on — no change required (valid_followup, post_flow_feedback).
