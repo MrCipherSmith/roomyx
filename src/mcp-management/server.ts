@@ -63,11 +63,15 @@ export function createManagementMcpServer(options: ManagementOptions): McpServer
         // escape hatch, because that is the operator on their own machine;
         // the network surface does not get one.
         target: z.enum([...NAMED_TARGETS, "all"]).describe("A runtime by name, or `all`."),
-        dryRun: z.boolean().optional(),
-        yes: z.boolean().optional(),
       },
     },
-    async ({ target, dryRun, yes }) => {
+    // No `yes`, and no `dryRun`. `yes` is what D-02's overwrite guard turns
+    // off, and on the CLI it is an operator's keystroke; over MCP it would be a
+    // boolean the caller sets for itself, which is not a guard. This tool
+    // reports what a sync *would* do — the deciding is the operator's, at the
+    // CLI, where `--yes` means a person decided. Same reasoning that removed
+    // `targetPath` from this schema.
+    async ({ target }) => {
       const targets = resolveTargets(target, options.cwd);
       const results = targets.map(({ name, path }) => ({
         target: name,
@@ -76,8 +80,7 @@ export function createManagementMcpServer(options: ManagementOptions): McpServer
           bundledSkillPath: options.bundledSkillPath,
           targetPath: path,
           configPath: options.configPath,
-          dryRun,
-          yes,
+          dryRun: true,
         }),
       }));
       return { content: [{ type: "text", text: JSON.stringify(results) }] };
