@@ -13,6 +13,46 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.6.2] — 2026-09-10
+
+A patch: two reader fixes a fuzzer found, and three testing harnesses. Nothing
+removed, no default changed — `^0.6.0` gets it automatically.
+
+### Fixed
+
+- **A log line that is not valid JSON now says which file and which line.** It
+  threw a bare `SyntaxError: Unexpected token` — no path, no line number — from
+  inside the one function whose purpose is to say
+  `Invalid "message" line 12 in /path/room.jsonl`. Found by fuzzing: of two
+  thousand damaged logs, every unparseable one refused without naming what it
+  had refused.
+- **A byte-order mark no longer makes a room unreadable.** Editors add one, it
+  is not part of the JSON, and it made the first line unparseable — which meant
+  the whole room.
+
+### Added
+
+- **`bun run soak`** — a soak harness. The three worst defects this project
+  shipped were functions of volume over time and invisible to a unit test by
+  construction. It compresses the clock by poll count rather than wall time, so
+  an hour of a live room costs a minute, and asserts trends rather than
+  thresholds.
+- **`bun scripts/fuzz-log.ts`** — fuzzes the log reader, which is the single
+  funnel all three read tools go through. Asserts that it terminates, that every
+  refusal names the file and the line, and that anything the writer accepts the
+  reader loads.
+- **`bun scripts/replay.ts <room.jsonl>`** — replays a real recorded room
+  through the real view at several widths and checks what reached the screen.
+  The rendering defects that shipped were all content-dependent and every one
+  survived a suite whose fixtures are three short ASCII messages.
+
+### Known
+
+- The wrap defect is **not synthetic**. Replaying a real nine-message room at
+  width 80 — the most ordinary terminal width there is — loses the final letter
+  of `continuation` every time; at 60, 100 and 140 it is intact. Still not
+  worked around, for the reason recorded in `test/client/wrap-defect.test.ts`.
+
 ## [0.6.1] — 2026-09-10
 
 **A patch, and the first release numbered by the rule rather than by feel.**

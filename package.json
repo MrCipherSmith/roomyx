@@ -1,6 +1,6 @@
 {
   "name": "@mrciphersmith/roomyx",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "MCP server + terminal UI for startup-room: live room status, chat, per-agent modal, an installable room registry, and skill-sync.",
   "publishConfig": {
     "access": "public"
@@ -38,7 +38,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src test",
     "check": "bun run lint && bun run typecheck && bun test",
-    "soak": "bun scripts/soak.ts"
+    "soak": "bun scripts/soak.ts",
+    "fuzz": "bun scripts/fuzz-log.ts",
+    "replay": "bun scripts/replay.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.0",

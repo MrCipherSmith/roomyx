@@ -3,12 +3,31 @@ import { messageLineSchema, stateLineSchema } from "./schema";
 import type { AgentDetail, MessageEnvelope, RoomState, RosterEntry } from "./types";
 
 /**
+ * `JSON.parse`, with the one thing it never says: where.
+ *
+ * A line that is not valid JSON used to throw a bare `SyntaxError: Unexpected
+ * token` — no path, no line number — from inside a function whose whole purpose
+ * is to say `Invalid "message" line 12 in /path/room.jsonl`. Found by fuzzing:
+ * of two thousand damaged logs, every unparseable one refused without naming
+ * the file it had refused.
+ */
+function parseLine(text: string, describe: () => string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error(`${describe()}: not valid JSON — ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
  * Reads the room log (see roomyx/README.md for the on-disk format) without
  * ever writing to it. The first line is the state header; every following
  * line is a message.
  */
 export function loadRoomLog(path: string): { state: RoomState; messages: MessageEnvelope[] } {
-  const raw = readFileSync(path, "utf8");
+  // Editors add a byte-order mark; it is not part of the JSON and it made the
+  // first line unparseable, which made the whole room unreadable.
+  const raw = readFileSync(path, "utf8").replace(/^\uFEFF/, "");
   const lines = raw.split("\n").filter((line) => line.trim().length > 0);
 
   if (lines.length === 0) {
@@ -16,7 +35,9 @@ export function loadRoomLog(path: string): { state: RoomState; messages: Message
   }
 
   const [headerLine, ...rest] = lines as [string, ...string[]];
-  const headerResult = stateLineSchema.safeParse(JSON.parse(headerLine));
+  const headerResult = stateLineSchema.safeParse(
+    parseLine(headerLine, () => `Room log at ${path} must start with a valid "state" line`),
+  );
   if (!headerResult.success) {
     throw new Error(
       `Room log at ${path} must start with a valid "state" line: ${headerResult.error.message}`,
@@ -31,7 +52,9 @@ export function loadRoomLog(path: string): { state: RoomState; messages: Message
   };
 
   const messages: MessageEnvelope[] = rest.map((line, index) => {
-    const result = messageLineSchema.safeParse(JSON.parse(line));
+    const result = messageLineSchema.safeParse(
+      parseLine(line, () => `Invalid "message" line ${index + 2} in ${path}`),
+    );
     if (!result.success) {
       // +2: 1-indexed lines, plus the header line already consumed.
       throw new Error(`Invalid "message" line ${index + 2} in ${path}: ${result.error.message}`);
