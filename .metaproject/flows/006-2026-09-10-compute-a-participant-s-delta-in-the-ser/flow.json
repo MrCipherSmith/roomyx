@@ -9,15 +9,48 @@
   "title": "Compute a participant's delta in the server, so the dispatcher stops carrying the cursor map (D-18 item 5)",
   "status": "in-progress",
   "createdAt": "2026-09-10T13:00:15.965Z",
-  "updatedAt": "2026-09-10T13:00:51.136Z",
+  "updatedAt": "2026-09-10T13:08:48.352Z",
   "source": {
     "type": "description",
     "ref": null
   },
   "acChecksum": "sha256:f16783d868f8326c38734a93a3e3d045bfc499af8070e0681133d41f63660432",
-  "acConfirmed": {},
+  "acConfirmed": {
+    "AC1": {
+      "at": "2026-09-10T13:08:30.977Z",
+      "note": "test/server/tools.test.ts (8 delta cases) + test/server/serve.test.ts (wire: per-participant deltas and the description as a client reads it); 407 pass / 0 fail; four executed mutations in the review package"
+    },
+    "AC2": {
+      "at": "2026-09-10T13:08:31.241Z",
+      "note": "test/server/tools.test.ts (8 delta cases) + test/server/serve.test.ts (wire: per-participant deltas and the description as a client reads it); 407 pass / 0 fail; four executed mutations in the review package"
+    },
+    "AC3": {
+      "at": "2026-09-10T13:08:31.778Z",
+      "note": "test/server/tools.test.ts (8 delta cases) + test/server/serve.test.ts (wire: per-participant deltas and the description as a client reads it); 407 pass / 0 fail; four executed mutations in the review package"
+    },
+    "AC4": {
+      "at": "2026-09-10T13:08:32.268Z",
+      "note": "test/server/tools.test.ts (8 delta cases) + test/server/serve.test.ts (wire: per-participant deltas and the description as a client reads it); 407 pass / 0 fail; four executed mutations in the review package"
+    },
+    "AC5": {
+      "at": "2026-09-10T13:08:32.650Z",
+      "note": "test/server/tools.test.ts (8 delta cases) + test/server/serve.test.ts (wire: per-participant deltas and the description as a client reads it); 407 pass / 0 fail; four executed mutations in the review package"
+    },
+    "AC6": {
+      "at": "2026-09-10T13:08:32.996Z",
+      "note": "test/server/tools.test.ts (8 delta cases) + test/server/serve.test.ts (wire: per-participant deltas and the description as a client reads it); 407 pass / 0 fail; four executed mutations in the review package"
+    },
+    "AC7": {
+      "at": "2026-09-10T13:08:33.340Z",
+      "note": "test/server/tools.test.ts (8 delta cases) + test/server/serve.test.ts (wire: per-participant deltas and the description as a client reads it); 407 pass / 0 fail; four executed mutations in the review package"
+    },
+    "AC8": {
+      "at": "2026-09-10T13:08:33.682Z",
+      "note": "test/server/tools.test.ts (8 delta cases) + test/server/serve.test.ts (wire: per-participant deltas and the description as a client reads it); 407 pass / 0 fail; four executed mutations in the review package"
+    }
+  },
   "pr": {
-    "url": null
+    "url": "https://github.com/MrCipherSmith/roomyx/pull/11"
   },
   "tasks": [
     {
@@ -41,7 +74,7 @@
       "title": "Implement per plan",
       "kind": "implement",
       "origin": "scaffold",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -49,14 +82,15 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T3",
       "title": "Add/adjust tests and make them pass",
       "kind": "test",
       "origin": "scaffold",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -64,14 +98,15 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T4",
       "title": "Self-review and prepare draft PR",
       "kind": "review",
       "origin": "scaffold",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -79,13 +114,14 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T5",
       "title": "End to end over a real MCP client: each fixture participant's delta, and the description as a client receives it",
       "kind": "test",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -93,13 +129,14 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T6",
       "title": "CHANGELOG and version per D-13; the tool description must not overclaim delivery",
       "kind": "docs",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -107,7 +144,8 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     }
   ],
   "history": [
@@ -138,6 +176,86 @@
       "at": "2026-09-10T13:00:51.136Z",
       "event": "task-done",
       "detail": "T1: Collect remaining context"
+    },
+    {
+      "at": "2026-09-10T13:08:30.977Z",
+      "event": "ac-confirmed",
+      "detail": "AC1: test/server/tools.test.ts (8 delta cases) + test/server/serve.test.ts (wire: per-participant deltas and the description as a client reads it); 407 pass / 0 fail; four executed mutations in the review package"
+    },
+    {
+      "at": "2026-09-10T13:08:31.241Z",
+      "event": "ac-confirmed",
+      "detail": "AC2: test/server/tools.test.ts (8 delta cases) + test/server/serve.test.ts (wire: per-participant deltas and the description as a client reads it); 407 pass / 0 fail; four executed mutations in the review package"
+    },
+    {
+      "at": "2026-09-10T13:08:31.778Z",
+      "event": "ac-confirmed",
+      "detail": "AC3: test/server/tools.test.ts (8 delta cases) + test/server/serve.test.ts (wire: per-participant deltas and the description as a client reads it); 407 pass / 0 fail; four executed mutations in the review package"
+    },
+    {
+      "at": "2026-09-10T13:08:32.269Z",
+      "event": "ac-confirmed",
+      "detail": "AC4: test/server/tools.test.ts (8 delta cases) + test/server/serve.test.ts (wire: per-participant deltas and the description as a client reads it); 407 pass / 0 fail; four executed mutations in the review package"
+    },
+    {
+      "at": "2026-09-10T13:08:32.650Z",
+      "event": "ac-confirmed",
+      "detail": "AC5: test/server/tools.test.ts (8 delta cases) + test/server/serve.test.ts (wire: per-participant deltas and the description as a client reads it); 407 pass / 0 fail; four executed mutations in the review package"
+    },
+    {
+      "at": "2026-09-10T13:08:32.996Z",
+      "event": "ac-confirmed",
+      "detail": "AC6: test/server/tools.test.ts (8 delta cases) + test/server/serve.test.ts (wire: per-participant deltas and the description as a client reads it); 407 pass / 0 fail; four executed mutations in the review package"
+    },
+    {
+      "at": "2026-09-10T13:08:33.340Z",
+      "event": "ac-confirmed",
+      "detail": "AC7: test/server/tools.test.ts (8 delta cases) + test/server/serve.test.ts (wire: per-participant deltas and the description as a client reads it); 407 pass / 0 fail; four executed mutations in the review package"
+    },
+    {
+      "at": "2026-09-10T13:08:33.682Z",
+      "event": "ac-confirmed",
+      "detail": "AC8: test/server/tools.test.ts (8 delta cases) + test/server/serve.test.ts (wire: per-participant deltas and the description as a client reads it); 407 pass / 0 fail; four executed mutations in the review package"
+    },
+    {
+      "at": "2026-09-10T13:08:33.939Z",
+      "event": "task-done",
+      "detail": "T2: Implement per plan"
+    },
+    {
+      "at": "2026-09-10T13:08:34.190Z",
+      "event": "task-done",
+      "detail": "T3: Add/adjust tests and make them pass"
+    },
+    {
+      "at": "2026-09-10T13:08:34.425Z",
+      "event": "task-done",
+      "detail": "T4: Self-review and prepare draft PR"
+    },
+    {
+      "at": "2026-09-10T13:08:34.626Z",
+      "event": "task-done",
+      "detail": "T5: End to end over a real MCP client: each fixture participant's delta, and the description as a client receives it"
+    },
+    {
+      "at": "2026-09-10T13:08:34.829Z",
+      "event": "task-done",
+      "detail": "T6: CHANGELOG and version per D-13; the tool description must not overclaim delivery"
+    },
+    {
+      "at": "2026-09-10T13:08:38.565Z",
+      "event": "implemented",
+      "detail": "draft PR: https://github.com/MrCipherSmith/roomyx/pull/11 (warning: PR is not a draft) (base: main)"
+    },
+    {
+      "at": "2026-09-10T13:08:38.738Z",
+      "event": "completing"
+    },
+    {
+      "at": "2026-09-10T13:08:48.352Z",
+      "event": "completion-failed",
+      "detail": "pull-request: PR checks not green"
     }
-  ]
+  ],
+  "baseBranch": "main"
 }

@@ -64,6 +64,7 @@
     "src/server/owner-queue.ts",
     "src/server/serve.ts",
     "src/server/shutdown.ts",
+    "src/server/tools/get-agent-delta.ts",
     "src/server/tools/get-agent-detail.ts",
     "src/server/tools/get-state.ts",
     "src/server/tools/get-transcript.ts"
