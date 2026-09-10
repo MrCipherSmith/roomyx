@@ -1,0 +1,31 @@
+[
+  {
+    "id": "R1-01",
+    "reviewer": "review-author-004",
+    "severity": "minor",
+    "problem": "The append guard looked for the room serving the log only in the confirmed-live list, so a room whose first probe timed out was invisible to it, and the second probe that would have told it whether a dispatcher is attached was never made. On a loaded machine, 'is anyone writing into this log?' came back 'nothing is'.",
+    "impact": "It is the same collapsed question this change exists to stop asking, one level up: the probe's load-sensitivity was allowed to decide a question about a writer. Narrower than it looks - the writer lease covers the CLI's own path, so the exposure is an embedder that supplies onOwnerCommand but no lease path.",
+    "suggested_fix": "Search both lists, because the caller needs to know which room this is, not whether it may attach to it.",
+    "evidence": "src/installer/registry.ts findRoomServing; src/cli.ts uses it. Executed mutation: narrowing the lookup back to the confirmed list alone makes the new test fail with undefined.",
+    "confidence": "high",
+    "file": "src/installer/registry.ts",
+    "class_scope": {
+      "sites": [
+        "src/cli.ts:341",
+        "src/installer/registry.ts:findRoomServing"
+      ],
+      "enumeration_method": "rg for listLiveRooms|listRoomsWithLiveness in src returns five call sites; only cli.ts:341 needs the room for its identity rather than for an attach decision. The other four either want confirmed-live only or already use the two-list form."
+    },
+    "global_id": "2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-7#R1-01",
+    "disposition": {
+      "state": "acted-on",
+      "evidence": "commit a421ab08bd5664147878d7c0d74c51133562370e"
+    },
+    "verification": {
+      "verdict": "refuted",
+      "method": "execution",
+      "evidence": "Run against the tree at a421ab08bd5664147878d7c0d74c51133562370e: narrowed findRoomServing back to the confirmed list alone and ran bun test test/installer/registry-liveness.test.ts -t 'an unconfirmed entry is still found' - the test failed with Expected: r-bv75p7 / Received: undefined. With the fix in place the same file is 14 pass / 0 fail. Reverted after the run.",
+      "verifier": "flow-orchestrator-mutation-pass"
+    }
+  }
+]
