@@ -4,11 +4,23 @@ Notable changes to `@mrciphersmith/roomyx`. Generated release notes say what
 changed; this file exists for the two things they cannot say — **why**, and
 **what to do if you were relying on the old behaviour**.
 
-Format loosely follows [Keep a Changelog](https://keepachangelog.com). Versions
-are [semantic](https://semver.org), with the `0.x` convention that breaking
-changes land in the minor position.
+Format loosely follows [Keep a Changelog](https://keepachangelog.com).
 
-## [Unreleased]
+**Versioning:** in `0.x` the minor position is the breaking position, and the
+patch position carries everything else — bug fixes *and* backward-compatible
+additions. That is what `^0.6.0` already promises a consumer: it receives every
+patch and never a minor. The rule, the reason, and an audit of the four of seven
+releases that followed it are in
+[`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
+
+## [0.6.1] — 2026-09-10
+
+**A patch, and the first release numbered by the rule rather than by feel.**
+Nothing here is breaking — no export, command, flag or tool parameter is gone,
+no default changed under a caller — so it takes the patch position and every
+`^0.6.0` dependant gets it automatically. Under the old habit this would have
+been `0.7.0`, which would have reached nobody without a manual bump. See
+[`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and D-13.
 
 Everything below is a defect that 0.6.0's own fixes introduced, or a
 verification claim about them that turned out to be false. Both classes were

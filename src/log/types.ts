@@ -39,8 +39,14 @@ export interface RoomState {
    *
    * It exposes a filesystem path to a caller that can already read the whole
    * transcript, which is a smaller disclosure than the one it prevents.
+   *
+   * Optional, and that is a versioning decision rather than a hedge: making it
+   * required would break anyone constructing a `RoomState`, which would put
+   * this release in the minor position under D-13. The probe already treats an
+   * absent value as "cannot be shown to be a different room", because that is
+   * what an older server returns.
    */
-  log_path: string;
+  log_path?: string;
 }
 
 export type AgentDetail =
