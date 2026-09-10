@@ -1,5 +1,5 @@
 {
-  "commit": "a421ab08bd5664147878d7c0d74c51133562370e",
-  "branch": "keryx/004-liveness-timeout",
-  "builtAt": "2026-09-10T12:07:31.792Z"
+  "commit": "d50548e35c1c258ea71293c68b44c4b0b0885d96",
+  "branch": "keryx/005-s3-skill-sync-and-doc-drift",
+  "builtAt": "2026-09-10T12:19:16.086Z"
 }
