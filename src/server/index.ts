@@ -1,30 +1,18 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getStateTool } from "./tools/get-state";
-import { OwnerCommandQueue } from "./owner-queue";
+import { OWNER_COMMAND_KINDS, OwnerCommandQueue } from "./owner-queue";
+import type { OwnerCommand, OwnerCommandEnvelope, OwnerCommandKind } from "./owner-queue";
 import { getTranscriptTool } from "./tools/get-transcript";
 import { getAgentDetailTool } from "./tools/get-agent-detail";
 
-export const OWNER_COMMAND_KINDS = ["veto", "constraint", "add_participant", "goal_edit"] as const;
-
-export type OwnerCommandKind = (typeof OWNER_COMMAND_KINDS)[number];
-
-export interface OwnerCommand {
-  kind: OwnerCommandKind;
-  body: string;
-}
-
 /**
- * A command as it reaches a dispatcher: the same two fields, plus the queue
- * entry's id.
- *
- * The id is what lets an embedded handler and a queue reader talk about the same
- * command — the handler can settle it, or name it in the log line it writes, and
- * the two roads meet at one identity instead of at a coincidence of body text.
+ * Re-exported so the vocabulary has one home — `owner-queue.ts`, where a command
+ * first exists — while everything that already reads it from the server's own
+ * surface keeps working.
  */
-export interface OwnerCommandEnvelope extends OwnerCommand {
-  id: string;
-}
+export { OWNER_COMMAND_KINDS };
+export type { OwnerCommand, OwnerCommandEnvelope, OwnerCommandKind };
 
 /**
  * What became of a posted command.

@@ -1,6 +1,36 @@
 import { randomUUID } from "node:crypto";
-import { OWNER_COMMAND_KINDS } from "./index";
-import type { OwnerCommandKind } from "./index";
+
+/**
+ * The owner-command vocabulary, which lives here rather than in `index.ts`
+ * because this is where a command first exists.
+ *
+ * It is here for a structural reason, not a tidy one: `index.ts` imports the
+ * queue, so a queue that imported the vocabulary back from `index.ts` made the
+ * two modules cyclic. The cycle happened to work under this loader — the
+ * bindings are only read inside functions — but "happens to work" is the kind of
+ * thing that stops being true when a bundler or a load order changes, and the
+ * fix costs nothing: one direction of dependency instead of two.
+ */
+export const OWNER_COMMAND_KINDS = ["veto", "constraint", "add_participant", "goal_edit"] as const;
+
+export type OwnerCommandKind = (typeof OWNER_COMMAND_KINDS)[number];
+
+export interface OwnerCommand {
+  kind: OwnerCommandKind;
+  body: string;
+}
+
+/**
+ * A command as it reaches a dispatcher: the same two fields, plus the queue
+ * entry's id.
+ *
+ * The id is what lets an embedded handler and a queue reader talk about the same
+ * command — the handler can settle it, or name it in the log line it writes, and
+ * the two roads meet at one identity instead of at a coincidence of body text.
+ */
+export interface OwnerCommandEnvelope extends OwnerCommand {
+  id: string;
+}
 
 /**
  * The owner-command queue, and the reason it is a separate object.
@@ -95,6 +125,3 @@ export class OwnerCommandQueue {
     return this.pending.delete(id);
   }
 }
-
-/** Exported for the schema and the error messages, which must agree with the contract. */
-export { OWNER_COMMAND_KINDS };
