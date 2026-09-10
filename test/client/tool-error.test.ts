@@ -179,6 +179,8 @@ describe("stopping the client", () => {
     stopped = true;
     await roomClient.stop();
 
+    // A real duration: the assertion is that nothing arrives, and there is no
+    // condition to wait on for an absence.
     await new Promise((resolve) => setTimeout(resolve, 600));
     expect(afterStop).toEqual([]);
   }, 20000);
@@ -218,9 +220,13 @@ describe("a client that was stopped", () => {
     // `stop()` cancelled the pending reconnect but left the handle set, and
     // `scheduleConnect` uses that field as its single-flight token — so
     // `start()` returned immediately and the client was inert for good.
-    const roomClient = new RoomClient({ url: "http://127.0.0.1:1/mcp", transcriptIntervalMs: 50 }, {});
+    const firstStatuses: string[] = [];
+    const roomClient = new RoomClient(
+      { url: "http://127.0.0.1:1/mcp", transcriptIntervalMs: 50 },
+      { onConnectionChange: (status) => firstStatuses.push(status) },
+    );
     roomClient.start();
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await until(() => firstStatuses.includes("disconnected"), "a reconnect to be pending");
     await roomClient.stop();
 
     const statuses: string[] = [];
@@ -229,12 +235,12 @@ describe("a client that was stopped", () => {
       { onConnectionChange: (status) => statuses.push(status) },
     );
     restarted.start();
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await until(() => statuses.length > 0, "the first run to report something");
     await restarted.stop();
     statuses.length = 0;
 
     restarted.start();
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    await until(() => statuses.length > 0, "the restarted client to report something");
     await restarted.stop();
     expect(statuses.length).toBeGreaterThan(0);
   }, 20000);

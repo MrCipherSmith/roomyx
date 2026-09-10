@@ -2,6 +2,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { serve } from "./server/serve";
+import { createServerShutdown } from "./server/shutdown";
 import { init } from "./installer/init";
 import { registerRoom, deregisterRoom, listLiveRooms } from "./installer/registry";
 import { syncSkill } from "./installer/skill-sync";
@@ -40,7 +41,8 @@ function bundledSkillPath(): string {
 const REGISTRY_FLAG = { type: "string", describe: "Registry file (default .roomyx/rooms/registry.json)" } as const;
 
 /**
- * Runs a long-lived server until a signal, then shuts it down once.
+ * Wires the signals. The shutdown itself lives in `./server/shutdown`, where a
+ * test can reach it — this module runs its entry point on import.
  *
  * Written once because there were three copies and they had drifted: the two
  * here handled SIGINT and SIGTERM and guarded nothing, while the client handled
@@ -54,19 +56,7 @@ const REGISTRY_FLAG = { type: "string", describe: "Registry file (default .roomy
  * the port. The room became invisible while still being served.
  */
 function runUntilSignal(close: () => Promise<void>, cleanup: () => void = () => undefined): void {
-  let shuttingDown = false;
-  const shutdown = (): void => {
-    if (shuttingDown) return;
-    shuttingDown = true;
-    void close()
-      .catch((error: unknown) => {
-        console.error(`shutdown failed: ${error instanceof Error ? error.message : String(error)}`);
-      })
-      .finally(() => {
-        cleanup();
-        process.exit(0);
-      });
-  };
+  const shutdown = createServerShutdown(close, cleanup);
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) process.on(signal, shutdown);
 }
 
