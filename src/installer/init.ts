@@ -1,5 +1,6 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { syncSkill } from "./skill-sync";
 
 export interface InitOptions {
   cwd: string;
@@ -14,6 +15,11 @@ export interface InitResult {
    */
   created: boolean;
   roomyxDir: string;
+  /**
+   * Why the staged skill was left as it was, when it was. Empty or absent means
+   * the sync had nothing to report — not that it did nothing.
+   */
+  skillWarnings?: string[];
 }
 
 const DEFAULT_CONFIG = {
@@ -45,13 +51,47 @@ export function init(options: InitOptions): InitResult {
   if (!existsSync(registryPath)) {
     writeFileSync(registryPath, JSON.stringify({ schemaVersion: 1, rooms: [] }, null, 2));
   }
-  // Guarded like the config and the registry beside it. This copy used to be
+  // Staged through `syncSkill`, not copied.
+  //
+  // Three defects lived in the two lines this replaces. The copy was
   // unconditional — no hash check, no backup, no gate — which is the operation
-  // `syncSkill` refuses outright, while this function's own comment promises
-  // "explicit, never-clobbering". Re-running `roomyx init` silently discarded
-  // hand edits to the staged copy.
+  // `syncSkill` refuses outright, while the comment above promises "explicit,
+  // never-clobbering": a second `roomyx init` silently discarded hand edits to
+  // the staged copy. Guarding it with `existsSync` fixed the clobber and created
+  // the opposite one: after a package upgrade the staged copy kept the old text
+  // forever, silently. And `.roomyx/skills/` is read by nothing (`skills sync`
+  // reads the bundled copy straight from the package), so a stale file there is
+  // pure misinformation — it looks like the skill the project uses.
+  //
+  // `syncSkill` is what this wanted all along: a recorded hash per target, a
+  // backup before any overwrite, and a refusal that says which target it is
+  // refusing. `init` supplies `yes` itself, because the gate below is about
+  // *when* to write, and the operator's consent to scaffolding was the command.
   const stagedSkill = join(skillDir, "SKILL.md");
-  if (!existsSync(stagedSkill)) copyFileSync(options.bundledSkillPath, stagedSkill);
+  const syncOptions = {
+    bundledSkillPath: options.bundledSkillPath,
+    targetPath: stagedSkill,
+    configPath,
+  };
+
+  // Asked before writing, so the decision is made from `syncSkill`'s own
+  // verdict rather than from a second copy of its rules here.
+  const dryRun = syncSkill({ ...syncOptions, dryRun: true });
+  if (dryRun.warnings.length > 0) {
+    // Ours to refresh only while it is still ours. A hand-edited or unrecorded
+    // staged copy is left exactly as it is, and the caller is told why — the
+    // silence was the defect, not the staleness.
+    return { created: !registryAlreadyHasRooms, roomyxDir, skillWarnings: dryRun.warnings };
+  }
+
+  const bundledContent = readFileSync(options.bundledSkillPath, "utf8");
+  const stagedContent = existsSync(stagedSkill) ? readFileSync(stagedSkill, "utf8") : null;
+  if (stagedContent !== bundledContent) {
+    // Only when there is a difference: a write with identical content still
+    // takes a timestamped backup, so a no-op `init` would fill the directory
+    // with copies of the same file and make a real backup impossible to find.
+    syncSkill({ ...syncOptions, yes: true });
+  }
 
   return { created: !registryAlreadyHasRooms, roomyxDir };
 }

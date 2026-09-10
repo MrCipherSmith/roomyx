@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { init } from "../../src/installer/init";
@@ -66,6 +66,76 @@ describe("re-running init", () => {
 
       init({ cwd: dir, bundledSkillPath: BUNDLED_SKILL });
       expect(readFileSync(staged, "utf8")).toBe("hand-edited staged copy");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("the staged skill is synced, not copied once", () => {
+  /**
+   * `init` wrote the staged copy with `copyFileSync` when it was absent and did
+   * nothing when it was present — so after a package upgrade
+   * `.roomyx/skills/startup-room/SKILL.md` kept the old text forever, with no
+   * hash, no backup and no warning. That is the operation `syncSkill` exists to
+   * refuse, and the backlog's S3 asks for exactly this routing.
+   */
+  function initWith(dir: string, bundled: string) {
+    return init({ cwd: dir, bundledSkillPath: bundled });
+  }
+
+  test("re-running init after the bundled skill changed refreshes the staged copy", () => {
+    const dir = mkdtempSync(join(tmpdir(), "roomyx-init-sync-"));
+    const second = join(dir, "bundled-v2.md");
+    try {
+      writeFileSync(second, "# Startup Room v2\n");
+      initWith(dir, second);
+      const staged = join(dir, ".roomyx", "skills", "startup-room", "SKILL.md");
+      expect(readFileSync(staged, "utf8")).toBe("# Startup Room v2\n");
+
+      // A new package version ships a new bundled skill.
+      const third = join(dir, "bundled-v3.md");
+      writeFileSync(third, "# Startup Room v3\n");
+      const result = initWith(dir, third);
+
+      // The staged copy is ours — we recorded its hash — so refreshing it is
+      // safe and is the whole point.
+      expect(readFileSync(staged, "utf8")).toBe("# Startup Room v3\n");
+      expect(result.skillWarnings ?? []).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("a hand-edited staged copy is left alone, and init says so", () => {
+    const dir = mkdtempSync(join(tmpdir(), "roomyx-init-sync-edit-"));
+    try {
+      initWith(dir, BUNDLED_SKILL);
+      const staged = join(dir, ".roomyx", "skills", "startup-room", "SKILL.md");
+      writeFileSync(staged, "hand-edited staged copy");
+
+      const result = initWith(dir, BUNDLED_SKILL);
+
+      expect(readFileSync(staged, "utf8")).toBe("hand-edited staged copy");
+      // Silence was the defect: the copy stayed stale and nothing said why.
+      expect((result.skillWarnings ?? []).join(" ")).toContain("hand-edited");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("a re-init that changes nothing writes nothing and leaves no backup", () => {
+    const dir = mkdtempSync(join(tmpdir(), "roomyx-init-sync-noop-"));
+    try {
+      initWith(dir, BUNDLED_SKILL);
+      initWith(dir, BUNDLED_SKILL);
+      initWith(dir, BUNDLED_SKILL);
+
+      const stagingDir = join(dir, ".roomyx", "skills", "startup-room");
+      // Backing up an identical file once per run would fill the directory with
+      // timestamped copies of the same content — noise that makes a real backup
+      // impossible to find.
+      expect(readdirSync(stagingDir)).toEqual(["SKILL.md"]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
