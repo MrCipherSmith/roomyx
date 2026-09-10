@@ -3,12 +3,24 @@ import type { RoomMcpServerOptions } from "./index";
 import { serveMcpOverHttp } from "./http-transport";
 import type { McpHttpTransportHandle } from "./http-transport";
 import { loadRoomLog } from "../log/store";
+import {
+  LEASE_HEARTBEAT_MS,
+  acquireWriterLease,
+  refreshWriterLease,
+  releaseWriterLease,
+} from "../writer-lease";
 
 export interface ServeOptions extends RoomMcpServerOptions {
   /** Defaults to 4319 (specification.md's default). 0 selects an ephemeral port. */
   port?: number;
   host?: string;
   acknowledgeNonLoopback?: boolean;
+  /**
+   * Where the writer lease lives, when this server has a dispatcher attached.
+   * Defaults to none: an embedder that does not dispatch holds nothing, and a
+   * library caller should not acquire a lease as a side effect of binding.
+   */
+  writerLeasePath?: string;
 }
 
 export type ServeHandle = McpHttpTransportHandle;
@@ -33,7 +45,7 @@ export async function serve(logPath: string, options: ServeOptions): Promise<Ser
   // that names the file and the line.
   loadRoomLog(logPath);
 
-  return serveMcpOverHttp({
+  const handle = await serveMcpOverHttp({
     createMcpServer: () => createRoomMcpServer(logPath, { onOwnerCommand: options.onOwnerCommand }),
     commandLabel: "roomyx serve",
     defaultPort: 4319,
@@ -41,4 +53,27 @@ export async function serve(logPath: string, options: ServeOptions): Promise<Ser
     host: options.host,
     acknowledgeNonLoopback: options.acknowledgeNonLoopback,
   });
+
+  // The lease is held by the process that has a dispatcher, which is this one —
+  // a server with no dispatcher is an observer, and holding a lease would claim
+  // a pen it never picks up.
+  if (options.onOwnerCommand === undefined || options.writerLeasePath === undefined) return handle;
+
+  const leasePath = options.writerLeasePath;
+  const lease = acquireWriterLease(leasePath, { pid: process.pid });
+  // `unref()`, so an idle heartbeat cannot be the reason the process stays
+  // alive — the same rule the transport's session sweeper follows.
+  const heartbeat = setInterval(() => {
+    refreshWriterLease(leasePath, lease.token);
+  }, LEASE_HEARTBEAT_MS);
+  heartbeat.unref();
+
+  return {
+    ...handle,
+    close: async () => {
+      clearInterval(heartbeat);
+      releaseWriterLease(leasePath, lease.token);
+      await handle.close();
+    },
+  };
 }

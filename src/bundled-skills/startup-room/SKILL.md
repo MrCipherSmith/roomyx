@@ -136,15 +136,22 @@ roomyx serve .roomyx/rooms/logs/<topic>.jsonl --port 0
 Then append each participant's turn verbatim as it arrives:
 
 ```bash
-roomyx room append .roomyx/rooms/logs/<topic>.jsonl --force \
+roomyx room append .roomyx/rooms/logs/<topic>.jsonl \
   --from ann --kind pitch --body "<their actual words>"
 ```
 
-**`--force` is required here, and it is correct here.** Without it, `append`
-refuses whenever a live room is serving that log — a guard against a *second*
-writer racing the dispatcher. You are the dispatcher: the single writer the
-guard exists to protect. roomyx cannot tell the two apart from outside, so it
-asks, and this is the case where the answer is yes.
+**No override flag, and that is the point.** `append` refuses only when the
+room is live *and* something is writing into it — a live room with no dispatcher
+has no writer to race, so this succeeds as written. The guard used to require
+`--force` here because roomyx could not tell the two apart from outside; the
+server now reports whether a dispatcher is attached, and the writer holds a
+lease, so the case that needed an override no longer arises. If something else
+really is writing (you will be told its pid), the only honest move is to stop it
+— do not look for a flag that overrides a live writer, because there is none.
+
+For a room whose dispatcher died while its server kept running, `--take-over`
+takes ownership deliberately and records that it did. Use it when you know you
+are the last writer, not to get past a refusal you do not understand.
 
 `--kind` is one of `pitch`, `question`, `challenge`, `answer`, `vote`, `status`,
 `research`; `--in-reply-to <seq>` records who was being answered. Both are

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { acquireWriterLease, LEASE_STALE_MS, writerLeasePathFor } from "../src/writer-lease";
 
 const CLI = join(import.meta.dir, "..", "src", "cli.ts");
 
@@ -20,8 +21,13 @@ afterEach(async () => {
   dir = undefined;
 });
 
-async function run(args: string[], cwd?: string) {
-  const proc = Bun.spawn(["bun", CLI, ...args], { stdout: "pipe", stderr: "pipe", ...(cwd ? { cwd } : {}) });
+async function run(args: string[], cwd?: string, options: { stdin?: string } = {}) {
+  const proc = Bun.spawn(["bun", CLI, ...args], {
+    stdout: "pipe",
+    stderr: "pipe",
+    ...(cwd ? { cwd } : {}),
+    ...(options.stdin === undefined ? {} : { stdin: new TextEncoder().encode(options.stdin) }),
+  });
   procs.push(proc);
   const [stdout, stderr] = await Promise.all([
     new Response(proc.stdout).text(),
@@ -100,55 +106,173 @@ describe("roomyx room append", () => {
     expect(stderr).toContain("roomyx room new");
   });
 
-  // D-01a. This is the guard the amendment exists for: appending to a log a
-  // dispatcher is actively writing would mint a second writer into a live room.
-  test("refuses when a live room is serving that log, and names the room", async () => {
-    dir = mkdtempSync(join(tmpdir(), "roomyx-room-guard-"));
+  // D-01a, as amended by D-18. The guard exists to stop a SECOND writer in a
+  // live room — and a live room with no dispatcher has no first writer, so the
+  // old refusal was making a false claim about it and `--force` was the escape
+  // from the falsehood. These four cases are the whole table.
+  describe("writer ownership", () => {
+    async function startRoom(log: string, registryPath: string): Promise<string> {
+      const server = Bun.spawn(["bun", CLI, "serve", log, "--port", "0", "--registry", registryPath], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      procs.push(server);
+      const deadline = Date.now() + 5000;
+      let roomId = "";
+      while (Date.now() < deadline && !roomId) {
+        try {
+          const parsed = JSON.parse(readFileSync(registryPath, "utf8")) as { rooms: { id: string }[] };
+          if (parsed.rooms.length > 0) roomId = parsed.rooms[0]!.id;
+        } catch {
+          // not written yet
+        }
+        if (!roomId) await new Promise((r) => setTimeout(r, 50));
+      }
+      expect(roomId).not.toBe("");
+      return roomId;
+    }
+
+    test("a bare serve has no writer to race: append writes, with no flag at all", async () => {
+      dir = mkdtempSync(join(tmpdir(), "roomyx-owner-bare-"));
+      const log = join(dir, "room.jsonl");
+      const registryPath = join(dir, "registry.json");
+      await run(["room", "new", log, "--goal", "g", "--roster", "a:A"]);
+      await startRoom(log, registryPath);
+
+      const before = readFileSync(log, "utf8");
+      const appended = await run(["room", "append", log, "--from", "a", "--body", "written by hand", "--registry", registryPath]);
+      expect(appended.stderr).toBe("");
+      expect(appended.code).toBe(0);
+      expect(readFileSync(log, "utf8")).not.toBe(before);
+    }, 20000);
+
+    test("--force is gone", async () => {
+      dir = mkdtempSync(join(tmpdir(), "roomyx-owner-noflag-"));
+      const log = join(dir, "room.jsonl");
+      await run(["room", "new", log, "--goal", "g", "--roster", "a:A"]);
+
+      const forced = await run(["room", "append", log, "--from", "a", "--body", "x", "--force"]);
+      expect(forced.code).toBe(1);
+      expect(forced.stderr).toContain("--force");
+      // A flag that still worked while the tests stopped looking would be worse
+      // than one that was never removed, so the write itself is checked too.
+      expect(readFileSync(log, "utf8").split("\n").filter(Boolean)).toHaveLength(1);
+    });
+
+    test("a fresh lease from another writer: append refuses, and --take-over refuses too", async () => {
+      dir = mkdtempSync(join(tmpdir(), "roomyx-owner-live-"));
+      const log = join(dir, "room.jsonl");
+      const registryPath = join(dir, "registry.json");
+      await run(["room", "new", log, "--goal", "g", "--roster", "a:A"]);
+      const roomId = await startRoom(log, registryPath);
+
+      // Pid 1 is not this machine's writer; what matters is that the lease is
+      // fresh, which is the only thing that can be checked without trusting it.
+      acquireWriterLease(writerLeasePathFor(registryPath), { pid: 1 });
+      const before = readFileSync(log, "utf8");
+
+      const refused = await run(["room", "append", log, "--from", "a", "--body", "x", "--registry", registryPath]);
+      expect(refused.code).toBe(1);
+      expect(refused.stderr).toContain(roomId);
+      expect(refused.stderr).toContain("--take-over");
+
+      const taken = await run(["room", "append", log, "--from", "a", "--body", "x", "--registry", registryPath, "--take-over"]);
+      expect(taken.code).toBe(1);
+      expect(readFileSync(log, "utf8")).toBe(before);
+    }, 20000);
+
+    test("concurrent appends against a fresh lease: none of them land", async () => {
+      dir = mkdtempSync(join(tmpdir(), "roomyx-owner-race-"));
+      const log = join(dir, "room.jsonl");
+      const registryPath = join(dir, "registry.json");
+      await run(["room", "new", log, "--goal", "g", "--roster", "a:A"]);
+      await startRoom(log, registryPath);
+      acquireWriterLease(writerLeasePathFor(registryPath), { pid: 1 });
+      const before = readFileSync(log, "utf8");
+
+      const results = await Promise.all(
+        Array.from({ length: 4 }, (_, i) =>
+          run(["room", "append", log, "--from", "a", "--body", `x${i}`, "--registry", registryPath]),
+        ),
+      );
+      expect(results.every((r) => r.code === 1)).toBe(true);
+      expect(readFileSync(log, "utf8")).toBe(before);
+    }, 25000);
+
+    test("a stale lease can be taken over, and the log records that it was", async () => {
+      dir = mkdtempSync(join(tmpdir(), "roomyx-owner-stale-"));
+      const log = join(dir, "room.jsonl");
+      const registryPath = join(dir, "registry.json");
+      await run(["room", "new", log, "--goal", "g", "--roster", "a:A"]);
+      await startRoom(log, registryPath);
+
+      // Written with a timestamp far enough in the past to be past the ceiling.
+      acquireWriterLease(writerLeasePathFor(registryPath), { pid: 1, now: Date.now() - LEASE_STALE_MS * 3 });
+
+      const taken = await run(["room", "append", log, "--from", "a", "--body", "taken over", "--registry", registryPath, "--take-over"]);
+      expect(taken.stderr).toBe("");
+      expect(taken.code).toBe(0);
+
+      const lines = readFileSync(log, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+      const bodies = lines.slice(1).map((m) => m.body as string);
+      expect(bodies).toContain("taken over");
+      // The trace is what a reader of the log later needs: a room that was
+      // written by hand while its writer was gone must not look supervised.
+      const trace = lines.find((m) => typeof m.kind === "string" && m.kind === "status");
+      expect(trace).toBeDefined();
+      expect(String(trace?.body)).toContain("--take-over");
+    }, 20000);
+  });
+
+  test("a body survives the shell it was passed through", async () => {
+    dir = mkdtempSync(join(tmpdir(), "roomyx-append-json-"));
     const log = join(dir, "room.jsonl");
-    const registryPath = join(dir, "registry.json");
     await run(["room", "new", log, "--goal", "g", "--roster", "a:A"]);
 
-    const server = Bun.spawn(["bun", CLI, "serve", log, "--port", "0", "--registry", registryPath], {
-      stdout: "pipe",
-      stderr: "pipe",
+    // A quote and a newline are ordinary in a room's prose, and both used to be
+    // the caller's problem: the JSON was assembled by hand around whatever the
+    // shell delivered.
+    const body = 'He said "no".\nThen he said yes — twice.';
+    const envelope = JSON.stringify({ from: "a", body, kind: "challenge" });
+    const written = await run(["room", "append", log, "--json", envelope]);
+    expect(written.stderr).toBe("");
+    expect(written.code).toBe(0);
+
+    const readBack = JSON.parse(readFileSync(log, "utf8").split("\n").filter(Boolean)[1] as string);
+    expect(readBack.body).toBe(body);
+    expect(readBack.kind).toBe("challenge");
+
+    const fromStdin = await run(["room", "append", log, "--body-file", "-", "--from", "b"], undefined, {
+      stdin: 'line one\nline "two"',
     });
-    procs.push(server);
+    expect(fromStdin.stderr).toBe("");
+    expect(fromStdin.code).toBe(0);
+    const second = JSON.parse(readFileSync(log, "utf8").split("\n").filter(Boolean)[2] as string);
+    expect(second.body).toBe('line one\nline "two"');
+  }, 20000);
 
-    // Wait for it to register itself.
-    const deadline = Date.now() + 5000;
-    let roomId = "";
-    while (Date.now() < deadline && !roomId) {
-      try {
-        const parsed = JSON.parse(readFileSync(registryPath, "utf8")) as { rooms: { id: string }[] };
-        if (parsed.rooms.length > 0) roomId = parsed.rooms[0]!.id;
-      } catch {
-        // not written yet
-      }
-      if (!roomId) await new Promise((r) => setTimeout(r, 50));
-    }
-    expect(roomId).not.toBe("");
+  test("--many writes a batch with consecutive seq, and an invalid line writes nothing", async () => {
+    dir = mkdtempSync(join(tmpdir(), "roomyx-append-many-"));
+    const log = join(dir, "room.jsonl");
+    await run(["room", "new", log, "--goal", "g", "--roster", "a:A"]);
 
+    const batch = [
+      JSON.stringify({ from: "a", body: "first" }),
+      JSON.stringify({ from: "b", body: "second", in_reply_to: 1 }),
+      JSON.stringify({ from: "a", body: "third" }),
+    ].join("\n");
+    const written = await run(["room", "append", log, "--many"], undefined, { stdin: batch });
+    expect(written.stderr).toBe("");
+    expect(written.code).toBe(0);
+    const messages = readFileSync(log, "utf8").split("\n").filter(Boolean).slice(1).map((l) => JSON.parse(l));
+    expect(messages.map((m) => m.seq)).toEqual([1, 2, 3]);
+
+    // One bad line means the whole batch is refused: half a batch is a room
+    // whose transcript silently skips a turn.
     const before = readFileSync(log, "utf8");
-    const refused = await run(["room", "append", log, "--from", "a", "--body", "x", "--registry", registryPath]);
+    const bad = [JSON.stringify({ from: "a", body: "fine" }), JSON.stringify({ from: "a", body: "broken", kind: "not-a-kind" })].join("\n");
+    const refused = await run(["room", "append", log, "--many"], undefined, { stdin: bad });
     expect(refused.code).toBe(1);
-    expect(refused.stderr).toContain(roomId);
-    expect(refused.stderr).toContain("D-01");
     expect(readFileSync(log, "utf8")).toBe(before);
-
-    // --force is the deliberate override, and it writes.
-    const forced = await run([
-      "room",
-      "append",
-      log,
-      "--from",
-      "a",
-      "--body",
-      "x",
-      "--registry",
-      registryPath,
-      "--force",
-    ]);
-    expect(forced.code).toBe(0);
-    expect(readFileSync(log, "utf8")).not.toBe(before);
-  }, 15000);
+  }, 20000);
 });

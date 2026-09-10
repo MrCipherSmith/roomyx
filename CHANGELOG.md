@@ -13,6 +13,52 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.8.0] — 2026-09-10
+
+A minor, because it is breaking: `roomyx room append --force` is gone. In `0.x`
+the minor position is the breaking position (D-13), and this one removes a flag
+from a documented workflow.
+
+### Changed
+
+- **`room append` refuses only when a writer is actually there.** The old guard
+  treated "a room answers on this path" as "someone is writing into it", which
+  is false for every room served by bare `roomyx serve` — so `--force` was the
+  documented way to do ordinary work, and the guard guarded nothing.
+  `room.get_state` now reports `dispatcherAttached`, and a server with a
+  dispatcher holds a writer lease beside the registry. A live room with no
+  writer needs no flag; a live room with a live writer cannot be overridden at
+  all, and the refusal names its pid.
+
+### Removed
+
+- **`roomyx room append --force`.** Replaced by `--take-over`, which writes only
+  when the room is live but its writer is gone (its lease is stale or absent) —
+  the one case the old flag was really for — and records the take-over in the
+  log as a `status` message, because a room written by hand while its writer was
+  absent must not read afterwards as supervised. The bundled `startup-room` skill
+  no longer teaches any override.
+
+### Added
+
+- **`room append --json <envelope>`** writes one whole envelope, so a body
+  containing quotes or newlines no longer depends on the caller assembling JSON
+  by hand. An unknown key is refused rather than ignored: `seq` is the writer's.
+- **`room append --body-file <path|->`** reads the body from a file, or stdin.
+- **`room append --many`** writes a JSONL batch from stdin with consecutive
+  `seq`, all of it or none of it — half a batch would silently drop a turn from
+  the middle of a conversation.
+- **`room.get_state.dispatcherAttached`** states whether anything is dispatching
+  into the room. Optional, so an older server's absence is not mistaken for a
+  `false`.
+
+### Notes
+
+- The room log's format is unchanged: the take-over trace uses the existing
+  `status` kind, and the lease is a separate file that lives beside the registry
+  rather than beside the log, which travels with the repository.
+- The server still never writes the log. This release gives it a lease, not a pen.
+
 ## [0.7.2] — 2026-09-10
 
 A patch. Found by reading a real room log: the reply structure the log schema

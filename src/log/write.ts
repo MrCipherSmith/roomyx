@@ -74,6 +74,34 @@ export function nextSeq(path: string): number {
   return seqs.length > 0 ? Math.max(...seqs) + 1 : 1;
 }
 
+/**
+ * Writes several messages as one unit: either every one of them lands with
+ * consecutive `seq`, or none does.
+ *
+ * Half a batch is worse than a refused one. A dispatcher posting a turn's
+ * messages gets no second chance to notice a gap — the log is append-only and
+ * the transcript is read as the record of what was said, so a batch that wrote
+ * its first two lines and rejected the third has silently dropped a turn from
+ * the middle of a conversation.
+ */
+export function appendMessages(
+  path: string,
+  batch: AppendMessageOptions[],
+): (MessageEnvelope & { type: "message" })[] {
+  if (batch.length === 0) return [];
+  return withLock(path, () => {
+    if (!existsSync(path)) {
+      throw new Error(`${path} does not exist. Create it with \`roomyx room new\` first.`);
+    }
+    // Allocated and validated as one set, before a single byte is written.
+    const base = nextSeq(path);
+    const built = batch.map((options, index) => buildMessage(base + index, options));
+    for (const message of built) validate(message);
+    for (const message of built) appendFileSync(path, JSON.stringify(message) + "\n");
+    return built;
+  });
+}
+
 export function appendMessage(path: string, options: AppendMessageOptions): MessageEnvelope & { type: "message" } {
   if (!existsSync(path)) {
     throw new Error(`${path} does not exist. Create it with \`roomyx room new\` first.`);
@@ -91,6 +119,22 @@ export function appendMessage(path: string, options: AppendMessageOptions): Mess
   return withLock(path, () => writeMessage(path, options));
 }
 
+function buildMessage(seq: number, options: AppendMessageOptions): MessageEnvelope & { type: "message" } {
+  return {
+    type: "message",
+    seq,
+    from: options.from,
+    body: options.body,
+    ...(options.kind ? { kind: options.kind } : {}),
+    ...(options.inReplyTo !== undefined ? { in_reply_to: options.inReplyTo } : {}),
+  };
+}
+
+function validate(message: MessageEnvelope & { type: "message" }): void {
+  const parsed = messageLineSchema.safeParse(message);
+  if (!parsed.success) throw new LogWriteError(describeInvalid(parsed.error));
+}
+
 function writeMessage(path: string, options: AppendMessageOptions): MessageEnvelope & { type: "message" } {
   const message: MessageEnvelope & { type: "message" } = {
     type: "message",
@@ -106,11 +150,7 @@ function writeMessage(path: string, options: AppendMessageOptions): MessageEnvel
   // line the reader refuses is not a failed write — it is a room nobody can
   // open again. Types alone did not hold this: they are erased at the CLI
   // boundary, where `--kind` arrived as an unchecked string.
-  const parsed = messageLineSchema.safeParse(message);
-  if (!parsed.success) {
-    throw new LogWriteError(describeInvalid(parsed.error));
-  }
-
+  validate(message);
   appendFileSync(path, JSON.stringify(message) + "\n");
   return message;
 }

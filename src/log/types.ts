@@ -47,6 +47,17 @@ export interface RoomState {
    * what an older server returns.
    */
   log_path?: string;
+  /**
+   * Whether anything is dispatching into the room this server is serving —
+   * i.e. whether the process that embedded this server supplied an
+   * owner-command handler.
+   *
+   * Optional, for the same D-13 reason as `log_path`: making it required would
+   * break every construction of a `RoomState`, which is a minor bump on its own.
+   * A consumer that reads an absent value must treat it as "cannot be shown to
+   * be dispatching", never as `false` — the two are different claims.
+   */
+  dispatcherAttached?: boolean;
 }
 
 export type AgentDetail =
