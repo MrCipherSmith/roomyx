@@ -7,9 +7,9 @@
   "id": "006",
   "slug": "compute-a-participant-s-delta-in-the-ser",
   "title": "Compute a participant's delta in the server, so the dispatcher stops carrying the cursor map (D-18 item 5)",
-  "status": "in-progress",
+  "status": "done",
   "createdAt": "2026-09-10T13:00:15.965Z",
-  "updatedAt": "2026-09-10T13:08:48.352Z",
+  "updatedAt": "2026-09-10T13:21:42.051Z",
   "source": {
     "type": "description",
     "ref": null
@@ -255,6 +255,20 @@
       "at": "2026-09-10T13:08:48.352Z",
       "event": "completion-failed",
       "detail": "pull-request: PR checks not green"
+    },
+    {
+      "at": "2026-09-10T13:21:34.056Z",
+      "event": "implemented",
+      "detail": "draft PR: https://github.com/MrCipherSmith/roomyx/pull/11 (warning: PR is not a draft)"
+    },
+    {
+      "at": "2026-09-10T13:21:34.191Z",
+      "event": "completing"
+    },
+    {
+      "at": "2026-09-10T13:21:42.051Z",
+      "event": "done",
+      "detail": "all gates passed"
     }
   ],
   "baseBranch": "main"
