@@ -83,6 +83,22 @@ export function getTranscript(messages: MessageEnvelope[], sinceSeq: number): Me
   return messages.filter((m) => m.seq > sinceSeq);
 }
 
+
+/**
+ * The agent's own last `seq`, or 0 when it has never spoken.
+ *
+ * Extracted because two functions now need this rule and it is a *rule*, not an
+ * expression: "what counts as the agent's own last message" is the convention
+ * both `get_agent_detail` and `getAgentDelta` publish, and computing it twice
+ * means a change to it has to be made twice — which is how the two would come to
+ * disagree about what a participant has seen, silently, since both answers look
+ * plausible on their own.
+ */
+function lastOwnSeq(messages: MessageEnvelope[], agentId: string): number {
+  const own = messages.filter((m) => m.from === agentId);
+  return own.length > 0 ? Math.max(...own.map((m) => m.seq)) : 0;
+}
+
 /** A single participant's messages and last-seen seq, or an explicit not-found result. */
 export function getAgentDetail(
   messages: MessageEnvelope[],
@@ -95,8 +111,7 @@ export function getAgentDetail(
   }
 
   const own = messages.filter((m) => m.from === agentId);
-  const lastSeenSeq = own.length > 0 ? Math.max(...own.map((m) => m.seq)) : 0;
-  return { found: true, agent, messages: own, lastSeenSeq };
+  return { found: true, agent, messages: own, lastSeenSeq: lastOwnSeq(messages, agentId) };
 }
 
 /**
@@ -132,9 +147,7 @@ export function getAgentDelta(
   const agent = roster.find((r) => r.id === agentId);
   if (!agent) return { found: false };
 
-  const own = messages.filter((m) => m.from === agentId);
-  const lastOwnSeq = own.length > 0 ? Math.max(...own.map((m) => m.seq)) : 0;
-  const since = sinceSeq ?? lastOwnSeq;
+  const since = sinceSeq ?? lastOwnSeq(messages, agentId);
 
   return {
     found: true,
