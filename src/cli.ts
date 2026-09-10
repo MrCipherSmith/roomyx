@@ -4,16 +4,19 @@ import { join, resolve } from "node:path";
 import { serve } from "./server/serve";
 import { createServerShutdown } from "./server/shutdown";
 import { init } from "./installer/init";
-import { registerRoom, deregisterRoom, listLiveRooms } from "./installer/registry";
+import { probeRoomState, registerRoom, deregisterRoom, listLiveRooms } from "./installer/registry";
 import { archiveRoom, defaultHistoryPath, readHistory } from "./installer/history";
 import { syncSkill } from "./installer/skill-sync";
-import { appendMessage, createRoomLog, LEGAL_KINDS, parseRoster } from "./log/write";
+import { appendMessages, createRoomLog, LEGAL_KINDS, parseRoster } from "./log/write";
+import type { AppendMessageOptions } from "./log/write";
+import { acquireWriterLease, readWriterLease, writerLeasePathFor } from "./writer-lease";
 import { MESSAGE_KINDS } from "./log/schema";
+import { LogWriteError } from "./log/write";
 import type { MessageEnvelope } from "./log/types";
 import { NAMED_TARGETS, resolveTargets } from "./installer/skill-targets";
 import { serveManagement } from "./mcp-management/server";
 import { ArgError, parseArgs, renderFlags } from "./cli/args";
-import type { FlagSpecs, ParsedArgs } from "./cli/args";
+import type { FlagSpecs, FlagValues, ParsedArgs } from "./cli/args";
 import { CLIENT_FLAGS } from "./cli/specs";
 
 /**
@@ -33,6 +36,147 @@ function defaultRegistryPath(): string {
 
 function defaultConfigPath(): string {
   return join(process.cwd(), ".roomyx", "config.json");
+}
+
+/**
+ * Turns the flags into the messages to write, or refuses.
+ *
+ * Four ways in, and they do not compose: an envelope says everything, so a
+ * `--from` beside it is an ambiguity rather than an override — and guessing
+ * which one the caller meant is how a body goes into the wrong speaker's mouth.
+ */
+function pendingAppends(flags: FlagValues): AppendMessageOptions[] {
+  // Two different things are being chosen here, and conflating them was wrong:
+  // `--json` and `--many` carry a whole envelope (speaker included), while
+  // `--body` and `--body-file` carry only the body and still need `--from`.
+  // Refusing `--body-file --from b` refused a combination that has no ambiguity
+  // in it at all.
+  const envelopeSources = [flags.json !== undefined, flags.many === true].filter(Boolean).length;
+  if (envelopeSources > 1) throw new ArgError("Use one of --json or --many, not both.");
+  const bodySources = [flags.body !== undefined, flags["body-file"] !== undefined].filter(Boolean).length;
+  if (bodySources > 1) throw new ArgError("Use one of --body or --body-file, not both.");
+
+  if (envelopeSources === 1) {
+    const conflicting = ["from", "body", "body-file", "kind", "in-reply-to"].filter((f) => flags[f] !== undefined);
+    if (conflicting.length > 0) {
+      // An envelope says everything. Silently preferring one source is how a
+      // body ends up in the log under a speaker nobody chose.
+      throw new ArgError(
+        `--json/--many carry the whole envelope, so --${conflicting.join(", --")} cannot be combined with them.`,
+      );
+    }
+    return flags.many === true ? parseBatch(readStdin()) : [envelopeFrom(flags.json as string)];
+  }
+
+  const from = flags.from;
+  if (typeof from !== "string" || from === "") {
+    throw new ArgError("Both --from and --body are required (or pass --json, --body-file or --many).");
+  }
+  const body = typeof flags["body-file"] === "string" ? bodyFromFile(flags["body-file"]) : flags.body;
+  if (typeof body !== "string") throw new ArgError("Both --from and --body are required.");
+
+  const kind = typeof flags.kind === "string" ? flags.kind : undefined;
+  if (kind !== undefined && !(MESSAGE_KINDS as readonly string[]).includes(kind)) {
+    throw new ArgError(`Unknown --kind "${kind}". Known kinds: ${LEGAL_KINDS}.`);
+  }
+  const inReplyTo = typeof flags["in-reply-to"] === "number" ? flags["in-reply-to"] : undefined;
+  if (inReplyTo !== undefined && (!Number.isInteger(inReplyTo) || inReplyTo < 1)) {
+    throw new ArgError(`--in-reply-to must be a whole number of at least 1, not ${inReplyTo}.`);
+  }
+  return [{ from, body, kind: kind as MessageEnvelope["kind"], inReplyTo }];
+}
+
+function readStdin(): string {
+  if (process.stdin.isTTY === true) {
+    // Reading fd 0 from a terminal blocks until Ctrl-D, which reads as a hang.
+    throw new ArgError("This flag reads the message from stdin, and stdin is a terminal. Pipe the text in, or use --body.");
+  }
+  return readFileSync(0, "utf8");
+}
+
+function bodyFromFile(file: string): string {
+  // A trailing newline is what every editor and every `echo` adds; it is not
+  // part of what the speaker said, and it would land inside the quoted body.
+  const raw = file === "-" ? readStdin() : readFileSync(resolve(file), "utf8");
+  return raw.replace(/\r?\n$/, "");
+}
+
+const ENVELOPE_KEYS = ["from", "body", "kind", "in_reply_to"] as const;
+
+/**
+ * Parses one envelope, refusing keys that would silently vanish.
+ *
+ * An unknown key is a refusal rather than something ignored: `seq` and `type`
+ * are assigned by the writer, and a caller who passes one believes they chose
+ * it — so accepting the envelope while dropping their value is the one answer
+ * that cannot be discovered from the log.
+ */
+function envelopeFrom(text: string): AppendMessageOptions {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text) as unknown;
+  } catch (error) {
+    throw new ArgError(`--json is not valid JSON: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new ArgError("--json must be a JSON object.");
+  }
+  const envelope = parsed as Record<string, unknown>;
+  for (const key of Object.keys(envelope)) {
+    if (!(ENVELOPE_KEYS as readonly string[]).includes(key)) {
+      throw new ArgError(`--json has an unknown key "${key}". Allowed: ${ENVELOPE_KEYS.join(", ")}.`);
+    }
+  }
+  const { from, body, kind, in_reply_to: inReplyTo } = envelope;
+  if (typeof from !== "string" || from === "") throw new ArgError('--json needs a non-empty "from".');
+  if (typeof body !== "string") throw new ArgError('--json needs a string "body".');
+  if (kind !== undefined && (typeof kind !== "string" || !(MESSAGE_KINDS as readonly string[]).includes(kind))) {
+    throw new ArgError(`--json "kind" must be one of: ${LEGAL_KINDS}.`);
+  }
+  if (inReplyTo !== undefined && (typeof inReplyTo !== "number" || !Number.isInteger(inReplyTo) || inReplyTo < 1)) {
+    throw new ArgError('--json "in_reply_to" must be a whole number of at least 1.');
+  }
+  return {
+    from,
+    body,
+    kind: kind as MessageEnvelope["kind"],
+    inReplyTo: inReplyTo as number | undefined,
+  };
+}
+
+function parseBatch(text: string): AppendMessageOptions[] {
+  const lines = text.split("\n").filter((line) => line.trim().length > 0);
+  if (lines.length === 0) throw new ArgError("--many read no envelopes from stdin.");
+  return lines.map((line, index) => {
+    try {
+      return envelopeFrom(line);
+    } catch (error) {
+      throw new ArgError(`--many line ${index + 1}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  });
+}
+
+/**
+ * Writes the batch, or none of it. `appendMessages` allocates consecutive `seq`
+ * and validates every envelope before the first byte, so a refused batch leaves
+ * the log exactly as it was.
+ */
+function writeAll(path: string, pending: AppendMessageOptions[]) {
+  try {
+    return appendMessages(path, pending);
+  } catch (error) {
+    if (error instanceof LogWriteError) throw new ArgError(error.message);
+    throw error;
+  }
+}
+
+/** The holder a take-over displaced, when there was one. */
+function stateBefore(lease: import("./writer-lease").LeaseState): { pid: number; at: number } | undefined {
+  if (lease.held) return { pid: lease.lease.pid, at: lease.lease.at };
+  // A stale lease still identifies the writer that stopped: recording it is the
+  // difference between a log that says "someone took this over" and one that
+  // says who from.
+  return lease.reason === "stale" ? { pid: lease.last.pid, at: lease.last.at } : undefined;
 }
 
 function bundledSkillPath(): string {
@@ -163,69 +307,110 @@ const COMMANDS: Record<string, Command> = {
   },
 
   "room append": {
-    usage: "roomyx room append <path> --from <id> --body <text> [flags]",
+    usage: "roomyx room append <path> (--from <id> --body <text> | --json <envelope> | --body-file <file> | --many) [flags]",
     summary: "append a message to a room log",
     notes:
-      "Refuses when a live room is serving that log: if that room has a\n  dispatcher, the dispatcher is the single writer (D-01a). --force appends\n  anyway — a room served by bare `roomyx serve` has no dispatcher to race.",
+      "Refuses only when the room is live AND something is writing into it: a\n  live room with no dispatcher has no writer to race, so appending to it\n  needs no flag at all (D-01a, D-18). A lease that has expired means the\n  writer stopped without saying so — taking over then is a deliberate act,\n  --take-over, and it is recorded in the log.",
     flags: {
-      from: { type: "string", describe: "Required. Participant id" },
-      body: { type: "string", describe: "Required. The message" },
+      from: { type: "string", describe: "Participant id" },
+      body: { type: "string", describe: "The message" },
+      json: { type: "string", describe: "A whole envelope: {from, body, kind?, in_reply_to?}" },
+      "body-file": { type: "string", describe: "Read the body from a file, or - for stdin" },
+      many: { type: "boolean", describe: "Read a JSONL batch of envelopes from stdin; all of them or none" },
       kind: { type: "string", describe: "Message kind, e.g. challenge" },
       "in-reply-to": { type: "number", describe: "seq of the message replied to" },
-      force: { type: "boolean", describe: "Append even if a live room serves this log" },
+      "take-over": { type: "boolean", describe: "Write when the room is live but its writer is gone" },
       registry: REGISTRY_FLAG,
     },
     run: async ({ positionals, flags }) => {
       const path = positionals[0];
       if (!path) throw new ArgError("Missing <path>.");
-      const from = flags.from;
-      const body = flags.body;
-      if (typeof from !== "string" || typeof body !== "string") {
-        throw new ArgError("Both --from and --body are required.");
-      }
-
       const absolute = resolve(path);
-      if (flags.force !== true) {
-        const registryPath = typeof flags.registry === "string" ? flags.registry : defaultRegistryPath();
-        const serving = (await listLiveRooms(registryPath)).find((room) => room.logPath === absolute);
-        if (serving) {
-          // The old wording ended "Pass --force if you know it isn't" — it asked
-          // the operator to assert the room is gone. But the common case for
-          // reaching this message is a room served by bare `roomyx serve`, where
-          // the room is genuinely live and simply has no dispatcher attached, so
-          // there is no second writer to race. The flag was the right escape
-          // hatch behind a claim that was false exactly when you needed it.
-          //
-          // roomyx cannot tell the two apart: the registry records that a room
-          // serves this path, not whether anything is dispatching into it. So
-          // say what is known and let the operator judge, rather than making
-          // --force mean something untrue.
-          throw new ArgError(
-            `A live room (${serving.id}) is serving this log. If it has a dispatcher, that dispatcher is the log's single writer (D-01a) and appending here races it. Pass --force to append anyway.`,
-          );
-        }
+
+      const takeOver = flags["take-over"] === true;
+
+      // Absolute, because the lease lives beside the registry and this process's
+      // cwd is not the next process's: a relative `--registry` made the lease
+      // land in a different directory depending on where the command was run.
+      const absoluteRegistry = resolve(typeof flags.registry === "string" ? flags.registry : defaultRegistryPath());
+      const leasePath = writerLeasePathFor(absoluteRegistry, absolute);
+
+      const serving = (await listLiveRooms(absoluteRegistry)).find((room) => room.logPath === absolute);
+
+      // Read the lease BEFORE the probe, and independently of its outcome. A
+      // liveness probe that times out says "could not reach it", which is not
+      // "nothing is writing into it" — and reading the lease only once the probe
+      // succeeded meant a busy machine wrote into a room whose dispatcher was
+      // perfectly alive.
+      const lease = readWriterLease(leasePath);
+      const dispatched = serving !== undefined ? ((await probeRoomState(serving))?.dispatcherAttached ?? undefined) : undefined;
+
+      // Two independent pieces of evidence that someone else is writing: a live
+      // dispatcher, and a lease somebody is refreshing. The second exists because
+      // the first only holds for a server that was started with a lease path.
+      const writerPresent = lease.held || dispatched === true;
+      const writerWasThere = !writerPresent && lease.reason === "stale";
+
+      if (writerPresent) {
+        // Two different reasons to refuse, and they need different advice: a
+        // lease that is merely stale will expire by itself, while a room that
+        // reports a dispatcher will keep reporting one until the server is
+        // stopped — waiting would be advice that never comes true.
+        const advice =
+          dispatched === true
+            ? `Stop the server that is running the room; once it is gone, --take-over will let you write to this log.`
+            : `Wait for that lease to expire (a writer that is running refreshes it), or stop the process holding it.`;
+        throw new ArgError(
+          `A writer is live in ${absolute}${serving === undefined ? "" : ` (room ${serving.id})`}` +
+            `${lease.held ? ` — pid ${lease.lease.pid}` : " — the room reports a dispatcher attached"}. ` +
+            `Two writers into one append-only log is the race D-01 exists to prevent, and nothing overrides a writer ` +
+            `that is still there. ${advice}`,
+        );
+      }
+      if (writerWasThere && !takeOver) {
+        throw new ArgError(
+          `A writer was in ${absolute}${serving === undefined ? "" : ` (room ${serving.id})`} and is gone — ` +
+            `nothing holds the lease now. Writing means taking ownership from a room that looks supervised. ` +
+            `Pass --take-over to do that deliberately; the log will record it.`,
+        );
       }
 
-      // Refused here, in the grammar, so the error names the flag the operator
-      // typed rather than a field name from the on-disk schema. `appendMessage`
-      // validates too — that is the guard that cannot be bypassed — but a
-      // message about `--kind` belongs to the CLI that owns the flag.
-      const kind = typeof flags.kind === "string" ? flags.kind : undefined;
-      if (kind !== undefined && !(MESSAGE_KINDS as readonly string[]).includes(kind)) {
-        throw new ArgError(`Unknown --kind "${kind}". Known kinds: ${LEGAL_KINDS}.`);
-      }
-      const inReplyTo = typeof flags["in-reply-to"] === "number" ? flags["in-reply-to"] : undefined;
-      if (inReplyTo !== undefined && (!Number.isInteger(inReplyTo) || inReplyTo < 1)) {
-        throw new ArgError(`--in-reply-to must be a whole number of at least 1, not ${inReplyTo}.`);
+      // Parsed only after the refusal: an operator whose command is going to be
+      // rejected should not be made to pipe a batch in first, and a reader that
+      // blocks on stdin while holding a decision helps nobody.
+      const pending = pendingAppends(flags);
+
+      const displaced = takeOver || writerWasThere ? stateBefore(lease) : undefined;
+      const takingOver = takeOver || writerWasThere;
+
+      // One batch, one lock section: the take-over trace goes in WITH the
+      // messages it describes. Written as a second call it could fail on its
+      // own, and a room written by hand while its writer was absent would read
+      // afterwards as supervised — the one thing the trace exists to prevent.
+      const written = writeAll(absolute, [
+        ...pending,
+        ...(takingOver
+          ? [
+              {
+                from: "owner",
+                kind: "status" as const,
+                body:
+                  `--take-over: ${pending.length} message(s) appended to ${absolute}` +
+                  `${serving === undefined ? "" : ` while room ${serving.id} was live`} with no live writer` +
+                  `${displaced === undefined ? " (no lease was held)" : ` (took over from pid ${displaced.pid})`}`,
+              },
+            ]
+          : []),
+      ]);
+
+      if (takingOver) {
+        // The lease is replaced with a new token, so a writer that was merely
+        // paused cannot revive the one it lost by refreshing it — the whole
+        // reason a take-over is not just a flag on the write.
+        acquireWriterLease(leasePath, { pid: process.pid, ...(displaced === undefined ? {} : { takeOverFrom: displaced }) });
       }
 
-      const message = appendMessage(absolute, {
-        from,
-        body,
-        kind: kind as MessageEnvelope["kind"],
-        inReplyTo,
-      });
-      console.log(`Appended seq ${message.seq} from ${message.from}.`);
+      for (const message of written) console.log(`Appended seq ${message.seq} from ${message.from}.`);
     },
   },
 
@@ -246,13 +431,17 @@ const COMMANDS: Record<string, Command> = {
       // directory: `roomyx-client` resolves rooms from wherever the person
       // happened to run it, and a relative logPath means nothing there.
       const absoluteLogPath = resolve(logPath);
+      // Resolved before binding: the writer lease lives beside the registry, and
+      // a server that acquires one after it starts answering would leave a
+      // window where a live dispatcher looks like no writer at all.
+      const registryPath = typeof flags.registry === "string" ? flags.registry : defaultRegistryPath();
       const handle = await serve(absoluteLogPath, {
         port: typeof flags.port === "number" ? flags.port : undefined,
         host: typeof flags.host === "string" ? flags.host : undefined,
         acknowledgeNonLoopback: flags["acknowledge-non-loopback"] === true,
+        writerLeasePath: writerLeasePathFor(resolve(registryPath), absoluteLogPath),
       });
 
-      const registryPath = typeof flags.registry === "string" ? flags.registry : defaultRegistryPath();
       const entry = registerRoom(registryPath, {
         port: handle.port,
         logPath: absoluteLogPath,

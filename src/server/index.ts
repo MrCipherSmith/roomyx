@@ -49,7 +49,17 @@ export function createRoomMcpServer(logPath: string, options: RoomMcpServerOptio
       description: "Roster and current goal contract for this room.",
     },
     async () => ({
-      content: [{ type: "text", text: JSON.stringify(getStateTool(logPath)) }],
+      content: [
+        {
+          type: "text",
+          // Always stated, even when false: this is the field `room append`
+          // needs to stop hedging its refusal, so "no dispatcher" has to be an
+          // answer rather than an absence.
+          text: JSON.stringify(
+            getStateTool(logPath, { dispatcherAttached: options.onOwnerCommand !== undefined }),
+          ),
+        },
+      ],
     }),
   );
 
