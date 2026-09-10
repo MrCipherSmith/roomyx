@@ -5,6 +5,7 @@ import { serve } from "./server/serve";
 import { createServerShutdown } from "./server/shutdown";
 import { init } from "./installer/init";
 import { registerRoom, deregisterRoom, listLiveRooms } from "./installer/registry";
+import { archiveRoom, defaultHistoryPath, readHistory } from "./installer/history";
 import { syncSkill } from "./installer/skill-sync";
 import { appendMessage, createRoomLog, LEGAL_KINDS, parseRoster } from "./log/write";
 import { MESSAGE_KINDS } from "./log/schema";
@@ -209,7 +210,16 @@ const COMMANDS: Record<string, Command> = {
 
       runUntilSignal(
         () => handle.close(),
-        () => deregisterRoom(registryPath, entry.id),
+        () => {
+          // Archive before deregistering, not after: `archiveRoom` reads the
+          // log to summarise it, and it reads better while the entry that says
+          // where the log is still exists. The order also means a crash
+          // between the two leaves the room recorded in history and still in
+          // the registry, which the next prune resolves — rather than gone
+          // from both.
+          archiveRoom(defaultHistoryPath(registryPath), entry);
+          deregisterRoom(registryPath, entry.id);
+        },
       );
     },
   },
@@ -231,6 +241,35 @@ const COMMANDS: Record<string, Command> = {
       }
       for (const room of rooms) {
         console.log(`${room.id}  port=${room.port}  log=${room.logPath}  started=${room.startedAt}`);
+      }
+    },
+  },
+
+  "rooms history": {
+    usage: "roomyx rooms history [flags]",
+    summary: "rooms that have closed, newest first",
+    notes:
+      "History records what a room was and where its log is — it does not copy\n  the log. Reopen one read-only with `roomyx-client --open <logPath>`, or\n  pick from the list with `roomyx-client --archive`.",
+    flags: { registry: REGISTRY_FLAG },
+    run: async ({ flags }) => {
+      const registryPath = typeof flags.registry === "string" ? flags.registry : defaultRegistryPath();
+      const { rooms, unreadable } = readHistory(defaultHistoryPath(registryPath));
+      if (rooms.length === 0) {
+        console.log("No closed rooms recorded yet.");
+      }
+      for (const room of rooms) {
+        const when = room.closedAt.slice(0, 16).replace("T", " ");
+        const goal = room.goal === "" ? "(goal unavailable)" : room.goal;
+        console.log(
+          `${room.id}  closed=${when}  messages=${room.messages}  participants=${room.participants}  ${goal}`,
+        );
+        // The path on its own line: it is the argument to --open, and a goal
+        // statement is long enough that putting them on one line means the
+        // thing you have to copy is the thing that gets wrapped.
+        console.log(`    ${room.logPath}${room.logExists ? "" : "  (log no longer at this path)"}`);
+      }
+      if (unreadable > 0) {
+        console.log(`\n${unreadable} history line(s) could not be read and were skipped.`);
       }
     },
   },

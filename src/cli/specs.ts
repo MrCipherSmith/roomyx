@@ -13,4 +13,6 @@ export const CLIENT_FLAGS: FlagSpecs = {
   room: { type: "string", describe: "Attach to a specific live room by id" },
   connect: { type: "string", describe: "Attach to an explicit MCP URL; the registry is not consulted" },
   registry: { type: "string", describe: "Registry file (default .roomyx/rooms/registry.json)" },
+  open: { type: "string", describe: "Reread a closed room from its log file, read-only" },
+  archive: { type: "boolean", describe: "Pick a closed room from the history index" },
 };

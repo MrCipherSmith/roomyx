@@ -1,20 +1,19 @@
 #!/usr/bin/env bun
-import { existsSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { createCliRenderer } from "@opentui/core";
+import type { CliRenderer } from "@opentui/core";
 import { RoomClient } from "./mcp-client";
-import { ChatView } from "./screens/chat-view";
-import type { RosterEntry } from "../log/types";
 import { resolveConnectionUrl } from "../installer/resolve-connection";
 import { IDLE, OPENED, ownerPromptLine, stepOwnerPrompt } from "./owner-prompt";
 import type { OwnerPromptState } from "./owner-prompt";
-import { resolveAction } from "./keymap";
-import type { Action } from "./keymap";
 import { livenessLine } from "./liveness";
-import { exportBaseName, nextFreeExportPath } from "./export-name";
 import { createShutdown } from "./shutdown";
-import { CLOSED, opened, searchPromptLine, stepSearchPrompt } from "./search-prompt";
-import type { SearchPromptState } from "./search-prompt";
+import { Viewer } from "./viewer";
+import { resolveAction } from "./keymap";
+import { ArchiveList } from "./screens/archive-list";
+import { defaultHistoryPath, readHistory } from "../installer/history";
+import type { RoomHistoryRow } from "../installer/history";
+import { loadRoomLog } from "../log/store";
 import type { ConnectionStatus } from "./mcp-client";
 import { ArgError, parseArgs, renderFlags } from "../cli/args";
 import type { FlagValues } from "../cli/args";
@@ -26,10 +25,24 @@ import { CLIENT_FLAGS } from "../cli/specs";
  * means. They previously had one scanner each, which is how a bare
  * `--registry` became `""` here (and `""` is not nullish, so it beat the
  * default) while becoming `true` in the other.
+ *
+ * Three modes, and only the first one needs a server: attach to a live room,
+ * reread one closed room by path (`--open`), or pick a closed room from the
+ * history index (`--archive`). Everything the reader does once a transcript is
+ * on screen is the same in all three and lives in `./viewer`.
  */
 export async function runClient(flags: FlagValues): Promise<void> {
   const registryPath =
     typeof flags.registry === "string" ? flags.registry : join(process.cwd(), ".roomyx", "rooms", "registry.json");
+
+  if (typeof flags.open === "string") {
+    await runArchived(resolve(flags.open), null);
+    return;
+  }
+  if (flags.archive === true) {
+    await runArchivePicker(defaultHistoryPath(registryPath));
+    return;
+  }
 
   const resolved = await resolveConnectionUrl({
     connect: typeof flags.connect === "string" ? flags.connect : undefined,
@@ -40,6 +53,12 @@ export async function runClient(flags: FlagValues): Promise<void> {
   if (!resolved.ok) {
     if (resolved.reason === "no-rooms") {
       console.error("No live roomyx rooms found. Start one with `roomyx serve <logPath>` first.");
+      // The rooms that have ended are the other half of the answer, and the
+      // person who just got "no live rooms" is usually looking for one of them.
+      const { rooms } = readHistory(defaultHistoryPath(registryPath));
+      if (rooms.length > 0) {
+        console.error(`${rooms.length} closed room(s) recorded — reread them with \`roomyx-client --archive\`.`);
+      }
     } else if (resolved.reason === "room-not-found") {
       console.error(`No live room with id "${flags.room}". Run \`roomyx rooms list\` to see what's running.`);
     } else {
@@ -48,59 +67,58 @@ export async function runClient(flags: FlagValues): Promise<void> {
     }
     process.exit(1);
   }
-  const url = resolved.url;
 
+  await runLive(resolved.url);
+}
+
+/** Attached to a room that is still running: polling, owner commands, liveness. */
+async function runLive(url: string): Promise<void> {
   const renderer = await createCliRenderer({ targetFps: 30 });
-
-  // Selecting a participant filters the stream in place instead of opening a
-  // window over it. The modal this replaces could not be scrolled, did not
-  // compose with search, cost a keypress to leave, and was pinned at hardcoded
-  // coordinates across the roster it had been opened from.
-  const chatView = new ChatView(renderer, {
-    width: renderer.terminalWidth,
-    height: renderer.terminalHeight,
-    onSelectAgent: (agent: RosterEntry) => applyFilter(agent),
-  });
-
-  renderer.root.add(chatView.node);
-
-  let filtered: RosterEntry | null = null;
-  let matchCursor = -1;
-
-  function applyFilter(agent: RosterEntry | null): void {
-    filtered = agent;
-    chatView.setFilter(agent?.id ?? null);
-    matchCursor = -1;
-    chatView.scrollToBottom();
-    refreshFooter();
-  }
 
   let messageCount = 0;
   let lastMessageAt: number | null = null;
   let connection: ConnectionStatus = "connecting";
-  let participants = 0;
+  let prompt: OwnerPromptState = IDLE;
 
-  function refreshFooter(): void {
-    const liveness = livenessLine({ status: connection, messageCount, lastMessageAt, now: Date.now() });
-    // On a terminal too narrow for the roster, the footer is the only place
-    // that still says how many people are in the room.
-    const here = chatView.isRosterVisible() || participants === 0 ? "" : `${participants} here · `;
-    // A filter or a search that is on but invisible is the worst of both: the
-    // pane looks like a quiet room. `less` prints a single `&` for the same
-    // reason, and k9s puts the live filter in the view title.
-    const filterNote = filtered === null ? "" : `filter: ${filtered.name} · `;
-    const query = chatView.transcript.currentQuery();
-    const total = chatView.transcript.matches().length;
-    // `matchCursor` is -1 until a match has been jumped to, and `applyFilter`
-    // resets it — so this printed "0/2", a match number that does not exist.
-    // Before a position is known, say how many there are.
-    const position = matchCursor >= 0 ? `${matchCursor + 1}/${total}` : `${total} matches`;
-    const searchNote = query === "" ? "" : `/${query} ${total === 0 ? "no matches" : position} · `;
-    chatView.footer.setLiveness(`${filterNote}${searchNote}${here}${liveness}`);
-    // Only say something when the reader is *not* where new messages land —
-    // a permanent "at bottom" would be another word that always says the same
-    // thing, which is the habit this footer exists to break.
-    chatView.footer.setScrollNote(chatView.isAtBottom() ? null : "scrolled up · G to follow");
+  const viewer = new Viewer({
+    renderer,
+    quit: () => shutdown(0),
+    status: () => livenessLine({ status: connection, messageCount, lastMessageAt, now: Date.now() }),
+    onOwnerPrompt: () => {
+      prompt = OPENED;
+      showPrompt();
+    },
+    // The prompt owns the keyboard while it is open — otherwise typing "q"
+    // into a veto would quit the client.
+    beforeKey: (event) => {
+      if (prompt.stage === "idle") return false;
+      const stepped = stepOwnerPrompt(prompt, event);
+      prompt = stepped.state;
+      showPrompt();
+      if (stepped.action.type === "send") {
+        const { kind, body } = stepped.action;
+        viewer.chatView.statusBar.setNotice(`${kind}: sending…`);
+        void roomClient
+          .postOwnerCommand(kind, body)
+          .then((result) => {
+            viewer.chatView.statusBar.setNotice(
+              result.accepted
+                ? `${kind} accepted${result.reason ? ` — ${result.reason}` : ""}`
+                : `${kind} not accepted — ${result.reason ?? "no reason given"}`,
+            );
+          })
+          .catch((error: unknown) => {
+            viewer.chatView.statusBar.setNotice(
+              `${kind} failed — ${error instanceof Error ? error.message : String(error)}`,
+            );
+          });
+      }
+      return true;
+    },
+  });
+
+  function showPrompt(): void {
+    viewer.chatView.statusBar.setNotice(ownerPromptLine(prompt));
   }
 
   const roomClient = new RoomClient(
@@ -109,34 +127,34 @@ export async function runClient(flags: FlagValues): Promise<void> {
       onConnectionChange: (status) => {
         const previous = connection;
         connection = status;
-        chatView.setConnectionStatus(status);
+        viewer.chatView.setConnectionStatus(status);
         // Also into the transcript, not only the footer: a repainted footer
         // row is never spoken by a screen reader and never survives a `tee`.
         if (previous !== status && previous !== "connecting") {
-          chatView.appendSystemLine(status === "connected" ? "reconnected" : "disconnected, retrying");
+          viewer.chatView.appendSystemLine(status === "connected" ? "reconnected" : "disconnected, retrying");
         }
-        refreshFooter();
+        viewer.refreshFooter();
       },
       // The room answered and the answer was an error — usually a malformed
       // line in the log. It reaches the transcript, where it is readable and
       // survives a scroll, rather than being thrown away.
       onToolError: (message) => {
-        chatView.appendSystemLine(message);
-        refreshFooter();
+        viewer.chatView.appendSystemLine(message);
+        viewer.refreshFooter();
       },
       onStateUpdate: (state) => {
-        chatView.setGoalContract(state.goal_contract);
-        chatView.setRoster(state.roster);
-        participants = state.roster.length;
-        refreshFooter();
+        viewer.chatView.setGoalContract(state.goal_contract);
+        viewer.chatView.setRoster(state.roster);
+        viewer.setParticipants(state.roster.length);
+        viewer.refreshFooter();
       },
       onNewMessages: (messages) => {
-        chatView.appendMessages(messages);
+        viewer.chatView.appendMessages(messages);
         if (messages.length > 0) {
           messageCount += messages.length;
           lastMessageAt = Date.now();
         }
-        refreshFooter();
+        viewer.refreshFooter();
       },
     },
   );
@@ -145,19 +163,8 @@ export async function runClient(flags: FlagValues): Promise<void> {
   // The footer carries an age, so it has to repaint on its own — otherwise
   // "last 4s ago" would sit there unchanged through a silence, which is the
   // exact failure it was added to prevent.
-  const footerTimer = setInterval(refreshFooter, 1000);
-  refreshFooter();
-
-  let prompt: OwnerPromptState = IDLE;
-
-  function showPrompt(): void {
-    chatView.statusBar.setNotice(ownerPromptLine(prompt));
-  }
-
-  function openOwnerPrompt(): void {
-    prompt = OPENED;
-    showPrompt();
-  }
+  const footerTimer = setInterval(() => viewer.refreshFooter(), 1000);
+  viewer.refreshFooter();
 
   // The ordering and the re-entry guard live in `./shutdown` so they can be
   // tested; see that file for why the order is the fix. `q`, Ctrl-C and all
@@ -175,168 +182,135 @@ export async function runClient(flags: FlagValues): Promise<void> {
     process.on(signal, () => shutdown(0));
   }
 
-  let search: SearchPromptState = CLOSED;
+  renderer.keyInput.on("keypress", (event) => viewer.handleKey(event));
+}
 
-  function showSearch(): void {
-    chatView.statusBar.setNotice(searchPromptLine(search));
+/**
+ * Rereads a room that has ended. No server, no polling, no reconnect — the log
+ * is a finished file, so it is read once and that is the whole of it.
+ *
+ * The log is loaded *before* the renderer starts. A room log that has been
+ * moved, or that has a damaged line, must fail as a printed sentence — entering
+ * the alternate screen first and then throwing leaves the terminal in a state
+ * the person has to `reset` out of, with the error scrolled away behind it.
+ */
+async function runArchived(logPath: string, closed: RoomHistoryRow | null, renderer?: CliRenderer): Promise<void> {
+  let loaded: ReturnType<typeof loadRoomLog>;
+  try {
+    loaded = loadRoomLog(logPath);
+  } catch (error) {
+    if (renderer) renderer.destroy();
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
   }
 
-  function jumpTo(index: number | null): void {
-    if (index === null) {
-      chatView.statusBar.setNotice(`no match for "${chatView.transcript.currentQuery()}"`);
-      matchCursor = -1;
-    } else {
-      matchCursor = chatView.transcript.matches().indexOf(index);
-      chatView.scrollToEntry(index);
-      chatView.statusBar.setNotice(null);
-    }
-    refreshFooter();
+  const active = renderer ?? (await createCliRenderer({ targetFps: 30 }));
+
+  // Static: nothing here changes after the file is read, so unlike the live
+  // client this needs no repaint timer. What it says instead of a liveness age
+  // is when the room closed, because "read-only" without a date is the same
+  // word forever — the habit this footer exists to break.
+  const status =
+    `read-only · ${loaded.messages.length} messages` + (closed ? ` · closed ${closed.closedAt.slice(0, 10)}` : "");
+
+  const shutdown = createShutdown({
+    stopClient: async () => undefined,
+    destroyRenderer: () => active.destroy(),
+    exit: (code) => process.exit(code),
+  });
+
+  const viewer = new Viewer({ renderer: active, quit: () => shutdown(0), status: () => status });
+  viewer.chatView.setGoalContract(loaded.state.goal_contract);
+  viewer.chatView.setRoster(loaded.state.roster);
+  viewer.setParticipants(loaded.state.roster.length);
+  viewer.chatView.appendMessages(loaded.messages);
+  // "closed" rather than a connection state: the status bar's other values all
+  // describe a socket, and this room does not have one.
+  viewer.chatView.setConnectionStatus("closed");
+  viewer.chatView.scrollToTop();
+  viewer.refreshFooter();
+
+  for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
+    process.on(signal, () => shutdown(0));
   }
 
-  /**
-   * Where `n` and `N` start counting from: the match cursor if a search is
-   * already underway, otherwise the end of the transcript, so the first `n`
-   * after a fresh `/` wraps to the earliest match rather than jumping from
-   * wherever the last search happened to leave off.
-   */
-  function currentEntryIndex(): number {
-    const matches = chatView.transcript.matches();
-    const at = matches[matchCursor];
-    return at ?? -1;
+  active.keyInput.on("keypress", (event) => viewer.handleKey(event));
+}
+
+/** The list of closed rooms; Enter opens the highlighted one read-only. */
+async function runArchivePicker(historyPath: string): Promise<void> {
+  const { rooms, unreadable } = readHistory(historyPath);
+  if (rooms.length === 0) {
+    // Printed rather than shown: a full-screen list you have to press q to
+    // leave, in order to be told it is empty, is worse than a sentence.
+    console.log("No closed rooms recorded yet.");
+    console.log("A room is recorded when `roomyx serve` shuts down, or when `roomyx rooms list` finds it gone.");
+    if (unreadable > 0) console.log(`${unreadable} history line(s) could not be read and were skipped.`);
+    return;
   }
 
-  /**
-   * Writes what is on screen to a file and names the path.
-   *
-   * Claude Code's transcript viewer dumps into the terminal's own scrollback so
-   * tmux copy-mode and the terminal's find can reach it. roomyx cannot leave
-   * the alternate screen safely while the room is still streaming into it, so
-   * it writes a file instead — same purpose, which is to get the text somewhere
-   * the reader's existing tools already work.
-   *
-   * It never overwrites: `wx` fails if the path exists and the loop takes the
-   * next free suffix. Silently replacing an export someone took a minute ago is
-   * exactly the kind of small theft a keystroke should not be able to commit.
-   */
-  function exportTranscript(): void {
-    const base = exportBaseName(filtered?.id ?? null);
-    const target = nextFreeExportPath(process.cwd(), base, existsSync);
-    if (!target.ok) {
-      chatView.statusBar.setNotice(
-        target.reason === "exhausted"
-          ? `${base}.txt and 99 numbered siblings all exist — nothing written`
-          : "refusing to write outside the working directory",
-      );
-      return;
-    }
-    try {
-      // `wx` creates or fails; it never truncates.
-      writeFileSync(target.path, `${chatView.transcript.toText()}\n`, { encoding: "utf8", flag: "wx" });
-      // The name, not the absolute path: the status bar is one line and
-      // truncates, and an absolute path under a deep working directory gets cut
-      // exactly where the filename would have been. The file is in the
-      // directory the client was started from, which the containment check
-      // above now guarantees rather than assumes.
-      chatView.statusBar.setNotice(`written to ./${target.name}`);
-    } catch (error) {
-      chatView.statusBar.setNotice(
-        `could not write ./${target.name} — ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
+  const renderer = await createCliRenderer({ targetFps: 30 });
+  const list = new ArchiveList(renderer, rooms, {
+    width: renderer.terminalWidth,
+    height: renderer.terminalHeight,
+    unreadable,
+  });
+  renderer.root.add(list.node);
+
+  const quit = createShutdown({
+    stopClient: async () => undefined,
+    destroyRenderer: () => renderer.destroy(),
+    exit: (code) => process.exit(code),
+  });
+  for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
+    process.on(signal, () => quit(0));
   }
 
+  // Through the shared keymap rather than its own key comparisons: this is a
+  // list of rows navigated with j/k and opened with Enter, which is what the
+  // roster already is, and two lists in one client that disagree about which
+  // key moves down is exactly the kind of drift a printed keymap is supposed to
+  // rule out.
   renderer.keyInput.on("keypress", (event) => {
-    // The help overlay swallows the keyboard, so a key pressed at a screen
-    // explaining the keys does not also fire the thing it explains.
-    if (chatView.help.isVisible()) {
-      if (event.name === "escape" || event.sequence === "?") chatView.help.hide();
-      return;
-    }
-
-    if (search.open) {
-      const stepped = stepSearchPrompt(search, event);
-      search = stepped.state;
-      showSearch();
-      if (stepped.action.type === "search") {
-        chatView.setQuery(stepped.action.query);
-        chatView.statusBar.setNotice(null);
-        if (stepped.action.query !== "") jumpTo(chatView.transcript.nextMatch(-1));
-        else refreshFooter();
-      } else if (stepped.action.type === "cancel") {
-        chatView.statusBar.setNotice(null);
+    switch (resolveAction(event)) {
+      // ↑/↓ scroll the transcript in the chat view, but a list has nothing else
+      // to scroll — a key that moves in every other list and does nothing here
+      // reads as the screen being frozen.
+      case "roster.next":
+      case "scroll.lineDown":
+        list.moveSelection(1);
+        break;
+      case "roster.prev":
+      case "scroll.lineUp":
+        list.moveSelection(-1);
+        break;
+      case "app.quit":
+        quit(0);
+        break;
+      case "roster.open": {
+        const room = list.selected();
+        if (room === null) return;
+        // Freed, not merely unlinked: `remove()` leaves the native yoga nodes
+        // and TextBuffers allocated, and the pool is finite. The chat view
+        // built next wants those rows back.
+        renderer.root.remove(list.node);
+        list.destroy();
+        void runArchived(room.logPath, room, renderer);
+        break;
       }
-      return;
+      default:
+        break;
     }
-
-    // The prompt owns the keyboard while it is open — otherwise typing "q"
-    // into a veto would quit the client.
-    if (prompt.stage !== "idle") {
-      const stepped = stepOwnerPrompt(prompt, event);
-      prompt = stepped.state;
-      showPrompt();
-      if (stepped.action.type === "send") {
-        const { kind, body } = stepped.action;
-        chatView.statusBar.setNotice(`${kind}: sending…`);
-        void roomClient
-          .postOwnerCommand(kind, body)
-          .then((result) => {
-            chatView.statusBar.setNotice(
-              result.accepted
-                ? `${kind} accepted${result.reason ? ` — ${result.reason}` : ""}`
-                : `${kind} not accepted — ${result.reason ?? "no reason given"}`,
-            );
-          })
-          .catch((error: unknown) => {
-            chatView.statusBar.setNotice(
-              `${kind} failed — ${error instanceof Error ? error.message : String(error)}`,
-            );
-          });
-      }
-      return;
-    }
-
-    // Any other key clears a leftover result line and falls through.
-    chatView.statusBar.setNotice(null);
-
-    const action = resolveAction(event);
-    if (action === null) return;
-
-    // One row per action rather than a chain of conditions, so the set of
-    // things a key can do is a list you can read, and adding one cannot
-    // accidentally shadow an earlier branch.
-    const half = Math.max(1, Math.floor(chatView.pageSize() / 2));
-    const handlers: Record<Action, () => void> = {
-      "scroll.lineUp": () => chatView.scrollByLines(-1),
-      "scroll.lineDown": () => chatView.scrollByLines(1),
-      "scroll.pageUp": () => chatView.scrollByLines(-chatView.pageSize()),
-      "scroll.pageDown": () => chatView.scrollByLines(chatView.pageSize()),
-      "scroll.halfUp": () => chatView.scrollByLines(-half),
-      "scroll.halfDown": () => chatView.scrollByLines(half),
-      "scroll.top": () => chatView.scrollToTop(),
-      "scroll.bottom": () => chatView.scrollToBottom(),
-      "roster.prev": () => chatView.roster.moveSelection(-1),
-      "roster.next": () => chatView.roster.moveSelection(1),
-      "roster.open": () => chatView.roster.confirmSelection(),
-      "filter.clear": () => applyFilter(null),
-      "search.open": () => {
-        search = opened();
-        showSearch();
-      },
-      "search.next": () => jumpTo(chatView.transcript.nextMatch(currentEntryIndex())),
-      "search.previous": () => jumpTo(chatView.transcript.previousMatch(currentEntryIndex())),
-      "owner.prompt": () => openOwnerPrompt(),
-      "transcript.export": () => exportTranscript(),
-      "help.toggle": () => chatView.help.toggle(),
-      "app.quit": () => shutdown(0),
-    };
-    handlers[action]();
-    refreshFooter();
   });
 }
 
-const CLIENT_USAGE = ["roomyx-client [flags]", "", "  attach the terminal UI to a live room", "", renderFlags(CLIENT_FLAGS)].join(
-  "\n",
-);
+const CLIENT_USAGE = [
+  "roomyx-client [flags]",
+  "",
+  "  attach the terminal UI to a live room, or reread a closed one",
+  "",
+  renderFlags(CLIENT_FLAGS),
+].join("\n");
 
 if (import.meta.main) {
   void (async () => {

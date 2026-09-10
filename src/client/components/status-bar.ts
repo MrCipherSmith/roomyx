@@ -3,11 +3,19 @@ import type { RenderContext } from "@opentui/core";
 import type { ConnectionStatus } from "../mcp-client";
 import type { GoalContract } from "../../log/types";
 
-/** One-line status bar: goal statement + connection status. */
+/**
+ * One-line status bar: goal statement + connection status.
+ *
+ * `"closed"` is a display state, not a transport state — a room being reread
+ * from its log has no socket at all. It is widened here rather than added to
+ * `ConnectionStatus`, which describes what the MCP client is doing and would
+ * then carry a member the client can never emit.
+ */
+export type DisplayStatus = ConnectionStatus | "closed";
 export class StatusBar {
   readonly node: TextRenderable;
   private goalStatement = "";
-  private status: ConnectionStatus = "connecting";
+  private status: DisplayStatus = "connecting";
   /** Takes over the line while an owner command is being composed or answered. */
   private notice: string | null = null;
 
@@ -25,7 +33,7 @@ export class StatusBar {
     this.render();
   }
 
-  setConnectionStatus(status: ConnectionStatus): void {
+  setConnectionStatus(status: DisplayStatus): void {
     this.status = status;
     this.render();
   }
@@ -41,9 +49,12 @@ export class StatusBar {
       this.node.content = this.notice;
       return;
     }
-    const statusLabel = { connecting: "connecting…", connected: "connected", disconnected: "disconnected — retrying" }[
-      this.status
-    ];
+    const statusLabel = {
+      connecting: "connecting…",
+      connected: "connected",
+      disconnected: "disconnected — retrying",
+      closed: "closed",
+    }[this.status];
     this.node.content = `[${statusLabel}] ${this.goalStatement}`;
   }
 }

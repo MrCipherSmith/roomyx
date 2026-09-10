@@ -4,6 +4,7 @@ import { z } from "zod";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { withLock } from "../lockfile";
+import { archiveRoom, defaultHistoryPath } from "./history";
 
 /** Re-exported: the registry's own tests reach for it, and it lives in ../lockfile now. */
 export { releaseLockIfOwned } from "../lockfile";
@@ -115,9 +116,10 @@ export function listRooms(registryPath: string): RoomRegistryEntry[] {
  */
 export async function listLiveRooms(
   registryPath: string,
-  options: { prune?: boolean } = {},
+  options: { prune?: boolean; historyPath?: string } = {},
 ): Promise<RoomRegistryEntry[]> {
   const prune = options.prune ?? true;
+  const historyPath = options.historyPath ?? defaultHistoryPath(registryPath);
   if (hasNoRegistry(registryPath)) return [];
   const rooms = withLock(registryPath, () => readRegistryUnlocked(registryPath).rooms);
   const checks = await Promise.all(
@@ -138,14 +140,24 @@ export async function listLiveRooms(
     // flight. Re-read under the lock and only remove entries this pass
     // actually confirmed dead, instead of blindly overwriting with the
     // stale `live` list computed before the re-read.
+    const dead = checks.filter((c) => !c.alive).map((c) => c.room);
     withLock(registryPath, () => {
       const current = readRegistryUnlocked(registryPath).rooms;
-      const deadIds = new Set(checks.filter((c) => !c.alive).map((c) => c.room.id));
+      const deadIds = new Set(dead.map((r) => r.id));
       writeRegistryUnlocked(
         registryPath,
         current.filter((r) => !deadIds.has(r.id)),
       );
     });
+    // A room pruned here died without deregistering — crashed, or was killed
+    // with a signal no handler runs for. This is the only moment anything
+    // observes that it ended, so it is the only place its history entry can be
+    // written. Without it the rooms that are most worth being able to reread
+    // are exactly the ones that leave no trace.
+    //
+    // `closedAt` is now, not the moment it actually died, which is unknowable
+    // — the entry records when it was found gone.
+    for (const room of dead) archiveRoom(historyPath, room);
   }
   return live;
 }

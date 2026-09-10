@@ -1,6 +1,7 @@
 import { TextRenderable } from "@opentui/core";
 import type { RenderContext } from "@opentui/core";
 import { footerHints } from "../keymap";
+import type { Action } from "../keymap";
 
 /**
  * The bottom line: what the room is doing on the left, what your keys are on
@@ -21,9 +22,12 @@ export class Footer {
   private liveness = "";
   private scrollNote: string | null = null;
   private readonly width: number;
+  /** Bindings that do not apply to this surface — see `footerHints`. */
+  private readonly hidden: readonly Action[];
 
-  constructor(ctx: RenderContext, options: { width: number }) {
+  constructor(ctx: RenderContext, options: { width: number; hideBindings?: readonly Action[] }) {
     this.width = options.width;
+    this.hidden = options.hideBindings ?? [];
     this.node = new TextRenderable(ctx, { content: "", height: 1 });
     this.render();
   }
@@ -46,7 +50,7 @@ export class Footer {
     // a time rather than all at once. The first version dropped every hint the
     // moment the line did not fit, which took them away in exactly the two
     // states that most need them: an empty room, and a scrolled one.
-    const right = footerHints(Math.max(0, this.width - left.length - 2));
+    const right = footerHints(Math.max(0, this.width - left.length - 2), this.hidden);
     const gap = this.width - left.length - right.length;
     this.node.content = right === "" || gap < 2 ? left.slice(0, Math.max(0, this.width)) : `${left}${" ".repeat(gap)}${right}`;
   }

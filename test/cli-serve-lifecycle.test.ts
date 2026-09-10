@@ -60,6 +60,62 @@ describe("cli serve lifecycle (AC2: real running instance, not just registry.ts 
     expect(after.rooms).toHaveLength(0);
   }, 10000);
 
+  test("a room that shuts down is recorded in history, and `rooms history` shows it", async () => {
+    // End to end rather than against `archiveRoom` directly: the unit tests
+    // prove the index is correct, and this proves the shutdown path actually
+    // reaches it. Those are different claims, and it was the second one that
+    // was missing when the registry's own deregistration was first written.
+    dir = mkdtempSync(join(tmpdir(), "roomyx-cli-history-"));
+    const registryPath = join(dir, "registry.json");
+    const historyPath = join(dir, "history.jsonl");
+
+    proc = Bun.spawn(["bun", CLI, "serve", FIXTURE, "--port", "0", "--registry", registryPath], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    expect(await waitForRegistration(registryPath, 5000)).toBeDefined();
+
+    proc.kill("SIGTERM");
+    await proc.exited;
+
+    const recorded = JSON.parse(readFileSync(historyPath, "utf8").trim()) as Record<string, unknown>;
+    expect(recorded.logPath).toBe(FIXTURE);
+    expect(recorded.messages).toBe(4);
+    expect(recorded.participants).toBe(3);
+    expect(recorded.goal).toBe("Decide whether the roomyx MCP server MVP is ready to review.");
+
+    const listed = Bun.spawnSync(["bun", CLI, "rooms", "history", "--registry", registryPath]);
+    const out = listed.stdout.toString();
+    expect(out).toContain("messages=4");
+    expect(out).toContain(FIXTURE);
+    // The log is still where the room left it, so nothing should claim otherwise.
+    expect(out).not.toContain("no longer at this path");
+  }, 15000);
+
+  test("history survives the log being moved away, and says the log is gone", async () => {
+    dir = mkdtempSync(join(tmpdir(), "roomyx-cli-history-moved-"));
+    const registryPath = join(dir, "registry.json");
+    const logPath = join(dir, "room.jsonl");
+    copyFileSync(FIXTURE, logPath);
+
+    proc = Bun.spawn(["bun", CLI, "serve", logPath, "--port", "0", "--registry", registryPath], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    expect(await waitForRegistration(registryPath, 5000)).toBeDefined();
+    proc.kill("SIGTERM");
+    await proc.exited;
+
+    rmSync(logPath);
+
+    const listed = Bun.spawnSync(["bun", CLI, "rooms", "history", "--registry", registryPath]);
+    const out = listed.stdout.toString();
+    // The room is still remembered — that is what an index buys over a copy
+    // that would simply be missing too if the whole directory went.
+    expect(out).toContain("messages=4");
+    expect(out).toContain("no longer at this path");
+  }, 15000);
+
   test("records an absolute logPath even when given a relative one — the registry outlives this cwd", async () => {
     dir = mkdtempSync(join(tmpdir(), "roomyx-cli-abs-"));
     const registryPath = join(dir, "registry.json");

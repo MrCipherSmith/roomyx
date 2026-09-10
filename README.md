@@ -153,7 +153,26 @@ supported: each new session gets its own transport and server instance, keyed by
 
 Lists rooms that are **confirmed live**, not merely present in the registry —
 each entry is verified with a real MCP round-trip, and entries that don't answer
-are pruned from the registry file as a side effect.
+are pruned from the registry file as a side effect. A pruned room is also
+recorded in the history index at that moment — for a room that crashed, this is
+the only point at which anything notices it ended.
+
+### `roomyx rooms history`
+
+The rooms that have **closed**, newest first — the goal each had, how many
+people and messages, when it closed, and where its log is.
+
+What is stored is an **index, not a copy**: `.roomyx/rooms/history.jsonl`
+records what a room was and *where its transcript is*, and the transcript itself
+stays exactly where you put it. A room log is append-only and is the single
+source of truth for what was said, so a second copy would be a second source of
+truth — and an append to the original would leave the two disagreeing with
+nothing recording which is current. The trade is that a log you move or delete
+is genuinely gone; the listing says so, which a shadow copy could never have
+told you. Reasoning: decision D-14.
+
+A room is recorded when `roomyx serve` shuts down, and — for a room killed by a
+signal no handler runs for — when `roomyx rooms list` next finds it gone.
 
 ### `roomyx mcp [flags]`
 
@@ -198,9 +217,17 @@ lifetime from `serve`/`mcp`.
 | `--room <id>` | Attach to a specific live room by id. |
 | `--connect <url>` | Attach to an explicit MCP URL. Wins outright; the registry is not consulted. |
 | `--registry <path>` | Registry file to resolve rooms from. |
+| `--archive` | Pick a closed room from the history index and open it read-only. |
+| `--open <logPath>` | Reread one closed room directly, read-only. No server needed. |
 
 With no flags it auto-attaches when exactly one room is live, and refuses with a
 list of candidate ids when more than one is.
+
+**Read-only mode.** `--open` and `--archive` load a finished log once — no
+server, no polling, no reconnect. Scrolling, per-participant filtering, search,
+export and help behave exactly as in a live room; the owner command does not
+work, and the footer does not print its key, because there is nothing to send it
+to.
 
 ## MCP tools
 
