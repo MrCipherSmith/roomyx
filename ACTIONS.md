@@ -12,7 +12,7 @@ here as work.
 | Released | `@mrciphersmith/roomyx@0.10.3` (tag `v0.10.3`). `0.10.1`/`0.10.2` are the owner's persona work, shipped to `main` in parallel |
 | `main` | green: 419 tests, 0 fail (the count includes the persona library's own tests) |
 | Flows | 001–006 `done`; PRs #5, #8, #9 were small changes without a flow |
-| Decisions recorded, not implemented | D-18 item 8 (a decision, not a task) |
+| Decisions recorded, not implemented | none — D-19 decided the last one (2026-09-10) |
 
 ## Triage
 
@@ -53,7 +53,7 @@ landed and the named half did not.
 | **R12** the status bar drops the threshold | **done** | released `0.9.0` (PR #9): the threshold is on the line, and over-long lines end with `clip()`'s marker instead of being cut by the pane edge |
 | D-18 item 5 `room.get_delta_for` | **done** | released `0.10.3` (flow 006, PR #11): the delta is computed in the server, reporting `since_seq` and `cursor_from` so an empty delta is distinguishable from a wrong cursor |
 | D-18 item 6 owner-command queue | **done** | released `0.10.0` (flow 005, PR #10): the queue is created in `serve()` so every session shares it, with `room.get_pending_owner_commands`, `room://owner-queue` and `room.ack_owner_command` |
-| D-18 item 8 state-update shape | **not schedulable** | needs a decision first |
+| D-18 item 8 state-update shape | **decided** | **D-19**: a message kind with the structured change beside a readable body, and `room.get_state` folds the stream. Schedulable now |
 
 **The previous list undercounted.** It carried D-18 items 5, 6 and 8 and nothing
 else, while three live defects sat in the backlog: R7's timeout half, R10 and
@@ -86,12 +86,15 @@ What is left is decisions and follow-ups, not tasks:
 
 ## Needs a decision before code
 
-2. **D-18 item 8 — a representation for `goal_edit` / `add_participant`.**
-   `loadRoomLog` requires every line after the header to satisfy
-   `messageLineSchema`, so a second `state` line makes the room unreadable
-   forever, and the header cannot be rewritten. A permitted record type with
-   last-wins semantics and a distinguished message kind differ in what
-   `room.get_state` means and in what history can be replayed. Owner's call.
+2. **D-18 item 8 / D-19 — a representation for `goal_edit` / `add_participant`.**
+   **Decided 2026-09-10** (see `decisions.md` D-19): a message kind carrying the
+   structured change beside a readable body, with `room.get_state` folding the
+   stream. Two reasons it is the message route rather than a second record type:
+   a state record would be **invisible in the terminal** (a person reads the
+   transcript, not the records), and the transcript is already the project's
+   channel for state changes ("state changes must also enter the transcript as
+   ordinary text"). It also finally fills `updated_in_round` / `updated_by`,
+   which the schema has carried since the beginning with nothing writing them.
 
 ## Doc drift to fix while nearby
 
@@ -114,30 +117,35 @@ What is left is decisions and follow-ups, not tasks:
   I/O failure mid-append leaves the earlier lines, and the bound is stated on the
   function because the append-only contract rules out a temp-file rename.
 
-## main is moving faster than a flow completes
+## DECIDED 2026-09-10: main outrunning a flow is routine, not a problem
 
 Flows 005 and 006 both collided with work the repository owner pushed to `main`
 while the branch was open — `0.10.1` and `0.10.2` in flow 006 alone. Each
-collision cost a rebase plus a version renumber, and the rule applied was: *their
-releases are published, mine is not, so mine moves*. That is defensible, but it
-should be a **decision rather than a habit**. The alternatives: hold `main` while
-a flow is in flight, or accept the renumbering as routine and always branch with
-a spare patch number.
+collision cost a rebase plus a version renumber.
 
-## Review dispatch is not producing anything
+**Decided: accept the renumbering as routine.** The owner publishes to `main`
+concurrently and that is not something to work around; the hierarchy is
+unambiguous — their release is published, mine is not, so mine moves. The rule to
+apply every time: take the branch's version number from `main` at merge time and
+bump past whatever the owner has shipped, never renumber or rewrite their
+CHANGELOG text, and expect at least one collision per flow. Branch numbers are
+therefore provisional until merge.
 
-Two consecutive flows (002, 004) dispatched a read-only reviewer for a code
-review, and **both returned only their opening line** — rounds exhausted, no
-findings. That is three review rounds whose cost was paid and whose result was
-zero, and it is now the reason flows 004 and 005 were self-reviewed, which is
-weaker evidence.
+## DECIDED 2026-09-10: raise the review dispatch budget
 
-Worth deciding separately, and it is not a code change: either the dispatch
-budget is too small for the amount of reading asked for (`max_rounds` 10-14 to
-read ~6 files plus tests), or the reviewers need a narrower question, or the
-nested read-only workers should be replaced by a direct diff review in the
-orchestrator's own context. **Do not keep paying for a round that returns
-nothing** — check the first reply before dispatching the second.
+Four consecutive flows (002-005) dispatched a read-only reviewer that **returned
+only its opening line** — rounds exhausted, no findings. The cost was paid four
+times and bought nothing, and it is why flows 004-006 were self-reviewed, which
+is weaker evidence than an independent round.
+
+**Decided: raise the budget, and check the first reply before dispatching
+again.** The dispatches asked a reviewer to read ~6 files plus their tests within
+`max_rounds` 10-14; the likely cause is that the reading is larger than the budget
+rather than that the question was wrong. Next round: `max_rounds: 24`,
+`max_tool_calls: 60`, and a narrower opening question. If a reviewer still returns
+nothing, the fallback is the one already used and known to work — the author's own
+round, with executed mutations as the evidence, labelled as the weaker thing it
+is. **Never dispatch a second round before reading the first reply.**
 
 ## Working notes that cost time
 
