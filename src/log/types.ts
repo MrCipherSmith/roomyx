@@ -28,6 +28,19 @@ export interface GoalContract {
 export interface RoomState {
   goal_contract: GoalContract;
   roster: RosterEntry[];
+  /**
+   * The log this server is serving, absolute.
+   *
+   * Present so a liveness probe can ask *which room is this*, not merely
+   * *does anything answer here*. Every `roomyx serve` defaults to port 4319, so
+   * without it a room that died without deregistering was resurrected as live
+   * by the next room to bind the port — and `roomyx-client --room <dead-id>`
+   * then rendered a different room's transcript under the dead room's id.
+   *
+   * It exposes a filesystem path to a caller that can already read the whole
+   * transcript, which is a smaller disclosure than the one it prevents.
+   */
+  log_path: string;
 }
 
 export type AgentDetail =

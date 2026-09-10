@@ -26,6 +26,8 @@ export function loadRoomLog(path: string): { state: RoomState; messages: Message
   const state: RoomState = {
     goal_contract: headerResult.data.goal_contract,
     roster: headerResult.data.roster,
+    // The reader knows which file it read; the state header does not carry it.
+    log_path: path,
   };
 
   const messages: MessageEnvelope[] = rest.map((line, index) => {

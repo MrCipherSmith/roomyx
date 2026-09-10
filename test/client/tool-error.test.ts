@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { serve } from "../../src/server/serve";
 import type { ServeHandle } from "../../src/server/serve";
 import { RoomClient, ToolError } from "../../src/client/mcp-client";
+import { until } from "../helpers/until";
 import { createRoomLog } from "../../src/log/write";
 
 /**
@@ -62,7 +63,7 @@ describe("a server that answers with an error", () => {
       },
     );
     client.start();
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await until(() => toolErrors.length > 0, "the server's error text to reach the client");
 
     // The room is reachable, so the client stays connected.
     expect(statuses).toContain("connected");
@@ -95,7 +96,7 @@ describe("a server that answers with an error", () => {
       },
     );
     client.start();
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    await until(() => toolErrors.length > 0, "the first tool error");
     expect(toolErrors).toHaveLength(1);
     expect(messages).toHaveLength(0);
 
@@ -104,7 +105,7 @@ describe("a server that answers with an error", () => {
     lines[1] = JSON.stringify({ type: "message", seq: 1, from: "a", body: "REPAIRED" });
     writeFileSync(path, `${lines.join("\n")}\n`);
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await until(() => messages.includes("REPAIRED"), "the repaired message to arrive");
     expect(messages).toContain("REPAIRED");
   }, 20000);
 
@@ -117,12 +118,11 @@ describe("a server that answers with an error", () => {
       { onConnectionChange: (status) => statuses.push(status) },
     );
     client.start();
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    expect(statuses).toContain("connected");
+    await until(() => statuses.includes("connected"), "the client to connect");
 
     await handle.close();
     handle = undefined;
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await until(() => statuses.includes("disconnected"), "the transport loss to be noticed");
     expect(statuses).toContain("disconnected");
   }, 20000);
 });
@@ -154,17 +154,23 @@ describe("stopping the client", () => {
       if (stopped) afterStop.push(what);
     };
 
+    let polled = false;
     const roomClient = new RoomClient(
       { url: handle.url, stateIntervalMs: 5, transcriptIntervalMs: 5 },
       {
+        onStateUpdate: () => {
+          polled = true;
+          record("state");
+        },
         onConnectionChange: () => record("connection"),
-        onStateUpdate: () => record("state"),
         onNewMessages: () => record("messages"),
         onToolError: () => record("toolError"),
       },
     );
     roomClient.start();
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    // The precondition the docstring assumes: a poll has actually happened, so
+    // stop() lands while one is in flight rather than before any ran.
+    await until(() => polled, "the first poll to complete");
 
     // Kill the server first, so a poll is losing its connection at the moment
     // stop() runs — the window the guards exist for.
@@ -192,9 +198,10 @@ describe("a tool error that does not go away", () => {
       { onToolError: (message) => toolErrors.push(message) },
     );
     client.start();
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // Twenty-odd polls in that window, and the fault never changes.
+    await until(() => toolErrors.length > 0, "the first report");
+    // Then a real duration, because the assertion is about what does NOT happen
+    // over time — that is the one case where a clock is the right instrument.
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     expect(toolErrors).toHaveLength(1);
   }, 20000);
 

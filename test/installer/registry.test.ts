@@ -201,22 +201,29 @@ describe("liveness is about this room, not about that port", () => {
     const handle = await serve(FIXTURE, { port: 0 });
 
     try {
-      const alive = registerRoom(registryPath, {
-        port: handle.port,
-        logPath: "/rooms/live.jsonl",
-        pid: process.pid,
-      });
+      // The live entry names the log the server is actually serving, because
+      // liveness now asks the server which room it is rather than only whether
+      // it answers.
+      const alive = registerRoom(registryPath, { port: handle.port, logPath: FIXTURE, pid: process.pid });
       // Same port, a pid that cannot exist.
-      const dead = registerRoom(registryPath, {
+      const deadPid = registerRoom(registryPath, {
         port: handle.port,
-        logPath: "/rooms/dead.jsonl",
+        logPath: FIXTURE,
         pid: 0x7ffffff0,
+      });
+      // Same port, a live pid, but a different room — the port-reuse case that
+      // the pid check alone could not catch.
+      const otherRoom = registerRoom(registryPath, {
+        port: handle.port,
+        logPath: "/rooms/some-other-room.jsonl",
+        pid: process.pid,
       });
 
       const live = await listLiveRooms(registryPath);
       const ids = live.map((room) => room.id);
       expect(ids).toContain(alive.id);
-      expect(ids).not.toContain(dead.id);
+      expect(ids).not.toContain(deadPid.id);
+      expect(ids).not.toContain(otherRoom.id);
     } finally {
       await handle.close();
       rmSync(dir, { recursive: true, force: true });
