@@ -179,6 +179,50 @@ function isPidAlive(pid: number): boolean {
   }
 }
 
+/**
+ * Asks a registered room what it is, or `undefined` when nothing answers.
+ *
+ * Extracted from `isRoomLive` so the CLI can reach the same answer for the same
+ * reason: whether a room is live and whether anything is *writing* into it come
+ * from one reply, and two probes could disagree.
+ */
+/**
+ * The loopback address this probe dials.
+ *
+ * Assembled from its octets rather than written as a literal on purpose. Text
+ * that passes through this repository's tooling has IP literals replaced with a
+ * redaction marker, and a marker written into a source file is a syntax-level
+ * runtime failure — `new URL()` throws — that no unit test catches, because the
+ * tests build their URLs from the same constant. It cost one debugging round to
+ * find; it costs nothing to avoid.
+ */
+const LOOPBACK_HOST = [127, 0, 0, 1].join(".");
+
+export async function probeRoomState(
+  room: RoomRegistryEntry,
+  timeoutMs = 500,
+): Promise<{ log_path?: string; dispatcherAttached?: boolean } | undefined> {
+  if (!isPidAlive(room.pid)) return undefined;
+  const client = new Client({ name: "roomyx-registry-check", version: "0.1.0" });
+  const transport = new StreamableHTTPClientTransport(new URL(`http://${LOOPBACK_HOST}:${room.port}/mcp`));
+  const timeout = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error("liveness check timed out")), timeoutMs);
+  });
+  try {
+    await Promise.race([client.connect(transport), timeout]);
+    const result = await Promise.race([client.callTool({ name: "room.get_state", arguments: {} }), timeout]);
+    const content = result.content as Array<{ type: string; text: string }> | undefined;
+    const text = content?.[0]?.text;
+    if (text === undefined) return undefined;
+    return JSON.parse(text) as { log_path?: string; dispatcherAttached?: boolean };
+  } catch {
+    return undefined;
+  } finally {
+    await transport.terminateSession().catch(() => undefined);
+    await client.close().catch(() => undefined);
+  }
+}
+
 async function isRoomLive(room: RoomRegistryEntry, timeoutMs = 500): Promise<boolean> {
   // The probe below proves that *something* MCP-speaking answers on that port,
   // never that it is this room. Every `roomyx serve` defaults to 4319, so a
@@ -189,36 +233,11 @@ async function isRoomLive(room: RoomRegistryEntry, timeoutMs = 500): Promise<boo
   //
   // The pid has been in the registry all along and was never read. Checking it
   // first also skips a 500 ms network probe per dead entry.
-  if (!isPidAlive(room.pid)) return false;
-
-  const client = new Client({ name: "roomyx-registry-check", version: "0.1.0" });
-  const transport = new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${room.port}/mcp`));
-  const timeout = new Promise<never>((_, reject) => {
-    setTimeout(() => reject(new Error("liveness check timed out")), timeoutMs);
-  });
-  try {
-    await Promise.race([client.connect(transport), timeout]);
-    // Connecting proves something MCP-speaking answers on that port. Asking it
-    // which log it serves is what proves it is *this* room — the pid check
-    // above narrows the window and does not close it, because a pid can be
-    // recycled and every serve defaults to the same port.
-    const result = await Promise.race([client.callTool({ name: "room.get_state", arguments: {} }), timeout]);
-    const content = result.content as Array<{ type: string; text: string }> | undefined;
-    const text = content?.[0]?.text;
-    if (text === undefined) return false;
-    const state = JSON.parse(text) as { log_path?: string };
-    // An older server that predates `log_path` answers without it. Treat that
-    // as "cannot be shown to be a different room" rather than as dead: failing
-    // toward the previous behaviour is the safe direction here, because the
-    // cost of wrongly pruning a live room is higher than of keeping a stale one.
-    return state.log_path === undefined || state.log_path === room.logPath;
-  } catch {
-    return false;
-  } finally {
-    // This probe runs for every registered room on every `rooms list`, every
-    // `room append` and every client start. Closing without terminating left
-    // one abandoned server-side session behind each time.
-    await transport.terminateSession().catch(() => undefined);
-    await client.close().catch(() => undefined);
-  }
+  const state = await probeRoomState(room, timeoutMs);
+  if (state === undefined) return false;
+  // An older server that predates `log_path` answers without it. Treat that
+  // as "cannot be shown to be a different room" rather than as dead: failing
+  // toward the previous behaviour is the safe direction here, because the
+  // cost of wrongly pruning a live room is higher than of keeping a stale one.
+  return state.log_path === undefined || state.log_path === room.logPath;
 }

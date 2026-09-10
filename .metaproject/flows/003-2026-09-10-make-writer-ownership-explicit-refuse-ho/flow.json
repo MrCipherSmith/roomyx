@@ -1,0 +1,214 @@
+{
+  "schemaVersion": 2,
+  "gates": {
+    "tasks": true,
+    "review": true
+  },
+  "id": "003",
+  "slug": "make-writer-ownership-explicit-refuse-ho",
+  "title": "Make writer ownership explicit: refuse honestly, and replace --force with a take-over that cannot be abused (D-18 items 1-4, 7)",
+  "status": "in-progress",
+  "createdAt": "2026-09-10T10:22:25.101Z",
+  "updatedAt": "2026-09-10T10:32:08.016Z",
+  "source": {
+    "type": "description",
+    "ref": null
+  },
+  "acChecksum": "sha256:9d5bcdf766b14f98078bbb28be657992dbdb9d82c61f2c1ac3ac85aa2496c08f",
+  "acConfirmed": {},
+  "pr": {
+    "url": null
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Collect remaining context",
+      "kind": "context",
+      "origin": "scaffold",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "completed"
+    },
+    {
+      "id": "T2",
+      "title": "Implement per plan",
+      "kind": "implement",
+      "origin": "scaffold",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 1,
+        "log": [
+          {
+            "at": "2026-09-10T10:23:48.478Z",
+            "outcome": "started",
+            "detail": "003-T2 tests-first, written in the orchestrator context (delegate sandbox has no write/shell tools — see flow 002)"
+          }
+        ]
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "completed"
+    },
+    {
+      "id": "T3",
+      "title": "Add/adjust tests and make them pass",
+      "kind": "test",
+      "origin": "scaffold",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "completed"
+    },
+    {
+      "id": "T4",
+      "title": "Self-review and prepare draft PR",
+      "kind": "review",
+      "origin": "scaffold",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 1,
+        "log": [
+          {
+            "at": "2026-09-10T10:32:08.016Z",
+            "outcome": "started",
+            "detail": "003-T4 review round 1: 4 major + 6 minor, all in the code this flow introduced"
+          }
+        ]
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T5",
+      "title": "End-to-end verification: run the ownership table against a real bare serve and a real dispatcher-attached server",
+      "kind": "test",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "completed"
+    },
+    {
+      "id": "T6",
+      "title": "Structural writing: --json envelope, --body-file -, --many all-or-nothing batch",
+      "kind": "implement",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "completed"
+    },
+    {
+      "id": "T7",
+      "title": "SKILL.md loses --force; CHANGELOG minor bump to 0.8.0; confirm the log format is unchanged",
+      "kind": "docs",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "completed"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-10T10:22:25.101Z",
+      "event": "created"
+    },
+    {
+      "at": "2026-09-10T10:23:00.254Z",
+      "event": "task-added",
+      "detail": "T5: End-to-end verification: run the ownership table against a real bare serve and a real dispatcher-attached server"
+    },
+    {
+      "at": "2026-09-10T10:23:00.410Z",
+      "event": "task-added",
+      "detail": "T6: Structural writing: --json envelope, --body-file -, --many all-or-nothing batch"
+    },
+    {
+      "at": "2026-09-10T10:23:00.555Z",
+      "event": "task-added",
+      "detail": "T7: SKILL.md loses --force; CHANGELOG minor bump to 0.8.0; confirm the log format is unchanged"
+    },
+    {
+      "at": "2026-09-10T10:23:00.707Z",
+      "event": "frozen",
+      "detail": "9 criteria; checksum recorded"
+    },
+    {
+      "at": "2026-09-10T10:23:00.860Z",
+      "event": "started"
+    },
+    {
+      "at": "2026-09-10T10:23:48.294Z",
+      "event": "task-done",
+      "detail": "T1: Collect remaining context"
+    },
+    {
+      "at": "2026-09-10T10:23:48.478Z",
+      "event": "task-attempt",
+      "detail": "T2: started (attempt 1) — 003-T2 tests-first, written in the orchestrator context (delegate sandbox has no write/shell tools — see flow 002)"
+    },
+    {
+      "at": "2026-09-10T10:26:14.363Z",
+      "event": "task-done",
+      "detail": "T2: Implement per plan"
+    },
+    {
+      "at": "2026-09-10T10:26:14.615Z",
+      "event": "task-done",
+      "detail": "T3: Add/adjust tests and make them pass"
+    },
+    {
+      "at": "2026-09-10T10:26:14.870Z",
+      "event": "task-done",
+      "detail": "T6: Structural writing: --json envelope, --body-file -, --many all-or-nothing batch"
+    },
+    {
+      "at": "2026-09-10T10:29:21.088Z",
+      "event": "task-done",
+      "detail": "T5: End-to-end verification: run the ownership table against a real bare serve and a real dispatcher-attached server"
+    },
+    {
+      "at": "2026-09-10T10:29:21.260Z",
+      "event": "task-done",
+      "detail": "T7: SKILL.md loses --force; CHANGELOG minor bump to 0.8.0; confirm the log format is unchanged"
+    },
+    {
+      "at": "2026-09-10T10:32:08.016Z",
+      "event": "task-attempt",
+      "detail": "T4: started (attempt 1) — 003-T4 review round 1: 4 major + 6 minor, all in the code this flow introduced"
+    }
+  ]
+}
