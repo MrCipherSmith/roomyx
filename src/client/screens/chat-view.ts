@@ -58,7 +58,7 @@ export class ChatView {
   ) {
     this.ctx = ctx;
     this.node = new BoxRenderable(ctx, { width: options.width, height: options.height, flexDirection: "column" });
-    this.statusBar = new StatusBar(ctx);
+    this.statusBar = new StatusBar(ctx, { width: options.width });
     this.node.add(this.statusBar.node);
 
     const body = new BoxRenderable(ctx, { flexDirection: "row", flexGrow: 1 });
