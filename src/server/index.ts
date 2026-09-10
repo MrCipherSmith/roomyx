@@ -4,6 +4,7 @@ import { getStateTool } from "./tools/get-state";
 import { OWNER_COMMAND_KINDS, OwnerCommandQueue } from "./owner-queue";
 import type { OwnerCommand, OwnerCommandEnvelope, OwnerCommandKind } from "./owner-queue";
 import { getTranscriptTool } from "./tools/get-transcript";
+import { getAgentDeltaTool } from "./tools/get-agent-delta";
 import { getAgentDetailTool } from "./tools/get-agent-detail";
 
 /**
@@ -135,6 +136,36 @@ export function createRoomMcpServer(logPath: string, options: RoomMcpServerOptio
     },
     async ({ agent_id }) => ({
       content: [{ type: "text", text: JSON.stringify(getAgentDetailTool(logPath, agent_id)) }],
+    }),
+  );
+
+  server.registerTool(
+    "room.get_delta_for",
+    {
+      title: "What one participant has not seen",
+      description:
+        "Everything after that participant's own last message, excluding its own — the convention " +
+        "\"everything since your last turn\", computed here instead of by hand. `since_seq` overrides " +
+        "the convention's cursor; the answer reports the cursor used and whether it came from the " +
+        "participant's last message or from the caller. " +
+        "This is what the participant has probably not seen: the server cannot see what was actually " +
+        "sent to it, so treat the result as a candidate delta, not as a delivery record.",
+      inputSchema: {
+        agent_id: z.string().min(1),
+        since_seq: z.number().int().min(0).optional(),
+      },
+    },
+    async ({ agent_id, since_seq }) => ({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            since_seq === undefined
+              ? getAgentDeltaTool(logPath, agent_id)
+              : getAgentDeltaTool(logPath, agent_id, since_seq),
+          ),
+        },
+      ],
     }),
   );
 

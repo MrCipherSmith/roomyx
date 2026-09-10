@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R1-01",
+    "reviewer": "review-author-006",
+    "severity": "minor",
+    "problem": "The rule for a participant's own last seq was computed twice — once in get_agent_detail for lastSeenSeq, and once in the new getAgentDelta for its default cursor.",
+    "impact": "It is a rule, not an expression: it is the convention both tools publish about what a participant has seen. Two copies mean a change to it must be made twice, and until someone notices, the two answers disagree silently — each looks plausible on its own, and nothing compares them.",
+    "suggested_fix": "One helper, lastOwnSeq(messages, agentId), used by both.",
+    "evidence": "grep for the expression in src/log/store.ts returns one occurrence, inside lastOwnSeq, with two call sites (getAgentDetail line 114, getAgentDelta line 150).",
+    "confidence": "high",
+    "file": "src/log/store.ts",
+    "class_scope": {
+      "sites": [
+        "src/log/store.ts:97",
+        "src/log/store.ts:114",
+        "src/log/store.ts:150"
+      ],
+      "enumeration_method": "rg for 'max of own' / 'Math.max(...own' across src returns the single helper and its two consumers; no other module computes an agent's own-last-seq, so the convention now has exactly one implementation."
+    },
+    "global_id": "2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-11#R1-01",
+    "disposition": {
+      "state": "acted-on",
+      "evidence": "commit 9ee7a2b43317578b128753ba31dd9a018b1190c2"
+    },
+    "verification": {
+      "verdict": "refuted",
+      "method": "site-check",
+      "evidence": "Checked at 9ee7a2b43317578b128753ba31dd9a018b1190c2: 'Math.max(...own.map' appears once in src/log/store.ts, inside lastOwnSeq, and both getAgentDetail and getAgentDelta call it. The duplication the finding names is gone, and no third copy exists.",
+      "verifier": "flow-orchestrator-mutation-pass"
+    }
+  }
+]

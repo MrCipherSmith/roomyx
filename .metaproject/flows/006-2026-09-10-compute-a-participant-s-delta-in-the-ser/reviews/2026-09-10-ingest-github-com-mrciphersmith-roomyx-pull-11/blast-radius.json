@@ -1,0 +1,729 @@
+{
+  "schemaVersion": 1,
+  "scope": "blast-radius",
+  "depth": 2,
+  "maxFiles": 40,
+  "changedFiles": [
+    ".metaproject/data/gdgraph/.provenance.json",
+    ".metaproject/data/gdgraph/artifacts/module-map.json",
+    ".metaproject/data/gdgraph/artifacts/summary.md",
+    ".metaproject/flows/006-2026-09-10-compute-a-participant-s-delta-in-the-ser/acceptance-criteria.md",
+    ".metaproject/flows/006-2026-09-10-compute-a-participant-s-delta-in-the-ser/context.md",
+    ".metaproject/flows/006-2026-09-10-compute-a-participant-s-delta-in-the-ser/description.md",
+    ".metaproject/flows/006-2026-09-10-compute-a-participant-s-delta-in-the-ser/flow.json",
+    ".metaproject/flows/006-2026-09-10-compute-a-participant-s-delta-in-the-ser/journal.md",
+    ".metaproject/flows/006-2026-09-10-compute-a-participant-s-delta-in-the-ser/plan.md",
+    ".metaproject/flows/006-2026-09-10-compute-a-participant-s-delta-in-the-ser/tasks.md",
+    "CHANGELOG.md",
+    "package.json",
+    "src/log/store.ts",
+    "src/log/types.ts",
+    "src/server/index.ts",
+    "src/server/tools/get-agent-delta.ts",
+    "test/server/serve.test.ts",
+    "test/server/tools.test.ts"
+  ],
+  "files": [
+    {
+      "file": "src/server/serve.ts",
+      "hop": 1,
+      "fanIn": 19,
+      "via": "src/log/store.ts",
+      "path": [
+        "src/server/serve.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/client/screens/chat-view.ts",
+      "hop": 1,
+      "fanIn": 12,
+      "via": "src/log/types.ts",
+      "path": [
+        "src/client/screens/chat-view.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/client/mcp-client.ts",
+      "hop": 1,
+      "fanIn": 9,
+      "via": "src/log/types.ts",
+      "path": [
+        "src/client/mcp-client.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/installer/history.ts",
+      "hop": 1,
+      "fanIn": 7,
+      "via": "src/log/store.ts",
+      "path": [
+        "src/installer/history.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/log/write.ts",
+      "hop": 1,
+      "fanIn": 6,
+      "via": "src/log/types.ts",
+      "path": [
+        "src/log/write.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/client/transcript.ts",
+      "hop": 1,
+      "fanIn": 3,
+      "via": "src/log/types.ts",
+      "path": [
+        "src/client/transcript.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/server/tools/get-transcript.ts",
+      "hop": 1,
+      "fanIn": 3,
+      "via": "src/log/store.ts",
+      "path": [
+        "src/server/tools/get-transcript.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/client/components/status-bar.ts",
+      "hop": 1,
+      "fanIn": 2,
+      "via": "src/log/types.ts",
+      "path": [
+        "src/client/components/status-bar.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/client/owner-prompt.ts",
+      "hop": 1,
+      "fanIn": 2,
+      "via": "src/server/index.ts",
+      "path": [
+        "src/client/owner-prompt.ts",
+        "src/server/index.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/client/viewer.ts",
+      "hop": 1,
+      "fanIn": 2,
+      "via": "src/log/types.ts",
+      "path": [
+        "src/client/viewer.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/server/tools/get-agent-detail.ts",
+      "hop": 1,
+      "fanIn": 2,
+      "via": "src/log/store.ts",
+      "path": [
+        "src/server/tools/get-agent-detail.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/server/tools/get-state.ts",
+      "hop": 1,
+      "fanIn": 2,
+      "via": "src/log/store.ts",
+      "path": [
+        "src/server/tools/get-state.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/client/components/message-row.ts",
+      "hop": 1,
+      "fanIn": 1,
+      "via": "src/log/types.ts",
+      "path": [
+        "src/client/components/message-row.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/client/components/roster-sidebar.ts",
+      "hop": 1,
+      "fanIn": 1,
+      "via": "src/log/types.ts",
+      "path": [
+        "src/client/components/roster-sidebar.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/client/index.ts",
+      "hop": 1,
+      "fanIn": 1,
+      "via": "src/log/store.ts",
+      "path": [
+        "src/client/index.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "scripts/fuzz-log.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "path": [
+        "scripts/fuzz-log.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "scripts/replay.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "path": [
+        "scripts/replay.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/cli.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/log/types.ts",
+      "path": [
+        "src/cli.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "test/client/first-message.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/log/types.ts",
+      "path": [
+        "test/client/first-message.test.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/message-row.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/log/types.ts",
+      "path": [
+        "test/client/message-row.test.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/renderable-lifetime.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/log/types.ts",
+      "path": [
+        "test/client/renderable-lifetime.test.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/reply-pointer-real-log.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/log/types.ts",
+      "path": [
+        "test/client/reply-pointer-real-log.test.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/scroll.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/log/types.ts",
+      "path": [
+        "test/client/scroll.test.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/transcript.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/log/types.ts",
+      "path": [
+        "test/client/transcript.test.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/log/store.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "path": [
+        "test/log/store.test.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/log/write-contract.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "path": [
+        "test/log/write-contract.test.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/server/owner-command.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/server/index.ts",
+      "path": [
+        "test/server/owner-command.test.ts",
+        "src/server/index.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/server/owner-queue.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/server/index.ts",
+      "path": [
+        "test/server/owner-queue.test.ts",
+        "src/server/index.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "src/installer/registry.ts",
+      "hop": 2,
+      "fanIn": 9,
+      "via": "src/log/store.ts",
+      "path": [
+        "src/installer/registry.ts",
+        "src/installer/history.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/client/liveness.ts",
+      "hop": 2,
+      "fanIn": 2,
+      "via": "src/log/types.ts",
+      "path": [
+        "src/client/liveness.ts",
+        "src/client/mcp-client.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/client/screens/archive-list.ts",
+      "hop": 2,
+      "fanIn": 2,
+      "via": "src/log/store.ts",
+      "path": [
+        "src/client/screens/archive-list.ts",
+        "src/installer/history.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "scripts/soak.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "path": [
+        "scripts/soak.ts",
+        "src/server/serve.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "test/cli-room-ownership-e2e.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "path": [
+        "test/cli-room-ownership-e2e.test.ts",
+        "src/server/serve.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/archive-row.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "path": [
+        "test/client/archive-row.test.ts",
+        "src/installer/history.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/help-overlay.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/types.ts",
+      "path": [
+        "test/client/help-overlay.test.ts",
+        "src/client/screens/chat-view.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/mcp-client.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "path": [
+        "test/client/mcp-client.test.ts",
+        "src/server/serve.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/owner-prompt.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/server/index.ts",
+      "path": [
+        "test/client/owner-prompt.test.ts",
+        "src/client/owner-prompt.ts",
+        "src/server/index.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/read-only.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/types.ts",
+      "path": [
+        "test/client/read-only.test.ts",
+        "src/client/viewer.ts",
+        "src/log/types.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/reconnect-rate.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "path": [
+        "test/client/reconnect-rate.test.ts",
+        "src/server/serve.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/render.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "path": [
+        "test/client/render.test.ts",
+        "src/server/serve.ts",
+        "src/log/store.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    }
+  ],
+  "dropped": [
+    {
+      "file": "test/client/roster-overflow.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/types.ts",
+      "source": "graph",
+      "reason": "cap",
+      "detail": "cut by blast_radius_max_files=40: ranked 41 of 54 at hop 2, fan-in 0, reached via src/log/types.ts. It was NOT reviewed."
+    },
+    {
+      "file": "test/client/status-bar.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/types.ts",
+      "source": "graph",
+      "reason": "cap",
+      "detail": "cut by blast_radius_max_files=40: ranked 42 of 54 at hop 2, fan-in 0, reached via src/log/types.ts. It was NOT reviewed."
+    },
+    {
+      "file": "test/client/tool-error.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "source": "graph",
+      "reason": "cap",
+      "detail": "cut by blast_radius_max_files=40: ranked 43 of 54 at hop 2, fan-in 0, reached via src/log/store.ts. It was NOT reviewed."
+    },
+    {
+      "file": "test/client/wrap-defect.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/types.ts",
+      "source": "graph",
+      "reason": "cap",
+      "detail": "cut by blast_radius_max_files=40: ranked 44 of 54 at hop 2, fan-in 0, reached via src/log/types.ts. It was NOT reviewed."
+    },
+    {
+      "file": "test/installer/history.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "source": "graph",
+      "reason": "cap",
+      "detail": "cut by blast_radius_max_files=40: ranked 45 of 54 at hop 2, fan-in 0, reached via src/log/store.ts. It was NOT reviewed."
+    },
+    {
+      "file": "test/installer/registry-liveness.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "source": "graph",
+      "reason": "cap",
+      "detail": "cut by blast_radius_max_files=40: ranked 46 of 54 at hop 2, fan-in 0, reached via src/log/store.ts. It was NOT reviewed."
+    },
+    {
+      "file": "test/installer/registry.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "source": "graph",
+      "reason": "cap",
+      "detail": "cut by blast_radius_max_files=40: ranked 47 of 54 at hop 2, fan-in 0, reached via src/log/store.ts. It was NOT reviewed."
+    },
+    {
+      "file": "test/installer/resolve-connection.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "source": "graph",
+      "reason": "cap",
+      "detail": "cut by blast_radius_max_files=40: ranked 48 of 54 at hop 2, fan-in 0, reached via src/log/store.ts. It was NOT reviewed."
+    },
+    {
+      "file": "test/mcp-management/server.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "source": "graph",
+      "reason": "cap",
+      "detail": "cut by blast_radius_max_files=40: ranked 49 of 54 at hop 2, fan-in 0, reached via src/log/store.ts. It was NOT reviewed."
+    },
+    {
+      "file": "test/server/dispatcher-attached.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "source": "graph",
+      "reason": "cap",
+      "detail": "cut by blast_radius_max_files=40: ranked 50 of 54 at hop 2, fan-in 0, reached via src/log/store.ts. It was NOT reviewed."
+    },
+    {
+      "file": "test/server/rebinding-guard.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "source": "graph",
+      "reason": "cap",
+      "detail": "cut by blast_radius_max_files=40: ranked 51 of 54 at hop 2, fan-in 0, reached via src/log/store.ts. It was NOT reviewed."
+    },
+    {
+      "file": "test/server/session-lifetime.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "source": "graph",
+      "reason": "cap",
+      "detail": "cut by blast_radius_max_files=40: ranked 52 of 54 at hop 2, fan-in 0, reached via src/log/store.ts. It was NOT reviewed."
+    },
+    {
+      "file": "test/server/shutdown.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "source": "graph",
+      "reason": "cap",
+      "detail": "cut by blast_radius_max_files=40: ranked 53 of 54 at hop 2, fan-in 0, reached via src/log/store.ts. It was NOT reviewed."
+    },
+    {
+      "file": "test/server/transport-gates.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/log/store.ts",
+      "source": "graph",
+      "reason": "cap",
+      "detail": "cut by blast_radius_max_files=40: ranked 54 of 54 at hop 2, fan-in 0, reached via src/log/store.ts. It was NOT reviewed."
+    }
+  ],
+  "unresolved": [
+    {
+      "file": ".metaproject/data/gdgraph/.provenance.json",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/data/gdgraph/artifacts/module-map.json",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/data/gdgraph/artifacts/summary.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/006-2026-09-10-compute-a-participant-s-delta-in-the-ser/acceptance-criteria.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/006-2026-09-10-compute-a-participant-s-delta-in-the-ser/context.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/006-2026-09-10-compute-a-participant-s-delta-in-the-ser/description.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/006-2026-09-10-compute-a-participant-s-delta-in-the-ser/flow.json",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/006-2026-09-10-compute-a-participant-s-delta-in-the-ser/journal.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/006-2026-09-10-compute-a-participant-s-delta-in-the-ser/plan.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/006-2026-09-10-compute-a-participant-s-delta-in-the-ser/tasks.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": "CHANGELOG.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": "package.json",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    }
+  ],
+  "counts": {
+    "changedFilesSeen": 18,
+    "changedFilesResolved": 6,
+    "changedFilesUnresolved": 12,
+    "candidates": 54,
+    "retained": 40,
+    "droppedByCap": 14,
+    "droppedByPreFilter": 0,
+    "relatedTestsAdded": 0,
+    "testsRetained": 18,
+    "hopHistogram": {
+      "1": 28,
+      "2": 12
+    }
+  },
+  "graph": {
+    "nodes": 106,
+    "edges": 201
+  }
+}

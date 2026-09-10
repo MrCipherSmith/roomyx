@@ -87,6 +87,57 @@ describe("serve", () => {
     }
   });
 
+  test("a real client reads each participant's delta, and the description it is told (D-18 item 5)", async () => {
+    const handle = await serve(FIXTURE, { port: 0 });
+    try {
+      const client = await connectClient(handle.url);
+
+      const delta = async (args: Record<string, unknown>) => {
+        const result = await client.callTool({ name: "room.get_delta_for", arguments: args });
+        const text = (result.content as Array<{ type: string; text: string }>)[0]?.text ?? "";
+        return JSON.parse(text) as {
+          found: boolean;
+          messages?: Array<{ seq: number; from: string }>;
+          since_seq?: number;
+          cursor_from?: string;
+        };
+      };
+
+      // The fixture's three boundary cases, over the wire.
+      expect((await delta({ agent_id: "yuki" })).messages?.map((m) => m.seq)).toEqual([4]);
+      expect((await delta({ agent_id: "omar" })).messages?.map((m) => m.seq)).toEqual([3, 4]);
+      expect((await delta({ agent_id: "zara" })).messages?.map((m) => m.seq)).toEqual([]);
+
+      const explicit = await delta({ agent_id: "yuki", since_seq: 0 });
+      expect(explicit.messages?.map((m) => m.seq)).toEqual([2, 4]);
+      expect(explicit.cursor_from).toBe("caller");
+      expect(explicit.messages?.every((m) => m.from !== "yuki")).toBe(true);
+
+      expect((await delta({ agent_id: "nobody" })).found).toBe(false);
+
+      // The description as a client is actually told it — the backlog files an
+      // overclaiming description as a defect in its own right, and a string
+      // assertion in the tool's own unit test cannot see what the wire says.
+      const { tools } = await client.listTools();
+      const described = tools.find((t) => t.name === "room.get_delta_for");
+      expect(described).toBeDefined();
+      const text = `${described?.description ?? ""}`.toLowerCase();
+      // The framing: a convention, stated as such.
+      expect(text).toContain("probably not seen");
+      // The denial, which is what makes the framing honest. Checking for
+      // forbidden WORDS would flag this very sentence — a disclaimer has to name
+      // the thing it disclaims — so the check is for affirmative claims instead.
+      expect(text).toContain("not as a delivery record");
+      for (const claim of ["has been delivered", "was delivered to", "has received", "what was sent to it"]) {
+        expect(text).not.toContain(claim);
+      }
+
+      await client.close();
+    } finally {
+      await handle.close();
+    }
+  }, 20000);
+
   test("refuses to bind a non-loopback host without --acknowledge-non-loopback (AC2)", async () => {
     await expect(serve(FIXTURE, { port: 0, host: "0.0.0.0" })).rejects.toThrow(
       /non-loopback/,
