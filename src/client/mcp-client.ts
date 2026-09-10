@@ -2,6 +2,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { MessageEnvelope, RoomState } from "../log/types";
 import type { TranscriptPage } from "../server/tools/get-transcript";
+import type { OwnerCommandResult } from "../server/index";
 
 export type ConnectionStatus = "connecting" | "connected" | "disconnected";
 
@@ -171,12 +172,16 @@ export class RoomClient {
   }
 
   /**
-   * Sends an owner command to the room's dispatcher. Not a write to the log —
-   * the server forwards it and answers with whatever the dispatcher said,
-   * including `accepted: false` when no dispatcher is attached at all.
+   * Sends an owner command to the room. Not a write to the log — the server holds
+   * it in the room's queue, or hands it to an embedded dispatcher and reports
+   * that verdict.
+   *
+   * `queued` is a state, not a failure: it means the command is held and nobody
+   * has read it yet, which is the normal answer for a room whose dispatcher is
+   * an agent that will read the queue on its next turn.
    */
-  async postOwnerCommand(kind: string, body: string): Promise<{ accepted: boolean; reason?: string }> {
-    return this.callTool<{ accepted: boolean; reason?: string }>("room.post_owner_command", { kind, body });
+  async postOwnerCommand(kind: string, body: string): Promise<OwnerCommandResult> {
+    return this.callTool<OwnerCommandResult>("room.post_owner_command", { kind, body });
   }
 
   private async callTool<T>(name: string, args: Record<string, unknown>): Promise<T> {

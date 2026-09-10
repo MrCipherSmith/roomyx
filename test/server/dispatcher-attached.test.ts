@@ -39,7 +39,7 @@ describe("room.get_state reports whether a dispatcher is attached", () => {
   });
 
   test("a server embedded by a dispatching host says true", async () => {
-    handle = await serve(FIXTURE, { port: 0, onOwnerCommand: () => ({ accepted: true }) });
+    handle = await serve(FIXTURE, { port: 0, onOwnerCommand: () => ({ status: "accepted" as const }) });
     expect(await stateFrom(handle.url)).toHaveProperty("dispatcherAttached", true);
   });
 });

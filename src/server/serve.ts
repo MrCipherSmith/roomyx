@@ -1,4 +1,5 @@
 import { createRoomMcpServer } from "./index";
+import { OwnerCommandQueue } from "./owner-queue";
 import type { RoomMcpServerOptions } from "./index";
 import { serveMcpOverHttp } from "./http-transport";
 import type { McpHttpTransportHandle } from "./http-transport";
@@ -45,8 +46,15 @@ export async function serve(logPath: string, options: ServeOptions): Promise<Ser
   // that names the file and the line.
   loadRoomLog(logPath);
 
+  // ONE queue for the room, created here because this factory runs once per
+  // SESSION: state built inside it would belong to a single client, so a command
+  // posted by the TUI would be invisible to the dispatcher's own session. This is
+  // the difference between a feature and a feature that passes its tests.
+  const ownerQueue = new OwnerCommandQueue();
+
   const handle = await serveMcpOverHttp({
-    createMcpServer: () => createRoomMcpServer(logPath, { onOwnerCommand: options.onOwnerCommand }),
+    createMcpServer: () =>
+      createRoomMcpServer(logPath, { onOwnerCommand: options.onOwnerCommand, ownerQueue }),
     commandLabel: "roomyx serve",
     defaultPort: 4319,
     port: options.port,

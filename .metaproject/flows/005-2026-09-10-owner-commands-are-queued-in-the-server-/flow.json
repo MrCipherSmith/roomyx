@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 2,
+  "gates": {
+    "tasks": true,
+    "review": true
+  },
+  "id": "005",
+  "slug": "owner-commands-are-queued-in-the-server-",
+  "title": "Owner commands are queued in the server and acknowledged, so a veto can actually reach a room (D-18 item 6)",
+  "status": "in-progress",
+  "createdAt": "2026-09-10T12:47:05.420Z",
+  "updatedAt": "2026-09-10T12:47:49.446Z",
+  "source": {
+    "type": "description",
+    "ref": null
+  },
+  "acChecksum": "sha256:3041f719f270732e1d74ea4ea4653ec98805c5c6c064cd2e7eed6f8d29650271",
+  "acConfirmed": {},
+  "pr": {
+    "url": null
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Collect remaining context",
+      "kind": "context",
+      "origin": "scaffold",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "completed"
+    },
+    {
+      "id": "T2",
+      "title": "Implement per plan",
+      "kind": "implement",
+      "origin": "scaffold",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T3",
+      "title": "Add/adjust tests and make them pass",
+      "kind": "test",
+      "origin": "scaffold",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T4",
+      "title": "Self-review and prepare draft PR",
+      "kind": "review",
+      "origin": "scaffold",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T5",
+      "title": "The TUI renders the owner-command status, with queued as a state rather than a failure",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T6",
+      "title": "End to end: two real MCP sessions against a live serve(), plus the resource read",
+      "kind": "test",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T7",
+      "title": "CHANGELOG and minor version per D-13; state the bound and the settling rules",
+      "kind": "docs",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-10T12:47:05.420Z",
+      "event": "created"
+    },
+    {
+      "at": "2026-09-10T12:47:48.789Z",
+      "event": "task-added",
+      "detail": "T5: The TUI renders the owner-command status, with queued as a state rather than a failure"
+    },
+    {
+      "at": "2026-09-10T12:47:48.920Z",
+      "event": "task-added",
+      "detail": "T6: End to end: two real MCP sessions against a live serve(), plus the resource read"
+    },
+    {
+      "at": "2026-09-10T12:47:49.049Z",
+      "event": "task-added",
+      "detail": "T7: CHANGELOG and minor version per D-13; state the bound and the settling rules"
+    },
+    {
+      "at": "2026-09-10T12:47:49.190Z",
+      "event": "frozen",
+      "detail": "8 criteria; checksum recorded"
+    },
+    {
+      "at": "2026-09-10T12:47:49.340Z",
+      "event": "started"
+    },
+    {
+      "at": "2026-09-10T12:47:49.446Z",
+      "event": "task-done",
+      "detail": "T1: Collect remaining context"
+    }
+  ]
+}

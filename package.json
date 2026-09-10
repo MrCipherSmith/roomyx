@@ -1,6 +1,6 @@
 {
   "name": "@mrciphersmith/roomyx",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "MCP server + terminal UI for startup-room: live room status, chat, per-agent modal, an installable room registry, and skill-sync.",
   "publishConfig": {
     "access": "public"

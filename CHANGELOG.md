@@ -13,6 +13,56 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.10.0] — 2026-09-10
+
+A minor, because it is breaking: `room.post_owner_command` answers with a status
+instead of a boolean, and `onOwnerCommand` returns one. In `0.x` the minor
+position is the breaking position (D-13).
+
+### Fixed
+
+- **An owner command actually reaches the room.** It used to be handed to
+  `onOwnerCommand` — a JS function supplied by whoever embeds the server — and
+  discarded when there was none. A model-driven orchestrator spawns
+  `roomyx serve` as a child process and cannot inject a function into it, so for
+  the consumer this feature exists for, the answer was always "no dispatcher is
+  attached" and the veto went nowhere. `prd.md` R5's criterion had no measurable
+  form because nothing was ever held anywhere.
+
+### Added
+
+- **A per-room owner-command queue**, created by `serve()` and shared by every
+  session. It is created there and not inside the server factory because that
+  factory runs **once per MCP session**: state built inside it belongs to one
+  client, so a command posted by the TUI would be invisible to the session that
+  has to act on it.
+- **`room.get_pending_owner_commands`** — what nobody has acknowledged, oldest
+  first. The dispatcher reads it on its next turn and writes the log line itself:
+  the server holds a queue, not a pen (D-01).
+- **`room://owner-queue`** — the same set as a resource, which is the shape a
+  host can subscribe to later.
+- **`room.ack_owner_command`** — settles one command, so "pending" keeps meaning
+  something. An unknown or already-acknowledged id is **refused**, because a
+  dispatcher told "acknowledged" about a command it never held stops looking.
+
+### Changed
+
+- **The post response is `{ id, status, reason? }`, with `status` one of
+  `queued` | `accepted` | `refused`.** `accepted: boolean` could not express the
+  distinction that matters: a command held for a dispatcher that has not read it
+  yet is not the same as a command nothing will ever act on, and `false` meant
+  both. `queued` is the normal answer for a bare `serve`.
+- **A handler that answers settles the command** rather than leaving it queued.
+  Two deliveries of one veto — once to the handler, once to whoever reads the
+  queue — is worse than one delivery to a stub the embedder wrote itself.
+- **The queue is bounded (32 unacknowledged).** The server lives as long as the
+  room and a room runs for hours, so a queue nothing drains grows for as long as
+  somebody keeps posting. A full queue refuses the next post and says how many
+  are waiting; a refusal an operator can read beats a leak nobody measures.
+- **The TUI shows three sentences, not two.** `queued` reads as a state, not as
+  a failure — showing the feature working as the feature failing is the mistake
+  this wording exists to avoid.
+
 ## [0.9.0] — 2026-09-10
 
 A minor, because it is breaking: `room.get_transcript` returns an object where it

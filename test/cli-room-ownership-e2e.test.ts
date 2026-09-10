@@ -45,7 +45,7 @@ describe("a room with a live dispatcher, across processes", () => {
 
     handle = await serve(log, {
       port: 0,
-      onOwnerCommand: () => ({ accepted: true }),
+      onOwnerCommand: () => ({ status: "accepted" as const }),
       writerLeasePath: writerLeasePathFor(registryPath, log),
     });
     const entry = registerRoom(registryPath, { port: handle.port, logPath: log, pid: process.pid });
@@ -75,7 +75,7 @@ describe("a room with a live dispatcher, across processes", () => {
 
     handle = await serve(log, {
       port: 0,
-      onOwnerCommand: () => ({ accepted: true }),
+      onOwnerCommand: () => ({ status: "accepted" as const }),
       writerLeasePath: leasePath,
     });
     const entry = registerRoom(registryPath, { port: handle.port, logPath: log, pid: process.pid });
