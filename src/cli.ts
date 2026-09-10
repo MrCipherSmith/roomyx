@@ -4,7 +4,7 @@ import { join, resolve } from "node:path";
 import { serve } from "./server/serve";
 import { createServerShutdown } from "./server/shutdown";
 import { init } from "./installer/init";
-import { probeRoomState, registerRoom, deregisterRoom, listLiveRooms } from "./installer/registry";
+import { probeRoomState, registerRoom, deregisterRoom, listLiveRooms, listRoomsWithLiveness } from "./installer/registry";
 import { archiveRoom, defaultHistoryPath, readHistory } from "./installer/history";
 import { syncSkill } from "./installer/skill-sync";
 import { appendMessages, createRoomLog, LEGAL_KINDS, parseRoster } from "./log/write";
@@ -477,13 +477,24 @@ const COMMANDS: Record<string, Command> = {
       // `rooms list --registry /nonexistent.json` printed "No live rooms"
       // about a different file.
       const registryPath = typeof flags.registry === "string" ? flags.registry : defaultRegistryPath();
-      const rooms = await listLiveRooms(registryPath);
-      if (rooms.length === 0) {
+      const { live, unconfirmed } = await listRoomsWithLiveness(registryPath);
+      if (live.length === 0 && unconfirmed.length === 0) {
+        // An empty registry and a registry whose rooms did not answer are
+        // different facts, and the second used to print this same sentence —
+        // which is how a serving room came to look like no room at all.
         console.log("No live rooms.");
         return;
       }
-      for (const room of rooms) {
+      for (const room of live) {
         console.log(`${room.id}  port=${room.port}  log=${room.logPath}  started=${room.startedAt}`);
+      }
+      for (const room of unconfirmed) {
+        // Kept in the registry, not claimed live: the probe did not answer, and
+        // "did not answer" is not permission to delete a room that may be
+        // serving. Named so the reader knows what to re-check.
+        console.log(
+          `${room.id}  port=${room.port}  log=${room.logPath}  started=${room.startedAt}  did not answer — still registered`,
+        );
       }
     },
   },
