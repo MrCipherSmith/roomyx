@@ -13,6 +13,35 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.10.3] — 2026-09-10
+
+A patch. A new read tool, and no existing response changes.
+
+### Added
+
+- **`room.get_delta_for(agent_id, since_seq?)`** — what a participant has not
+  seen, by the convention the dispatcher used to apply by hand on every turn:
+  everything after that participant's own last message, excluding its own. The
+  rule is not new — `get_agent_detail` has always reported `lastSeenSeq` as the
+  maximum of an agent's own `seq` — but the cursor map and the filter were being
+  re-derived in a language model's context once per iteration. The answer also
+  reports `since_seq` and `cursor_from` (`agent-last-message` or `caller`), so an
+  empty delta means "nothing new" rather than "I passed the wrong cursor".
+
+### Notes
+
+- **It is a candidate delta, not a delivery record.** The server cannot see a
+  `SendMessage`: it knows a convention about the log and nothing else. The tool's
+  description says so, and a test asserts that wording **as a client receives
+  it** over the wire, because a string assertion in the tool's own unit test
+  cannot see what the wire says. A dispatcher may have failed to send a delta or
+  sent one twice, and no field here can tell.
+- Its own messages are excluded at any cursor, including an explicit `0` — an
+  agent does not need to be told what it said.
+- Stateless: the default cursor is derived from the log on every call. A cursor
+  the server *stored* would belong to one server instance, and the factory behind
+  `serve` runs once per session (the lesson `0.10.0` paid for).
+
 ## [0.10.2] — 2026-09-10
 
 ### Added
