@@ -261,7 +261,7 @@ describe("roomyx room append", () => {
     expect(second.body).toBe('line one\nline "two"');
   }, 20000);
 
-  test("an edit is appended through --json and folds into the state (D-19)", async () => {
+  test("an edit is appended through --json and folds into the state (D-20)", async () => {
     dir = mkdtempSync(join(tmpdir(), "roomyx-append-edit-"));
     const log = join(dir, "room.jsonl");
     await run(["room", "new", log, "--goal", "Pick a database", "--roster", "a:A"]);

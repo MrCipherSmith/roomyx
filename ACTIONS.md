@@ -12,7 +12,7 @@ here as work.
 | Released | `@mrciphersmith/roomyx@0.11.0` (tag `v0.11.0`, published with provenance) |
 | `main` | green: 433 tests, 0 fail (the count includes the persona library's own tests) |
 | Flows | 001–007 `done`; PRs #5, #8, #9 were small changes without a flow |
-| Decisions recorded, not implemented | none — D-19 shipped in `0.11.0` |
+| Decisions recorded, not implemented | none — the state-update decision shipped in `0.11.0` as **D-20** (was mis-numbered D-19; the owner's D-19 is the persona library) |
 
 ## Triage
 
@@ -53,7 +53,7 @@ landed and the named half did not.
 | **R12** the status bar drops the threshold | **done** | released `0.9.0` (PR #9): the threshold is on the line, and over-long lines end with `clip()`'s marker instead of being cut by the pane edge |
 | D-18 item 5 `room.get_delta_for` | **done** | released `0.10.3` (flow 006, PR #11): the delta is computed in the server, reporting `since_seq` and `cursor_from` so an empty delta is distinguishable from a wrong cursor |
 | D-18 item 6 owner-command queue | **done** | released `0.10.0` (flow 005, PR #10): the queue is created in `serve()` so every session shares it, with `room.get_pending_owner_commands`, `room://owner-queue` and `room.ack_owner_command` |
-| D-18 item 8 state-update shape | **decided** | **D-19**: a message kind with the structured change beside a readable body, and `room.get_state` folds the stream. Schedulable now |
+| D-18 item 8 state-update shape | **decided** | **D-20**: a message kind with the structured change beside a readable body, and `room.get_state` folds the stream. Shipped in `0.11.0` |
 
 **The previous list undercounted.** It carried D-18 items 5, 6 and 8 and nothing
 else, while three live defects sat in the backlog: R7's timeout half, R10 and
@@ -86,8 +86,8 @@ What is left is decisions and follow-ups, not tasks:
 
 ## Needs a decision before code
 
-2. **D-18 item 8 / D-19 — a representation for `goal_edit` / `add_participant`.**
-   **Decided 2026-09-10** (see `decisions.md` D-19): a message kind carrying the
+2. **D-18 item 8 / D-20 — a representation for `goal_edit` / `add_participant`.**
+   **Decided 2026-09-10** (see `decisions.md` D-20): a message kind carrying the
    structured change beside a readable body, with `room.get_state` folding the
    stream. Two reasons it is the message route rather than a second record type:
    a state record would be **invisible in the terminal** (a person reads the

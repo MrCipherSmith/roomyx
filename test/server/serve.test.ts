@@ -138,7 +138,7 @@ describe("serve", () => {
     }
   }, 20000);
 
-  test("a real client reads the folded state after an edit (D-19)", async () => {
+  test("a real client reads the folded state after an edit (D-20)", async () => {
     // The fold has to be visible where a room's state is actually read. A tool
     // unit test proves `loadRoomLog` folds; this proves `room.get_state` — the
     // thing the dispatcher and the status bar consume — returns the folded state.
