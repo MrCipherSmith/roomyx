@@ -108,6 +108,32 @@ What is left is decisions and follow-ups, not tasks:
 
 ## Known open, verified, not scheduled
 
+**Three items lived in `decisions.md` and in test files but were never carried
+here.** `ACTIONS.md` is meant to be the complete list, and a list that omits
+things is worse than no list: it reads as "nothing else is outstanding". They are
+added below with what is actually true of each.
+
+- **The wrap defect** — a word ending exactly at the wrap column loses its last
+  character (`whether scrolling` renders `whether scrollin`). Reproduced headlessly
+  at 72 columns and observed in a real terminal through tmux; measured to be
+  width-dependent rather than universal. It is an `@opentui/core` defect, not
+  roomyx's, and it is held by a **deliberate `test.failing` tripwire** in
+  `test/client/wrap-defect.test.ts`: the day the upstream fix lands, the suite says
+  so instead of leaving a workaround in place. The obvious workaround (a one-column
+  right margin) was measured and rejected because it *moves the boundary* rather
+  than removing the cause, turning a reproducible defect into an intermittent one.
+  Nothing to do until upstream changes — but it must not be forgotten, because a
+  `test.failing` that is silently deleted looks exactly like a fixed bug.
+- **Terminal resize handling** (D-12, deferred with reasons): no path re-lays out
+  `ChatView`, `Footer`, `HelpOverlay` or the roster breakpoint when the terminal
+  changes size. In a narrow terminal there is no way to grow out of it.
+- **Display-cell arithmetic** (D-12, the same deferred pair): `clip()` counts code
+  units, which is wrong for wide characters and combining marks, and the module
+  records that itself. D-12's judgement was that the two are **one piece of work,
+  not two** — the resize path needs the width primitive and the width primitive
+  needs the resize path — and that doing it inside a defect-fix flow would mix two
+  kinds of risk. That judgement still holds; it is a feature, not a repair.
+
 - **`RoomState` construction by an external embedder** is exercised by no test.
   `dispatcherAttached` is asserted present-and-true/false in
   `test/server/dispatcher-attached.test.ts`, but never absent — the treatment of
