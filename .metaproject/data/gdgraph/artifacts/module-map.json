@@ -106,6 +106,7 @@
     "test/installer/history.test.ts",
     "test/installer/init-plan.test.ts",
     "test/installer/init.test.ts",
+    "test/installer/registry-liveness.test.ts",
     "test/installer/registry.test.ts",
     "test/installer/resolve-connection.test.ts",
     "test/installer/skill-sync.test.ts",

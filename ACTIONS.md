@@ -9,12 +9,17 @@ here as work.
 
 | | |
 |---|---|
-| Released | `@mrciphersmith/roomyx@0.8.0` (tag `v0.8.0`, published with provenance) |
-| `main` | green: `bun run check` → 358 pass / 0 fail |
-| Flows | 001, 002, 003 — all `done` (`.metaproject/flows/`) |
+| Released | `@mrciphersmith/roomyx@0.8.1` (tag `v0.8.1`, published with provenance) |
+| `main` | green: `bun run check` → 372 pass / 0 fail |
+| Flows | 001, 002, 003, 004 — all `done` (`.metaproject/flows/`) |
 | Decisions recorded, not implemented | D-18 items 5, 6, 8 |
 
 ## Triage
+
+**R7's timeout half is closed** (flow 004, `0.8.1`): liveness answers
+`live`/`gone`/`unknown`, only `gone` deletes or archives anything, and `rooms
+list` prints `did not answer — still registered` rather than dropping the room.
+
 
 `done` means the shipped code contradicts the item and the item should stop being
 carried. `open` means the defect is still reachable. `partial` means one half
@@ -34,7 +39,7 @@ landed and the named half did not.
 | **R8** the CLI has no argument grammar | **done** | spec-driven parser in `src/cli/args.ts` |
 | **R9** SIGTERM with a client attached | **done** | `closeAllConnections()` and cleanup-after-close (`http-transport.ts`, `server/shutdown.ts`) |
 | release smoke test that cannot fail | **done** | `.github/workflows/release.yml:111` now asserts `--help` exits 0, with the defect in the comment |
-| **R7** a timeout prunes a live room | **open** | see *Do now* — the identity half landed, the timeout half did not, and the timeout half is the one with the victim |
+| **R7** a timeout prunes a live room | **done** | flow 004, release `0.8.1`: `Liveness` is `live`/`gone`/`unknown`, only `gone` prunes or archives, and `rooms list` reports an unanswered room instead of dropping it |
 | **R10** `get_transcript` has no `limit` | **open** | `src/server/index.ts:71` — the input schema is `{ since_seq }` and nothing else |
 | **R12** the status bar drops the threshold | **open** | `grep threshold\|criteria src/client/components/status-bar.ts` → no match |
 | D-18 item 5 `room.get_delta_for` | **open** | not in `src/` |
@@ -48,16 +53,7 @@ was looking at, not of what is broken.
 
 ## Do now — each is small, and each has a named victim
 
-1. **R7, timeout half — a live room is still deleted from the registry.**
-   `probeRoomState` returns `undefined` for *both* "could not reach it" and
-   "reached a different room" (`src/installer/registry.ts`), `isRoomLive` maps
-   `undefined` to `false`, and `listLiveRooms` then prunes the entry *and* writes
-   its history record. A `SIGSTOP`'d or merely slow server passes the pid
-   pre-filter — `process.kill(pid, 0)` succeeds on a stopped process — and is
-   then deleted for not answering within 500 ms. R7 says it in its own words:
-   *"Identity mismatch is the one case where deleting is correct — a timeout
-   never is."* The identity half is done; this is the other one.
-2. **S3 residual — the staged skill is written once and never refreshed.**
+1. **S3 residual — the staged skill is written once and never refreshed.**
    `src/installer/init.ts:53` skips the copy when the file exists, so after an
    upgrade `.roomyx/skills/startup-room/SKILL.md` keeps the old text silently —
    no hash, no backup, no warning, which is what the backlog asked `syncSkill`
@@ -65,31 +61,31 @@ was looking at, not of what is broken.
    staged copy at all: `skills sync` uses `bundledSkillPath()` from the package.
    So decide: route it through `syncSkill` (as the backlog says) or stop writing
    a file nothing consumes.
-3. **R10 — `limit` on `room.get_transcript`.** A cold attach at `since_seq: 0`
+2. **R10 — `limit` on `room.get_transcript`.** A cold attach at `since_seq: 0`
    hands the entire transcript to a language model in one text block. The
    backlog's own framing is the reason to do it: *"That isn't 20 ms of CPU, it's
    a context window."* Split as the backlog suggests — `limit` and a cursor now,
    memoization later, and only if someone runs a room long enough to care.
-4. **R12 — the threshold belongs on screen.** The room exists to cross a number
+3. **R12 — the threshold belongs on screen.** The room exists to cross a number
    and the number is not displayed. Same line as `setNotice`, so a refusal's own
    sentence gets truncated too. Inherit the wrap primitive rather than hand-roll
    a second one.
 
 ## Next, after those
 
-5. **D-18 item 6 — the owner-command queue** (`room.get_pending_owner_commands`,
+4. **D-18 item 6 — the owner-command queue** (`room.get_pending_owner_commands`,
    `room://owner-queue`, `room.ack_owner_command`). Highest value of the three
    decisions: `room.post_owner_command` still answers `accepted: false` for the
    primary scenario, because a model-driven orchestrator spawns `serve` and
    `onOwnerCommand` is a JS function that cannot be injected into it. `prd.md`
    R5's criterion has no measurable form until an ack exists.
-6. **D-18 item 5 — `room.get_delta_for`.** Do it after item 6, not with it: same
+5. **D-18 item 5 — `room.get_delta_for`.** Do it after item 6, not with it: same
    tool file, and bundling two changes into one review stops the review from
    being about either.
 
 ## Needs a decision before code
 
-7. **D-18 item 8 — a representation for `goal_edit` / `add_participant`.**
+6. **D-18 item 8 — a representation for `goal_edit` / `add_participant`.**
    `loadRoomLog` requires every line after the header to satisfy
    `messageLineSchema`, so a second `state` line makes the room unreadable
    forever, and the header cannot be rewritten. A permitted record type with

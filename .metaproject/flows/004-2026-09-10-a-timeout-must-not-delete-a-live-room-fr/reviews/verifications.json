@@ -1,0 +1,19 @@
+{
+ "status": "DONE",
+ "verifier": "flow-orchestrator-mutation-pass",
+ "summary": "1 finding; proved and refuted by executed mutation against the branch head",
+ "verifications": [
+  {
+   "finding": "2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-7#R1-01",
+   "verdict": "refuted",
+   "method": "execution",
+   "evidence": "Run against the tree at a421ab08bd5664147878d7c0d74c51133562370e: narrowed findRoomServing back to the confirmed list alone and ran bun test test/installer/registry-liveness.test.ts -t 'an unconfirmed entry is still found' - the test failed with Expected: r-bv75p7 / Received: undefined. With the fix in place the same file is 14 pass / 0 fail. Reverted after the run."
+  }
+ ],
+ "stats": {
+  "confirmed": 0,
+  "refuted": 1,
+  "unverifiable": 0,
+  "not_checked": 0
+ }
+}
