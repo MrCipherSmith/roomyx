@@ -67,8 +67,13 @@ describe("a message row", () => {
     expect(kindOnly).toContain("yes");
 
     // A reply to a seq that is not in this log resolves to nothing. Drawing
-    // the number instead is what D-17 removes: it names no speaker.
+    // the number instead is what D-17 removes: it names no speaker, and an
+    // unresolved pointer must leave NO stray tag behind rather than half of
+    // one. `not.toContain("#7")` alone cannot fail while the formatter has no
+    // `#` in it, so the claim is made positively, on the header itself.
     const replyOnly = await frameFor([{ seq: 2, from: "a", in_reply_to: 7, body: "because" }]);
+    const replyHeader = replyOnly.split("\n").find((line) => line.includes("Ann")) ?? "";
+    expect(replyHeader.trim()).toBe("Ann");
     expect(replyOnly).not.toContain("#7");
 
     const plain = await frameFor([{ seq: 3, from: "a", body: "hello" }]);

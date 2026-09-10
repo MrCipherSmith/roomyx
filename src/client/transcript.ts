@@ -129,14 +129,15 @@ export class Transcript {
 }
 
 /**
- * The one place the kind + reply tag is spelled.
+ * How much of the parent's body the pointer quotes, in code units.
  *
- * It used to be assembled twice — in `message-row.ts` for the pane, and inline
- * in `toText()` for the export — so the two could disagree about what a message
- * said, and neither was visible to `matches()`. The tag is drawn on screen,
- * which is the whole test of whether a search has to find it.
+ * A budget rather than a proportion of the pane: the tag sits on one
+ * `height: 1` line beside a name, and anything that has to be measured against
+ * a live width would make the tag's text depend on the terminal it is drawn in.
+ * Code units, not display cells — the same deferral `clip.ts` records for the
+ * same reason.
  */
-export const QUOTE_CELLS = 24;
+const QUOTE_CELLS = 24;
 
 export interface ReplyTarget {
   /** The parent's resolved display name. Never a sequence number: a number names nobody. */
@@ -162,6 +163,14 @@ function quote(body: string): string {
   return `${flat.slice(0, QUOTE_CELLS - 3).trimEnd()}...`;
 }
 
+/**
+ * The one place the kind and reply tag is spelled.
+ *
+ * It used to be assembled twice — in `message-row.ts` for the pane, and inline
+ * in `toText()` for the export — so the two could disagree about what a message
+ * said, and neither was visible to `matches()`. The tag is drawn on screen,
+ * which is the whole test of whether a search has to find it.
+ */
 export function messageTag(message: MessageEnvelope, replyTo?: ReplyTarget): string {
   const pointer = replyTo === undefined ? "" : `-> ${replyTo.name} "${quote(replyTo.body)}"`;
   return [message.kind, pointer].filter((part): part is string => Boolean(part)).join(" ");
