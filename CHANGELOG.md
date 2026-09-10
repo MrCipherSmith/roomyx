@@ -13,6 +13,42 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.9.0] — 2026-09-10
+
+A minor, because it is breaking: `room.get_transcript` returns an object where it
+returned a bare array. In `0.x` the minor position is the breaking position
+(D-13).
+
+### Changed
+
+- **`room.get_transcript` pages, and says whether it paged.** The response is now
+  `{ messages, has_more, next_seq }`. A cold attach at `since_seq: 0` used to ship
+  the entire transcript as one text block — 3.8 MB in the room the backlog
+  measured — and the consumer on the management path is a language model, so that
+  is not slow CPU, it is a context window. Pass `next_seq` back as `since_seq` to
+  continue.
+- **The default is bounded (200).** An opt-in limit would have left every
+  existing caller shipping the whole room, which is the caller the problem was
+  measured on. A bare array could not express "there is more", and a truncated
+  list that looks complete is the defect this project keeps re-filing — hence the
+  object rather than a silent cap.
+- **`roomyx-client` reads the page and its cursor.** The polling loop takes
+  `next_seq` from the response instead of computing `max` over what arrived: the
+  server knows which messages it actually sent, and a bounded page means "the
+  last seq I received" and "the cursor" are the same number only by luck.
+
+### Fixed
+
+- **The status bar shows the goal's threshold.** The room is goal-driven and its
+  goal is a number to cross; the line carried the goal statement and not the
+  number, so a reader could not tell how close the room was. A goal that states
+  no threshold gets no invented one.
+- **Over-long status lines are clipped with a marker instead of cut by the pane
+  edge.** With `wrapMode: "none"` on a `height: 1` row, a truncated goal read as
+  a short goal — and an owner command's answer stopped mid-word: a real veto
+  against a dispatcher-less room ended at "…the command. A". Both the goal line
+  and a notice now end with the client's own `…` marker.
+
 ## [0.8.2] — 2026-09-10
 
 A patch. Closes the backlog's S3 and corrects two documents that described a

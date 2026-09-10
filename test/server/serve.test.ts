@@ -50,8 +50,28 @@ describe("serve", () => {
         arguments: { since_seq: 2 },
       });
       const transcriptText = (transcriptResult.content as Array<{ type: string; text: string }>)[0]?.text ?? "";
-      const transcript = JSON.parse(transcriptText);
-      expect(transcript.map((m: { seq: number }) => m.seq)).toEqual([3, 4]);
+      const transcript = JSON.parse(transcriptText) as {
+        messages: Array<{ seq: number }>;
+        has_more: boolean;
+        next_seq: number;
+      };
+      expect(transcript.messages.map((m) => m.seq)).toEqual([3, 4]);
+      // The page shape, over the wire rather than through the tool: a caller
+      // that cannot tell a page from a complete answer is the defect the shape
+      // exists to prevent, and it would be invisible in a unit test of the tool.
+      expect(transcript.has_more).toBe(false);
+      expect(transcript.next_seq).toBe(4);
+
+      // An explicit limit pages over the wire too, and reports the cursor.
+      const pagedResult = await client.callTool({
+        name: "room.get_transcript",
+        arguments: { since_seq: 0, limit: 2 },
+      });
+      const pagedText = (pagedResult.content as Array<{ type: string; text: string }>)[0]?.text ?? "";
+      const paged = JSON.parse(pagedText) as { messages: Array<{ seq: number }>; has_more: boolean; next_seq: number };
+      expect(paged.messages.map((m) => m.seq)).toEqual([1, 2]);
+      expect(paged.has_more).toBe(true);
+      expect(paged.next_seq).toBe(2);
 
       const agentResult = await client.callTool({
         name: "room.get_agent_detail",
