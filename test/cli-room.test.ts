@@ -223,9 +223,14 @@ describe("roomyx room append", () => {
       expect(bodies).toContain("taken over");
       // The trace is what a reader of the log later needs: a room that was
       // written by hand while its writer was gone must not look supervised.
-      const trace = lines.find((m) => typeof m.kind === "string" && m.kind === "status");
+      const trace = lines.find((m) => typeof m.body === "string" && m.body.includes("--take-over"));
       expect(trace).toBeDefined();
-      expect(String(trace?.body)).toContain("--take-over");
+      // The trace and the message it describes are one batch: consecutive seq,
+      // so a trace that failed to write would have taken the message with it
+      // rather than leaving an unrecorded take-over behind.
+      expect(trace?.seq).toBe(lines[lines.length - 1]?.seq);
+      const taken2 = lines.find((m) => m.body === "taken over");
+      expect(taken2?.seq).toBe((trace?.seq as number) - 1);
     }, 20000);
   });
 

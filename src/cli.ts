@@ -7,7 +7,7 @@ import { init } from "./installer/init";
 import { probeRoomState, registerRoom, deregisterRoom, listLiveRooms } from "./installer/registry";
 import { archiveRoom, defaultHistoryPath, readHistory } from "./installer/history";
 import { syncSkill } from "./installer/skill-sync";
-import { appendMessage, appendMessages, createRoomLog, LEGAL_KINDS, parseRoster } from "./log/write";
+import { appendMessages, createRoomLog, LEGAL_KINDS, parseRoster } from "./log/write";
 import type { AppendMessageOptions } from "./log/write";
 import { acquireWriterLease, readWriterLease, writerLeasePathFor } from "./writer-lease";
 import { MESSAGE_KINDS } from "./log/schema";
@@ -379,21 +379,31 @@ const COMMANDS: Record<string, Command> = {
       // rejected should not be made to pipe a batch in first, and a reader that
       // blocks on stdin while holding a decision helps nobody.
       const pending = pendingAppends(flags);
-      const written = writeAll(absolute, pending);
 
-      if (takeOver || writerWasThere) {
-        // In the same batch as the write, not a second locked section after it: a
-        // trace that can be lost between the two would leave a taken-over room
-        // reading as supervised, which is the one thing it must not do.
-        const displaced = stateBefore(lease);
-        appendMessage(absolute, {
-          from: "owner",
-          kind: "status",
-          body:
-            `--take-over: ${written.length} message(s) appended to ${absolute}` +
-            `${serving === undefined ? "" : ` while room ${serving.id} was live`} with no live writer` +
-            `${displaced === undefined ? " (no lease was held)" : ` (took over from pid ${displaced.pid})`}`,
-        });
+      const displaced = takeOver || writerWasThere ? stateBefore(lease) : undefined;
+      const takingOver = takeOver || writerWasThere;
+
+      // One batch, one lock section: the take-over trace goes in WITH the
+      // messages it describes. Written as a second call it could fail on its
+      // own, and a room written by hand while its writer was absent would read
+      // afterwards as supervised — the one thing the trace exists to prevent.
+      const written = writeAll(absolute, [
+        ...pending,
+        ...(takingOver
+          ? [
+              {
+                from: "owner",
+                kind: "status" as const,
+                body:
+                  `--take-over: ${pending.length} message(s) appended to ${absolute}` +
+                  `${serving === undefined ? "" : ` while room ${serving.id} was live`} with no live writer` +
+                  `${displaced === undefined ? " (no lease was held)" : ` (took over from pid ${displaced.pid})`}`,
+              },
+            ]
+          : []),
+      ]);
+
+      if (takingOver) {
         // The lease is replaced with a new token, so a writer that was merely
         // paused cannot revive the one it lost by refreshing it — the whole
         // reason a take-over is not just a flag on the write.
