@@ -1,0 +1,21 @@
+# Decisions
+
+- fix-01: acted-on — commit 7dde8b2729818b44653565c6753ab18b2e3559cd (valid_followup, post_flow_feedback).
+- fix-02: acted-on — commit 7dde8b2729818b44653565c6753ab18b2e3559cd (valid_followup, post_flow_feedback).
+- fix-03: acted-on — commit 7dde8b2729818b44653565c6753ab18b2e3559cd; severity corrected downward, impact refuted by measurement (valid_followup, post_flow_feedback).
+- fix-04: acted-on — commit 7dde8b2729818b44653565c6753ab18b2e3559cd (valid_followup, post_flow_feedback).
+- fix-05: acted-on — commit 7dde8b2729818b44653565c6753ab18b2e3559cd (valid_followup, post_flow_feedback).
+- fix-06: acted-on — commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9 (valid_followup, post_flow_feedback).
+- fix-07: acted-on — commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9 (valid_followup, post_flow_feedback).
+- fix-08: acted-on — commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9 (valid_followup, post_flow_feedback).
+- fix-09: acted-on — commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9 (valid_followup, post_flow_feedback).
+- fix-10: acted-on — commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — the CLI re-entry guard is pinned; transport.onclose measured unpinnable and labelled; the clip width guard labelled as unreachable (valid_followup, post_flow_feedback).
+- fix-11: acted-on — commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — a request-rate test added, and labelled in the file as NOT a barrier: the pre-fix shape still passes it (valid_followup, post_flow_feedback).
+- fix-12: acted-on — commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — Host/Origin validated before the 404 (valid_followup, post_flow_feedback).
+- fix-13: acted-on — commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — RoomState carries log_path and the probe compares it (valid_followup, post_flow_feedback).
+- fix-14: acted-on — commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — one shared until() helper; the two sleeps that remain are assertions about time (valid_followup, post_flow_feedback).
+- fix-15: acted-on — commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — the bound host joins the allowlist when the operator acknowledged it (valid_followup, post_flow_feedback).
+- fix-16: acted-on — commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — listLiveRooms takes prune; the MCP tool passes false (valid_followup, post_flow_feedback).
+- fix-17: acted-on — commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9 — confirmation, no code change required (valid_followup, post_flow_feedback).
+- fix-18: acted-on — commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9 — docs/roomyx/fix-round-2026-09-09.md (valid_followup, post_flow_feedback).
+- fix-19: acted-on — commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9 — confirmation, no code change required (valid_followup, post_flow_feedback).

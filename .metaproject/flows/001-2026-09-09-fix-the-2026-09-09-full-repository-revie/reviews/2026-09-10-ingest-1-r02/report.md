@@ -169,8 +169,7 @@ the prose lists 7.
     "src/mcp-management/server.ts:105"
    ],
    "enumeration_method": "`keryx ctx rg \"serveMcpOverHttp\" src --all` returns one definition and exactly two call sites, so the sweeper is unconditional for both servers. The room server escapes only incidentally, because its TUI polls at 1s; there is no per-server guard. `IDLE_SESSION_MS` is written once, at http-transport.ts:128."
-  },
-  "global_id": "flow-001-fixround#fix-01"
+  }
  },
  {
   "id": "fix-02",
@@ -195,8 +194,7 @@ the prose lists 7.
     "src/client/index.ts:115"
    ],
    "enumeration_method": "`keryx ctx rg \"appendSystemLine\" src --all` gives the definition (chat-view.ts:120) and exactly two call sites. index.ts:115 is guarded by `previous !== status`, so it emits once per transition; index.ts:123 was the unguarded one, fed by mcp-client.ts:200 which called the event on every rejection. The dedupe is placed at the emitter rather than at either consumer, so a third consumer cannot reintroduce it."
-  },
-  "global_id": "flow-001-fixround#fix-02"
+  }
  },
  {
   "id": "fix-03",
@@ -220,8 +218,7 @@ the prose lists 7.
     "src/server/http-transport.ts:155"
    ],
    "enumeration_method": "Derived from the guard rather than grepped: the set of requests reaching `createSession()` is {sessionId undefined} union {sessionId unknown}. The 404 removes the second member; the first is untouched and only its `initialize` subset ever reaches `onsessioninitialized`. Confirmed by counting createSession calls for each member separately - 15 session-less POSTs minted 15, 15 unknown-id POSTs minted 0."
-  },
-  "global_id": "flow-001-fixround#fix-03"
+  }
  },
  {
   "id": "fix-04",
@@ -238,8 +235,7 @@ the prose lists 7.
   "disposition": {
    "state": "acted-on",
    "evidence": "commit 7dde8b2729818b44653565c6753ab18b2e3559cd"
-  },
-  "global_id": "flow-001-fixround#fix-04"
+  }
  },
  {
   "id": "fix-05",
@@ -263,8 +259,7 @@ the prose lists 7.
     "src/client/index.ts:223"
    ],
    "enumeration_method": "`keryx ctx rg \"nextFreeExportPath|exportBaseName\" src --all` gives two definitions and one call site, which passes `process.cwd()`. The containment check exists at exactly one place, so the class is that one site plus its only caller."
-  },
-  "global_id": "flow-001-fixround#fix-05"
+  }
  },
  {
   "id": "fix-06",
@@ -281,8 +276,7 @@ the prose lists 7.
   "disposition": {
    "state": "acted-on",
    "evidence": "commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9"
-  },
-  "global_id": "flow-001-fixround#fix-06"
+  }
  },
  {
   "id": "fix-07",
@@ -298,8 +292,7 @@ the prose lists 7.
   "disposition": {
    "state": "acted-on",
    "evidence": "commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9"
-  },
-  "global_id": "flow-001-fixround#fix-07"
+  }
  },
  {
   "id": "fix-08",
@@ -316,8 +309,7 @@ the prose lists 7.
   "disposition": {
    "state": "acted-on",
    "evidence": "commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9"
-  },
-  "global_id": "flow-001-fixround#fix-08"
+  }
  },
  {
   "id": "fix-09",
@@ -333,8 +325,7 @@ the prose lists 7.
   "disposition": {
    "state": "acted-on",
    "evidence": "commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9"
-  },
-  "global_id": "flow-001-fixround#fix-09"
+  }
  },
  {
   "id": "fix-10",
@@ -350,8 +341,7 @@ the prose lists 7.
   "disposition": {
    "state": "acted-on",
    "evidence": "commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — the CLI re-entry guard is pinned; transport.onclose measured unpinnable and labelled; the clip width guard labelled as unreachable"
-  },
-  "global_id": "flow-001-fixround#fix-10"
+  }
  },
  {
   "id": "fix-11",
@@ -368,8 +358,7 @@ the prose lists 7.
   "disposition": {
    "state": "acted-on",
    "evidence": "commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — a request-rate test added, and labelled in the file as NOT a barrier: the pre-fix shape still passes it"
-  },
-  "global_id": "flow-001-fixround#fix-11"
+  }
  },
  {
   "id": "fix-12",
@@ -385,8 +374,7 @@ the prose lists 7.
   "disposition": {
    "state": "acted-on",
    "evidence": "commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — Host/Origin validated before the 404"
-  },
-  "global_id": "flow-001-fixround#fix-12"
+  }
  },
  {
   "id": "fix-13",
@@ -403,8 +391,7 @@ the prose lists 7.
   "disposition": {
    "state": "acted-on",
    "evidence": "commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — RoomState carries log_path and the probe compares it"
-  },
-  "global_id": "flow-001-fixround#fix-13"
+  }
  },
  {
   "id": "fix-14",
@@ -420,8 +407,7 @@ the prose lists 7.
   "disposition": {
    "state": "acted-on",
    "evidence": "commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — one shared until() helper; the two sleeps that remain are assertions about time"
-  },
-  "global_id": "flow-001-fixround#fix-14"
+  }
  },
  {
   "id": "fix-15",
@@ -438,8 +424,7 @@ the prose lists 7.
   "disposition": {
    "state": "acted-on",
    "evidence": "commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — the bound host joins the allowlist when the operator acknowledged it"
-  },
-  "global_id": "flow-001-fixround#fix-15"
+  }
  },
  {
   "id": "fix-16",
@@ -456,8 +441,7 @@ the prose lists 7.
   "disposition": {
    "state": "acted-on",
    "evidence": "commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — listLiveRooms takes prune; the MCP tool passes false"
-  },
-  "global_id": "flow-001-fixround#fix-16"
+  }
  },
  {
   "id": "fix-17",
@@ -471,8 +455,7 @@ the prose lists 7.
   "disposition": {
    "state": "acted-on",
    "evidence": "commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9 — confirmation, no code change required"
-  },
-  "global_id": "flow-001-fixround#fix-17"
+  }
  },
  {
   "id": "fix-18",
@@ -486,8 +469,7 @@ the prose lists 7.
   "disposition": {
    "state": "acted-on",
    "evidence": "commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9 — docs/roomyx/fix-round-2026-09-09.md"
-  },
-  "global_id": "flow-001-fixround#fix-18"
+  }
  },
  {
   "id": "fix-19",
@@ -501,8 +483,7 @@ the prose lists 7.
   "disposition": {
    "state": "acted-on",
    "evidence": "commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9 — confirmation, no code change required"
-  },
-  "global_id": "flow-001-fixround#fix-19"
+  }
  }
 ]
 ```
