@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { messageLineSchema, stateLineSchema } from "./schema";
-import type { AgentDelta, AgentDetail, MessageEnvelope, RoomState, RosterEntry } from "./types";
+import type { MessageChange } from "./schema";
+import type { AgentDelta, AgentDetail, GoalContract, MessageEnvelope, RoomState, RosterEntry } from "./types";
 
 /**
  * `JSON.parse`, with the one thing it never says: where.
@@ -56,13 +57,6 @@ export function loadRoomLog(path: string): { state: RoomState; messages: Message
     );
   }
 
-  const state: RoomState = {
-    goal_contract: headerResult.data.goal_contract,
-    roster: headerResult.data.roster,
-    // The reader knows which file it read; the state header does not carry it.
-    log_path: path,
-  };
-
   const messages: MessageEnvelope[] = rest.map((line, index) => {
     const result = messageLineSchema.safeParse(
       parseLine(line, () => `Invalid "message" line ${index + 2} in ${path}`),
@@ -75,7 +69,62 @@ export function loadRoomLog(path: string): { state: RoomState; messages: Message
     return envelope;
   });
 
+  const state: RoomState = {
+    // The header is the room's ORIGINAL contract and the base every edit is
+    // applied to; it is never reinterpreted as one of them.
+    ...foldEdits({ goal_contract: headerResult.data.goal_contract, roster: headerResult.data.roster }, messages),
+    // The reader knows which file it read; the state header does not carry it.
+    log_path: path,
+  };
+
   return { state, messages };
+}
+
+/**
+ * A room's current state, from its original state and every edit since.
+ *
+ * The reason this exists at all: a room's state lives in the first line and that
+ * line cannot be rewritten (append-only) and cannot be followed by a second one
+ * (`loadRoomLog` requires every following line to be a message, so a second state
+ * line makes the room unreadable forever). D-19 therefore makes an edit a
+ * *message* — which also puts it in the transcript, where this project already
+ * puts state changes so a person can see what happened.
+ *
+ * In `seq` order, last edit wins. A message whose kind is an edit kind but which
+ * carries no change is not an edit and is skipped: it is a valid message that
+ * happens to be tagged, and the schema deliberately does not make it invalid,
+ * because an invalid line would kill the room.
+ *
+ * Nothing here writes. The fold is an interpretation of an append-only log, and
+ * the header keeps the contract the room was created with.
+ */
+export function foldEdits(
+  base: { goal_contract: GoalContract; roster: RosterEntry[] },
+  messages: MessageEnvelope[],
+): { goal_contract: GoalContract; roster: RosterEntry[] } {
+  let goalContract = base.goal_contract;
+  let roster = base.roster;
+
+  for (const message of [...messages].sort((a, b) => a.seq - b.seq)) {
+    const change: MessageChange | undefined = message.change;
+    if (change === undefined) continue;
+    if (change.type === "goal_contract") {
+      goalContract = {
+        ...change.goal_contract,
+        // The schema has carried these since the beginning with nothing writing
+        // them; an edit is exactly what they were designed for.
+        updated_by: "owner",
+        updated_in_round: message.seq,
+      };
+      continue;
+    }
+    // "add", not "set": the roster grows, and replacing it would silently drop
+    // everyone an earlier message had introduced.
+    const known = new Set(roster.map((entry) => entry.id));
+    roster = [...roster, ...change.add.filter((entry) => !known.has(entry.id))];
+  }
+
+  return { goal_contract: goalContract, roster };
 }
 
 /** Messages with seq strictly greater than sinceSeq, in log order. */

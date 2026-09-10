@@ -13,6 +13,46 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.11.0] — 2026-09-10
+
+A minor, for the reason D-13 gives: `room.get_state` now returns a **changed
+result for a caller who asked for nothing different**. The log format also gained
+an optional field and two message kinds, which is additive on its own.
+
+### Added
+
+- **A room's state can change.** `goal_edit` and `add_participant` are message
+  kinds carrying the change in a new optional `change` field, and
+  `room.get_state` folds them: the header, then every edit in `seq` order, last
+  one winning. Before this, a room's state was its first line and nothing else —
+  so `goal_edit` and `add_participant` had **nowhere to land**, and
+  `updated_in_round` / `updated_by` sat in the schema with nothing writing them
+  since the format was defined.
+- `room append --json <envelope>` accepts `change`, so an edit can be posted the
+  same way any other message is.
+
+### Notes
+
+- **The edit is a message, and that is the point.** The header cannot be
+  rewritten (append-only) and cannot be followed by a second one (every line
+  after the first must be a message, or the room becomes unreadable forever). A
+  message is therefore the only representation available — and because it is a
+  message it lands in the transcript, which is where this project already puts
+  state changes so a person can see them.
+- **Reading is a fold, never a rewrite.** The file keeps the contract the room was
+  created with; bytes and mtime are untouched by any read. A test asserts both.
+- **The body stays prose.** `"raise the pass mark to 85"`, with the structure
+  beside it in `change` — a JSON blob in the message pane is unreadable.
+- **An edit kind with no `change` is a valid message that is not an edit**, and
+  the fold skips it. Making that ill-formed would have invented a new way for a
+  log to become unreadable, which is the one thing this format cannot afford.
+  A `change` whose `type` does not match its kind *is* ill-formed and is refused
+  by the writer.
+- **Known divergence, recorded rather than fixed:** `archiveRoom` summarises a
+  closed room from its header, so `rooms history` shows the goal the room was
+  *created* with, not the one it ended with. Deciding which of those the index
+  should record is a follow-up.
+
 ## [0.10.3] — 2026-09-10
 
 A patch. A new read tool, and no existing response changes.
