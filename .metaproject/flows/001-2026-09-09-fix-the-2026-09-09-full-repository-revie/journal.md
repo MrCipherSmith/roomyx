@@ -88,3 +88,32 @@ Known section.
 - 2026-09-10T04:44:36.071Z - implemented: draft PR: https://github.com/MrCipherSmith/roomyx/pull/1 (warning: PR is not a draft)
 - 2026-09-10T04:44:36.326Z - completing
 - 2026-09-10T04:44:40.277Z - completion-failed: review: 1 of 5 conditions failed — head-commit (violated): the latest round ran against 20646ab261d54edc6f69e0919d7d0f3deefbae2c, but the PR head is cd214973fc31d0c54264e55dc73c487d0c1bd4db. A clean round against a stale SHA proves nothing about what will merge — re-run the round. The round cap (3) is reached with the gate unsatisfied: the flow stays in-progress and the decision is the operator's. Completing here would reintroduce the leak this gate closes.
+- 2026-09-10T04:48:17.687Z - implemented: draft PR: https://github.com/MrCipherSmith/roomyx/pull/2 (warning: PR is not a draft)
+- 2026-09-10T04:48:17.920Z - completing
+- 2026-09-10T04:48:21.865Z - completion-failed: review: 2 of 5 conditions failed — head-commit (violated): the latest round ran against 20646ab261d54edc6f69e0919d7d0f3deefbae2c, but the PR head is 89f1dda825e0d1d935975ed3387f301946599eab. A clean round against a stale SHA proves nothing about what will merge — re-run the round. | external-comments (unobserved): the external-comment collection did not run: nothing records whether anyone commented on MrCipherSmith/roomyx#2 (`.metaproject/reviews/pr-comments/MrCipherSmith__roomyx__2.json` does not exist). Zero collected comments and no collection at all are different facts, and only one of them is clean. Run `keryx review comments collect --repo MrCipherSmith/roomyx --pr 2 --sha <pr-head>`, or inject `FlowServiceDeps.externalCommentsGate` with a collector of your own. The round cap (3) is reached with the gate unsatisfied: the flow stays in-progress and the decision is the operator's. Completing here would reintroduce the leak this gate closes.
+
+## 2026-09-10 — closed
+
+All 14 tasks terminal, all 12 frozen acceptance criteria confirmed with
+evidence, `bun run check` green at 268 tests, `keryx health run` 98 and passing.
+
+Two review rounds ran against the fixes rather than against the code they fixed,
+which is the class that goes under-found. The first found five defects the fixes
+had introduced and four verification claims that were false. The second, run
+after those were fixed, re-checked all nineteen findings against the commits
+that fixed them: eighteen no longer reproduce, and one does.
+
+The one that does is recorded as the operator's decision rather than as a fix:
+neither reconnect mechanism is pinned by a test, and the test written to close
+that gap passes against the full pre-fix shape. Its own header says so.
+
+Closing needed several attempts, and the reason is worth writing down. The gate
+compares a round's head against the PR's head, and this work went to `main`
+directly all day — so every round ran against a SHA no pull request pointed at.
+Each attempt that squash-merged a PR froze that PR's head and moved `main` past
+it, which put the next attempt back where it started. The flow closes from a
+branch whose PR is still open, with the round ingested at that branch's head,
+and the state committed before the merge rather than after.
+- 2026-09-10T04:49:57.815Z - implemented: draft PR: https://github.com/MrCipherSmith/roomyx/pull/3 (warning: PR is not a draft)
+- 2026-09-10T04:49:58.270Z - completing
+- 2026-09-10T04:50:03.566Z - done: all gates passed

@@ -1,0 +1,21 @@
+# Decisions
+
+- fix-01: acted-on — commit 7dde8b2729818b44653565c6753ab18b2e3559cd (valid_followup, post_flow_feedback).
+- fix-02: acted-on — commit 7dde8b2729818b44653565c6753ab18b2e3559cd (valid_followup, post_flow_feedback).
+- fix-03: acted-on — commit 7dde8b2729818b44653565c6753ab18b2e3559cd; severity corrected downward, impact refuted by measurement (valid_followup, post_flow_feedback).
+- fix-04: acted-on — commit 7dde8b2729818b44653565c6753ab18b2e3559cd (valid_followup, post_flow_feedback).
+- fix-05: acted-on — commit 7dde8b2729818b44653565c6753ab18b2e3559cd (valid_followup, post_flow_feedback).
+- fix-06: acted-on — commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9 (valid_followup, post_flow_feedback).
+- fix-07: acted-on — commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9 (valid_followup, post_flow_feedback).
+- fix-08: acted-on — commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9 (valid_followup, post_flow_feedback).
+- fix-09: acted-on — commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9 (valid_followup, post_flow_feedback).
+- fix-10: acted-on — commit c1297e3502555ef828ec7d69ceb8d321d79f0213 — the CLI re-entry guard and the cleanup ordering are now pinned by test/server/shutdown-order.test.ts, after a verifier showed the subprocess test did not pin either; transport.onclose and the clip width guard are labelled unreachable rather than claimed pinned (valid_followup, post_flow_feedback).
+- fix-11: dismissed-deprioritised — decided-by: altsay (operator), 2026-09-10 — accepted open after being told it was the one finding of the nine that could not be closed. Not marked fixed: the verifier's verdict is `confirmed`, because the test written to close it passes against the full pre-fix shape and says so in its own header. See docs/roomyx/fix-round-2026-09-09.md, 'Still open after all of it'. (valid_followup, post_flow_feedback).
+- fix-12: acted-on — commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — Host/Origin validated before the 404 (valid_followup, post_flow_feedback).
+- fix-13: acted-on — commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — RoomState carries log_path and the probe compares it (valid_followup, post_flow_feedback).
+- fix-14: acted-on — commit c1297e3502555ef828ec7d69ceb8d321d79f0213 — every condition-standing-in sleep in the two named files is a predicate wait through test/helpers/until.ts; the four setTimeout sites left are two hang detectors and two assertions about absence, where a duration is the right instrument (valid_followup, post_flow_feedback).
+- fix-15: acted-on — commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — the bound host joins the allowlist when the operator acknowledged it (valid_followup, post_flow_feedback).
+- fix-16: acted-on — commit 25c80a093c404c2ed39004c5de4741d0b385a3fb — listLiveRooms takes prune; the MCP tool passes false (valid_followup, post_flow_feedback).
+- fix-17: acted-on — commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9 — confirmation, no code change required (valid_followup, post_flow_feedback).
+- fix-18: acted-on — commit c1297e3502555ef828ec7d69ceb8d321d79f0213 — the table is published and its counts restated against itself (21 red, 7 green, 28 mutations); the stage counts restated against the dispositions the block actually carries (valid_followup, post_flow_feedback).
+- fix-19: acted-on — commit 4dd78b90bd5c0fee3ce9b230baf56ebab55316f9 — confirmation, no code change required (valid_followup, post_flow_feedback).
