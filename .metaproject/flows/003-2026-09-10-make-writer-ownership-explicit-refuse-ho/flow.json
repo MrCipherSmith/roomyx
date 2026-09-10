@@ -7,17 +7,54 @@
   "id": "003",
   "slug": "make-writer-ownership-explicit-refuse-ho",
   "title": "Make writer ownership explicit: refuse honestly, and replace --force with a take-over that cannot be abused (D-18 items 1-4, 7)",
-  "status": "in-progress",
+  "status": "done",
   "createdAt": "2026-09-10T10:22:25.101Z",
-  "updatedAt": "2026-09-10T10:32:08.016Z",
+  "updatedAt": "2026-09-10T11:49:23.823Z",
   "source": {
     "type": "description",
     "ref": null
   },
   "acChecksum": "sha256:9d5bcdf766b14f98078bbb28be657992dbdb9d82c61f2c1ac3ac85aa2496c08f",
-  "acConfirmed": {},
+  "acConfirmed": {
+    "AC1": {
+      "at": "2026-09-10T11:47:53.528Z",
+      "note": "test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    "AC2": {
+      "at": "2026-09-10T11:47:53.617Z",
+      "note": "test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    "AC3": {
+      "at": "2026-09-10T11:47:53.703Z",
+      "note": "test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    "AC4": {
+      "at": "2026-09-10T11:47:53.787Z",
+      "note": "test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    "AC5": {
+      "at": "2026-09-10T11:47:53.868Z",
+      "note": "test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    "AC6": {
+      "at": "2026-09-10T11:47:53.956Z",
+      "note": "test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    "AC7": {
+      "at": "2026-09-10T11:47:54.041Z",
+      "note": "test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    "AC8": {
+      "at": "2026-09-10T11:47:54.125Z",
+      "note": "test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    "AC9": {
+      "at": "2026-09-10T11:47:54.210Z",
+      "note": "test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    }
+  },
   "pr": {
-    "url": null
+    "url": "https://github.com/MrCipherSmith/roomyx/pull/6"
   },
   "tasks": [
     {
@@ -79,7 +116,7 @@
       "title": "Self-review and prepare draft PR",
       "kind": "review",
       "origin": "scaffold",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 1,
@@ -93,7 +130,8 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T5",
@@ -209,6 +247,84 @@
       "at": "2026-09-10T10:32:08.016Z",
       "event": "task-attempt",
       "detail": "T4: started (attempt 1) — 003-T4 review round 1: 4 major + 6 minor, all in the code this flow introduced"
+    },
+    {
+      "at": "2026-09-10T11:47:53.528Z",
+      "event": "ac-confirmed",
+      "detail": "AC1: test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T11:47:53.617Z",
+      "event": "ac-confirmed",
+      "detail": "AC2: test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T11:47:53.703Z",
+      "event": "ac-confirmed",
+      "detail": "AC3: test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T11:47:53.787Z",
+      "event": "ac-confirmed",
+      "detail": "AC4: test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T11:47:53.868Z",
+      "event": "ac-confirmed",
+      "detail": "AC5: test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T11:47:53.956Z",
+      "event": "ac-confirmed",
+      "detail": "AC6: test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T11:47:54.041Z",
+      "event": "ac-confirmed",
+      "detail": "AC7: test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T11:47:54.125Z",
+      "event": "ac-confirmed",
+      "detail": "AC8: test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T11:47:54.210Z",
+      "event": "ac-confirmed",
+      "detail": "AC9: test/writer-lease.test.ts, test/server/dispatcher-attached.test.ts, test/cli-room.test.ts, test/cli-room-ownership-e2e.test.ts; 358 pass / 0 fail on the merged tree; the two executed refutations are recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T11:47:56.797Z",
+      "event": "implemented",
+      "detail": "draft PR: https://github.com/MrCipherSmith/roomyx/pull/6 (warning: PR is not a draft)"
+    },
+    {
+      "at": "2026-09-10T11:49:06.892Z",
+      "event": "completing"
+    },
+    {
+      "at": "2026-09-10T11:49:11.788Z",
+      "event": "completion-failed",
+      "detail": "tasks: not done: T4"
+    },
+    {
+      "at": "2026-09-10T11:49:16.129Z",
+      "event": "task-done",
+      "detail": "T4: Self-review and prepare draft PR"
+    },
+    {
+      "at": "2026-09-10T11:49:18.570Z",
+      "event": "implemented",
+      "detail": "draft PR: https://github.com/MrCipherSmith/roomyx/pull/6 (warning: PR is not a draft)"
+    },
+    {
+      "at": "2026-09-10T11:49:18.659Z",
+      "event": "completing"
+    },
+    {
+      "at": "2026-09-10T11:49:23.823Z",
+      "event": "done",
+      "detail": "all gates passed"
     }
   ]
 }

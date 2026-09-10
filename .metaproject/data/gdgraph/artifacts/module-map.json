@@ -67,10 +67,14 @@
     "src/server/tools/get-state.ts",
     "src/server/tools/get-transcript.ts"
   ],
+  "writer-lease.ts": [
+    "src/writer-lease.ts"
+  ],
   "test": [
     "test/cli-commands.test.ts",
     "test/cli-init.test.ts",
     "test/cli-launcher.test.ts",
+    "test/cli-room-ownership-e2e.test.ts",
     "test/cli-room.test.ts",
     "test/cli-serve-lifecycle.test.ts",
     "test/cli/args.test.ts",
@@ -109,6 +113,7 @@
     "test/log/store.test.ts",
     "test/log/write-contract.test.ts",
     "test/mcp-management/server.test.ts",
+    "test/server/dispatcher-attached.test.ts",
     "test/server/owner-command.test.ts",
     "test/server/rebinding-guard.test.ts",
     "test/server/serve.test.ts",
@@ -116,6 +121,7 @@
     "test/server/shutdown-order.test.ts",
     "test/server/shutdown.test.ts",
     "test/server/tools.test.ts",
-    "test/server/transport-gates.test.ts"
+    "test/server/transport-gates.test.ts",
+    "test/writer-lease.test.ts"
   ]
 }
