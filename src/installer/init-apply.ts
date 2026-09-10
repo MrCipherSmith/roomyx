@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { join } from "node:path";
 import { syncSkill } from "./skill-sync";
+import { installPersonas } from "./personas";
 import type { PlanItem } from "./init-plan";
 
 /**
@@ -24,6 +25,7 @@ export interface ApplyResult {
 export interface ApplyContext {
   cwd: string;
   bundledSkillPath: string;
+  bundledPersonasPath: string;
   configPath: string;
 }
 
@@ -61,6 +63,14 @@ function applyOne(item: PlanItem, context: ApplyContext): string {
       });
       if (!result.written) return result.warnings[0] ?? "not written";
       return result.backedUpTo ? `written (backup: ${result.backedUpTo})` : "written";
+    }
+
+    case "personas": {
+      const result = installPersonas(context.bundledPersonasPath, item.path);
+      if (result.written === 0) return `${result.skipped} file(s) already there — none replaced`;
+      return result.skipped === 0
+        ? `${result.written} file(s) written`
+        : `${result.written} written, ${result.skipped} kept as they were`;
     }
 
     case "logs":

@@ -13,6 +13,37 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.10.1] — 2026-09-10
+
+A patch. The skill pointed at a persona directory that only existed in the
+project roomyx was extracted from, so a room had nothing to be built out of
+anywhere else.
+
+### Added
+
+- **A bundled persona library, and `roomyx personas` to install it.** Fifty
+  numbered interview personas — ordinary people in ordinary jobs, one file each
+  — plus `founders/`, `tech/` and `panel/` role sets, plus `questionnaire-50.md`,
+  a fifty-question interview script for use with any of them. Lands in
+  `.roomyx/personas/`, and is offered as a ticked box in `roomyx init`.
+- Files that already exist are **skipped, never overwritten** — these ship as
+  markdown precisely so you can edit them. `--force` replaces the library and
+  moves the previous directory aside as `.bak-<timestamp>`, rather than merging
+  into it: one rename is reversible, eighty-seven backups are noise.
+
+### Fixed
+
+- **The `startup-room` skill no longer sends an agent to a path that does not
+  exist.** It read "use the persona profiles, e.g. `arena/roles/**/*.md`" —
+  correct only inside the repository roomyx came out of. It now names the
+  bundled library and says how to install it.
+
+### Note
+
+The package grows by about 400 KB. The 50-criteria scoring rubric was already
+carried inside the skill; the personas are the other half of the same kit.
+Reasoning, and what it costs, in decision D-19.
+
 ## [0.10.0] — 2026-09-10
 
 A minor, because it is breaking: `room.post_owner_command` answers with a status
