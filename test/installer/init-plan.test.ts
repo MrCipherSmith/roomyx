@@ -7,6 +7,7 @@ import { applyPlan } from "../../src/installer/init-apply";
 import { SKILL_RUNTIMES, resolveTargets } from "../../src/installer/skill-targets";
 
 const BUNDLED = join(import.meta.dir, "..", "fixtures", "bundled-skill.md");
+const PERSONAS = join(import.meta.dir, "..", "..", "src", "bundled-personas");
 
 let dir: string;
 function tempDir(): string {
@@ -122,7 +123,7 @@ describe("applying a plan", () => {
     mkdirSync(join(root, ".claude"), { recursive: true });
     const item = buildPlan({ cwd: root }).find((i) => i.id === "skill:claude-project")!;
 
-    const [result] = applyPlan([item], { cwd: root, bundledSkillPath: BUNDLED, configPath });
+    const [result] = applyPlan([item], { cwd: root, bundledSkillPath: BUNDLED, bundledPersonasPath: PERSONAS, configPath });
     expect(result?.ok).toBe(true);
     expect(existsSync(item.path)).toBe(true);
     expect(readFileSync(item.path, "utf8")).toBe(readFileSync(BUNDLED, "utf8"));
@@ -135,7 +136,7 @@ describe("applying a plan", () => {
     const configPath = withConfig(root);
     const item = buildPlan({ cwd: root }).find((i) => i.kind === "gitignore")!;
 
-    applyPlan([item], { cwd: root, bundledSkillPath: BUNDLED, configPath });
+    applyPlan([item], { cwd: root, bundledSkillPath: BUNDLED, bundledPersonasPath: PERSONAS, configPath });
     const once = readFileSync(join(root, ".gitignore"), "utf8");
     expect(once).toContain("node_modules");
     expect(once).toContain(".roomyx/rooms/registry.json");
@@ -143,7 +144,7 @@ describe("applying a plan", () => {
     // the one genuinely destructive thing this item could do.
     expect(once).not.toContain(".roomyx/rooms/logs");
 
-    const [second] = applyPlan([item], { cwd: root, bundledSkillPath: BUNDLED, configPath });
+    const [second] = applyPlan([item], { cwd: root, bundledSkillPath: BUNDLED, bundledPersonasPath: PERSONAS, configPath });
     expect(second?.message).toBe("already covered");
     expect(readFileSync(join(root, ".gitignore"), "utf8")).toBe(once);
   });
@@ -154,7 +155,7 @@ describe("applying a plan", () => {
     writeFileSync(join(root, ".mcp.json"), JSON.stringify({ mcpServers: { other: { command: "x" } } }, null, 2));
     const item = buildPlan({ cwd: root }).find((i) => i.id === "mcp:claude")!;
 
-    applyPlan([item], { cwd: root, bundledSkillPath: BUNDLED, configPath });
+    applyPlan([item], { cwd: root, bundledSkillPath: BUNDLED, bundledPersonasPath: PERSONAS, configPath });
     const written = JSON.parse(readFileSync(join(root, ".mcp.json"), "utf8")) as {
       mcpServers: Record<string, { command: string; args?: string[] }>;
     };
@@ -171,7 +172,7 @@ describe("applying a plan", () => {
     writeFileSync(join(root, ".mcp.json"), JSON.stringify(mine, null, 2));
     const item = buildPlan({ cwd: root }).find((i) => i.id === "mcp:claude")!;
 
-    const [result] = applyPlan([item], { cwd: root, bundledSkillPath: BUNDLED, configPath });
+    const [result] = applyPlan([item], { cwd: root, bundledSkillPath: BUNDLED, bundledPersonasPath: PERSONAS, configPath });
     expect(result?.message).toContain("already registered");
     expect(JSON.parse(readFileSync(join(root, ".mcp.json"), "utf8"))).toEqual(mine);
   });
@@ -182,7 +183,7 @@ describe("applying a plan", () => {
     writeFileSync(join(root, ".mcp.json"), "{ this is not json");
     const item = buildPlan({ cwd: root }).find((i) => i.id === "mcp:claude")!;
 
-    const [result] = applyPlan([item], { cwd: root, bundledSkillPath: BUNDLED, configPath });
+    const [result] = applyPlan([item], { cwd: root, bundledSkillPath: BUNDLED, bundledPersonasPath: PERSONAS, configPath });
     expect(result?.ok).toBe(false);
     expect(result?.message).toContain("Left untouched");
     expect(readFileSync(join(root, ".mcp.json"), "utf8")).toBe("{ this is not json");
@@ -196,7 +197,7 @@ describe("applying a plan", () => {
     const plan = buildPlan({ cwd: root });
     const items = [plan.find((i) => i.id === "mcp:claude")!, plan.find((i) => i.kind === "logs")!];
 
-    const results = applyPlan(items, { cwd: root, bundledSkillPath: BUNDLED, configPath });
+    const results = applyPlan(items, { cwd: root, bundledSkillPath: BUNDLED, bundledPersonasPath: PERSONAS, configPath });
     expect(results[0]?.ok).toBe(false);
     expect(results[1]?.ok).toBe(true);
     expect(existsSync(join(root, ".roomyx", "rooms", "logs"))).toBe(true);
@@ -209,7 +210,7 @@ describe("applying a plan", () => {
     for (const item of plan) item.selected = false;
 
     expect(selectedItems(plan)).toHaveLength(0);
-    applyPlan(selectedItems(plan), { cwd: root, bundledSkillPath: BUNDLED, configPath });
+    applyPlan(selectedItems(plan), { cwd: root, bundledSkillPath: BUNDLED, bundledPersonasPath: PERSONAS, configPath });
     expect(existsSync(join(root, ".roomyx", "rooms", "logs"))).toBe(false);
     expect(existsSync(join(root, ".mcp.json"))).toBe(false);
   });
