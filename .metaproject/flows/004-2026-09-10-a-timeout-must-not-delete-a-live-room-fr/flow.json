@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 2,
+  "gates": {
+    "tasks": true,
+    "review": true
+  },
+  "id": "004",
+  "slug": "a-timeout-must-not-delete-a-live-room-fr",
+  "title": "A timeout must not delete a live room from the registry (R7, timeout half)",
+  "status": "in-progress",
+  "createdAt": "2026-09-10T11:55:31.683Z",
+  "updatedAt": "2026-09-10T12:02:15.436Z",
+  "source": {
+    "type": "description",
+    "ref": null
+  },
+  "acChecksum": "sha256:741b7a1a6aa174b15f0fafb3a5cb8668f8d1f5dd99fde1c11fb286d4399aac91",
+  "acConfirmed": {},
+  "pr": {
+    "url": null
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Collect remaining context",
+      "kind": "context",
+      "origin": "scaffold",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "completed"
+    },
+    {
+      "id": "T2",
+      "title": "Implement per plan",
+      "kind": "implement",
+      "origin": "scaffold",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "completed"
+    },
+    {
+      "id": "T3",
+      "title": "Add/adjust tests and make them pass",
+      "kind": "test",
+      "origin": "scaffold",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "completed"
+    },
+    {
+      "id": "T4",
+      "title": "Self-review and prepare draft PR",
+      "kind": "review",
+      "origin": "scaffold",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T5",
+      "title": "End-to-end: rooms list against a registry holding live, unconfirmed and gone entries",
+      "kind": "test",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "completed"
+    },
+    {
+      "id": "T6",
+      "title": "CHANGELOG and version per D-13; name the pid-reuse limit in the code",
+      "kind": "docs",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "completed"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-10T11:55:31.683Z",
+      "event": "created"
+    },
+    {
+      "at": "2026-09-10T11:56:04.881Z",
+      "event": "task-added",
+      "detail": "T5: End-to-end: rooms list against a registry holding live, unconfirmed and gone entries"
+    },
+    {
+      "at": "2026-09-10T11:56:04.986Z",
+      "event": "task-added",
+      "detail": "T6: CHANGELOG and version per D-13; name the pid-reuse limit in the code"
+    },
+    {
+      "at": "2026-09-10T11:56:05.097Z",
+      "event": "frozen",
+      "detail": "7 criteria; checksum recorded"
+    },
+    {
+      "at": "2026-09-10T11:56:05.182Z",
+      "event": "started"
+    },
+    {
+      "at": "2026-09-10T11:56:05.278Z",
+      "event": "task-done",
+      "detail": "T1: Collect remaining context"
+    },
+    {
+      "at": "2026-09-10T12:02:14.987Z",
+      "event": "task-done",
+      "detail": "T2: Implement per plan"
+    },
+    {
+      "at": "2026-09-10T12:02:15.124Z",
+      "event": "task-done",
+      "detail": "T3: Add/adjust tests and make them pass"
+    },
+    {
+      "at": "2026-09-10T12:02:15.296Z",
+      "event": "task-done",
+      "detail": "T5: End-to-end: rooms list against a registry holding live, unconfirmed and gone entries"
+    },
+    {
+      "at": "2026-09-10T12:02:15.436Z",
+      "event": "task-done",
+      "detail": "T6: CHANGELOG and version per D-13; name the pid-reuse limit in the code"
+    }
+  ]
+}

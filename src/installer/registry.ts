@@ -114,61 +114,144 @@ export function listRooms(registryPath: string): RoomRegistryEntry[] {
  * answers). Dead entries are pruned from the persisted file, not just
  * omitted from the returned list.
  */
-export async function listLiveRooms(
+/**
+ * What a liveness probe established, which is not a yes/no.
+ *
+ * The defect this type replaces: `probeRoomState` returned `state | undefined`,
+ * and `undefined` had to carry both "I could not reach it" and "the process is
+ * gone". The caller resolved that ambiguity in the destructive direction —
+ * `undefined → false → prune` — so a room that was merely slow had its registry
+ * entry deleted and a history record written claiming it had ended. The 500 ms
+ * probe is load-sensitive, `process.kill(pid, 0)` succeeds for a `SIGSTOP`ped
+ * process, and the failure is silent: the room is serving, and the registry says
+ * it never existed.
+ *
+ * R7's rule, in its own words: **identity mismatch is the one case where
+ * deleting is correct — a timeout never is.** Three values is what makes that
+ * expressible.
+ */
+export type Liveness = "live" | "gone" | "unknown";
+
+/**
+ * Asks what this entry is, with the destructive answer reserved for evidence.
+ *
+ * - `gone` — the registered pid is not running, or a server answered and named a
+ *   different log than this entry claims. Both are facts about *this entry*.
+ * - `unknown` — the probe did not reach it: a refused connection, a connect
+ *   timeout, or a `tools/call` that did not answer in time. Nothing is known, so
+ *   nothing may be deleted on the strength of it.
+ * - `live` — a server answered and named this entry's log, or answered without a
+ *   `log_path` at all. The second case is an older server: it cannot be shown to
+ *   be a different room, and failing toward keeping is the safe direction, since
+ *   the cost of wrongly pruning is higher than that of keeping a stale entry.
+ *
+ * **Known limit.** A pid that has been reused by an unrelated process keeps its
+ * entry in `unknown` where it will stay until something answers on that port.
+ * That is why the pid is a pre-filter and not the assertion — and it is strictly
+ * better than deleting a live room, which is what the alternative buys.
+ */
+export async function checkRoomLiveness(room: RoomRegistryEntry, timeoutMs = 500): Promise<Liveness> {
+  if (!isPidAlive(room.pid)) return "gone";
+  const state = await probeRoomState(room, timeoutMs);
+  if (state === undefined) return "unknown";
+  if (state.log_path === undefined) return "live";
+  return state.log_path === room.logPath ? "live" : "gone";
+}
+
+export interface LiveAndUnconfirmed {
+  live: RoomRegistryEntry[];
+  /**
+   * Registered, probed, and not answered. Returned apart from `live` rather than
+   * mixed in, because every consumer of the confirmed list decides *what to
+   * attach to* — and a room that did not answer is not a candidate for that.
+   */
+  unconfirmed: RoomRegistryEntry[];
+}
+
+/**
+ * The confirmed-live rooms, and the ones nothing is known about, as two lists.
+ *
+ * Only `gone` prunes and archives. A room pruned here died without
+ * deregistering — crashed, or was killed with a signal no handler runs for — and
+ * this is the only moment anything observes that it ended, so it is the only
+ * place its history entry can be written. An `unknown` room gets neither: the
+ * history line would be a claim it ended, and the prune would be a claim about
+ * the room made on evidence that is a claim about the network.
+ */
+export async function listRoomsWithLiveness(
   registryPath: string,
-  options: { prune?: boolean; historyPath?: string } = {},
-): Promise<RoomRegistryEntry[]> {
+  options: { prune?: boolean; historyPath?: string; timeoutMs?: number } = {},
+): Promise<LiveAndUnconfirmed> {
   const prune = options.prune ?? true;
   const historyPath = options.historyPath ?? defaultHistoryPath(registryPath);
-  if (hasNoRegistry(registryPath)) return [];
+  if (hasNoRegistry(registryPath)) return { live: [], unconfirmed: [] };
   const rooms = withLock(registryPath, () => readRegistryUnlocked(registryPath).rooms);
   const checks = await Promise.all(
-    rooms.map(async (room) => {
-      const alive = await isRoomLive(room);
-      return { room, alive };
-    }),
+    rooms.map(async (room) => ({ room, liveness: await checkRoomLiveness(room, options.timeoutMs ?? 500) })),
   );
-  const live = checks.filter((c) => c.alive).map((c) => c.room);
+  const pick = (want: Liveness) => checks.filter((c) => c.liveness === want).map((c) => c.room);
+  const live = pick("live");
+  const unconfirmed = pick("unknown");
+  const gone = pick("gone");
+
   // The MCP surface passes `prune: false`. It is the one place a network caller
   // could cause a filesystem write, and the content is not caller-controlled —
   // but "the MCP surface only reads" is worth being exactly true rather than
   // nearly, and the 500ms probe is load-sensitive enough that a busy machine
   // could prune a live-but-slow room on someone else's call.
-  if (prune && live.length !== rooms.length) {
+  //
+  // That reasoning is now structural rather than a convention: a load-sensitive
+  // probe returns `unknown`, and `unknown` is not pruned even when pruning is
+  // asked for. `prune: false` still matters — it stops the deletion of entries
+  // confirmed gone — but the load-sensitive half of the argument no longer
+  // depends on every caller remembering to pass it.
+  if (prune && gone.length > 0) {
     // Re-take the lock for the write: another process may have registered or
     // deregistered a room while the (network) liveness checks above were in
     // flight. Re-read under the lock and only remove entries this pass
-    // actually confirmed dead, instead of blindly overwriting with the
-    // stale `live` list computed before the re-read.
-    const dead = checks.filter((c) => !c.alive).map((c) => c.room);
+    // actually confirmed gone, instead of blindly overwriting with the stale
+    // list computed before the re-read.
     withLock(registryPath, () => {
       const current = readRegistryUnlocked(registryPath).rooms;
-      const deadIds = new Set(dead.map((r) => r.id));
+      const goneIds = new Set(gone.map((r) => r.id));
       writeRegistryUnlocked(
         registryPath,
-        current.filter((r) => !deadIds.has(r.id)),
+        current.filter((r) => !goneIds.has(r.id)),
       );
     });
-    // A room pruned here died without deregistering — crashed, or was killed
-    // with a signal no handler runs for. This is the only moment anything
-    // observes that it ended, so it is the only place its history entry can be
-    // written. Without it the rooms that are most worth being able to reread
-    // are exactly the ones that leave no trace.
-    //
     // `closedAt` is now, not the moment it actually died, which is unknowable
     // — the entry records when it was found gone.
-    for (const room of dead) archiveRoom(historyPath, room);
+    for (const room of gone) archiveRoom(historyPath, room);
   }
-  return live;
+  return { live, unconfirmed };
 }
 
 /**
- * Is the process that registered this room still running?
+ * The registered entry serving a log, whether or not it was confirmed live.
  *
- * Signal 0 performs the permission and existence checks without delivering
- * anything. ESRCH means no such process; EPERM means it exists and belongs to
- * someone else, which is still "alive" for our purposes.
+ * For anything that must know *which room is this*, rather than *may I attach to
+ * it*. The distinction matters here because a first probe can time out while the
+ * room is alive: searching only the confirmed list made a slow machine's answer
+ * to "is anyone writing into this log?" come back "nothing is" — which is the
+ * same collapsed question this module's `Liveness` type was introduced to stop
+ * asking. An unconfirmed entry is still an entry, and its second probe may
+ * answer.
  */
+export function findRoomServing(
+  logPath: string,
+  lists: { live: RoomRegistryEntry[]; unconfirmed: RoomRegistryEntry[] },
+): RoomRegistryEntry | undefined {
+  return [...lists.live, ...lists.unconfirmed].find((room) => room.logPath === logPath);
+}
+
+/** Confirmed live only — what anything that decides what to attach to must read. */
+export async function listLiveRooms(
+  registryPath: string,
+  options: { prune?: boolean; historyPath?: string; timeoutMs?: number } = {},
+): Promise<RoomRegistryEntry[]> {
+  return (await listRoomsWithLiveness(registryPath, options)).live;
+}
+
 function isPidAlive(pid: number): boolean {
   if (!Number.isInteger(pid) || pid <= 0) return true; // no pid recorded — fall back to the probe
   try {
@@ -223,21 +306,3 @@ export async function probeRoomState(
   }
 }
 
-async function isRoomLive(room: RoomRegistryEntry, timeoutMs = 500): Promise<boolean> {
-  // The probe below proves that *something* MCP-speaking answers on that port,
-  // never that it is this room. Every `roomyx serve` defaults to 4319, so a
-  // room that died without deregistering was resurrected as live by the next
-  // room to bind the port — and then `roomyx-client --room <dead-id>` silently
-  // rendered a different room's transcript under the dead room's id, while
-  // `room append` refused a log nothing was serving.
-  //
-  // The pid has been in the registry all along and was never read. Checking it
-  // first also skips a 500 ms network probe per dead entry.
-  const state = await probeRoomState(room, timeoutMs);
-  if (state === undefined) return false;
-  // An older server that predates `log_path` answers without it. Treat that
-  // as "cannot be shown to be a different room" rather than as dead: failing
-  // toward the previous behaviour is the safe direction here, because the
-  // cost of wrongly pruning a live room is higher than of keeping a stale one.
-  return state.log_path === undefined || state.log_path === room.logPath;
-}

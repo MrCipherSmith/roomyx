@@ -13,6 +13,48 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.8.1] — 2026-09-10
+
+A patch. Found by triaging the action list against the code: this defect had
+been sitting in the backlog, unscheduled, with a victim it names itself.
+
+### Fixed
+
+- **A room that does not answer within the liveness probe's 500 ms is no longer
+  deleted from the registry.** The check returned `state | undefined`, and
+  `undefined` had to mean both "I could not reach it" and "the process is gone" —
+  so the caller resolved the ambiguity destructively: `undefined → false → prune`,
+  plus a history record claiming the room had ended. A room that was merely slow,
+  or `SIGSTOP`ped, or on a loaded machine, was silently removed while it was
+  still serving. The pid check does not catch it: `process.kill(pid, 0)` succeeds
+  for a stopped process.
+
+  Liveness now answers `live`, `gone` or `unknown`, and only `gone` deletes
+  anything. `gone` requires evidence about *this entry* — a registered pid that
+  is not running, or a server that answered and named a different log than the
+  entry claims.
+
+### Added
+
+- **`roomyx rooms list` shows a room that did not answer instead of omitting it**,
+  marked `did not answer — still registered`. It used to print `No live rooms.`
+  about a registry that had one, which is how a serving room came to look like no
+  room at all. An empty registry still prints exactly that sentence.
+- **`listRoomsWithLiveness()`** returns `{ live, unconfirmed }`. Everything that
+  decides *what to attach to* keeps reading the confirmed list, so a client never
+  auto-attaches to a room that did not answer.
+
+### Notes
+
+- The known limit is stated in the code rather than left to be discovered: a pid
+  reused by an unrelated process keeps its entry in `unconfirmed` until something
+  answers on that port. That is why the pid is a pre-filter and not the assertion
+  — and it is strictly better than deleting a live room, which is the trade this
+  release makes deliberately.
+- `prune: false` (the MCP surface) still prunes nothing. The load-sensitive half
+  of that argument is now structural: a probe that times out returns `unknown`,
+  and `unknown` is never pruned even when pruning is asked for.
+
 ## [0.8.0] — 2026-09-10
 
 A minor, because it is breaking: `roomyx room append --force` is gone. In `0.x`
