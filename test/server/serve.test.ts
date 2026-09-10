@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, copyFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -135,6 +135,60 @@ describe("serve", () => {
       await client.close();
     } finally {
       await handle.close();
+    }
+  }, 20000);
+
+  test("a real client reads the folded state after an edit (D-19)", async () => {
+    // The fold has to be visible where a room's state is actually read. A tool
+    // unit test proves `loadRoomLog` folds; this proves `room.get_state` — the
+    // thing the dispatcher and the status bar consume — returns the folded state.
+    const dir = mkdtempSync(join(tmpdir(), "roomyx-fold-serve-"));
+    const logPath = join(dir, "room.jsonl");
+    copyFileSync(FIXTURE, logPath);
+    const header = JSON.parse(readFileSync(logPath, "utf8").split("\n")[0] as string);
+    const raised = JSON.parse(JSON.stringify(header.goal_contract)) as { threshold: { pass_at_or_above: number } };
+    raised.threshold.pass_at_or_above = 95;
+    appendFileSync(
+      logPath,
+      `${JSON.stringify({
+        type: "message",
+        seq: 5,
+        from: "owner",
+        kind: "goal_edit",
+        body: "raise the pass mark to 95",
+        change: { type: "goal_contract", goal_contract: raised },
+      })}\n`,
+    );
+
+    const handle = await serve(logPath, { port: 0 });
+    try {
+      const client = await connectClient(handle.url);
+      const state = JSON.parse(
+        ((await client.callTool({ name: "room.get_state", arguments: {} })).content as Array<{ text: string }>)[0]
+          ?.text ?? "{}",
+      ) as { goal_contract: { threshold: { pass_at_or_above: number }; updated_by?: string } };
+      expect(state.goal_contract.threshold.pass_at_or_above).toBe(95);
+      expect(state.goal_contract.updated_by).toBe("owner");
+
+      // And the edit is in the transcript as an ordinary message, because that is
+      // how a person sees what happened to the room.
+      const page = JSON.parse(
+        (
+          (await client.callTool({ name: "room.get_transcript", arguments: { since_seq: 4 } })).content as Array<{
+            text: string;
+          }>
+        )[0]?.text ?? "{}",
+      ) as { messages: Array<{ kind?: string; body: string }> };
+      expect(page.messages.map((m) => m.kind)).toEqual(["goal_edit"]);
+      expect(page.messages[0]?.body).toBe("raise the pass mark to 95");
+
+      await client.close();
+      // Reading folded state is an interpretation: the file keeps the contract
+      // the room was created with.
+      expect(JSON.parse(readFileSync(logPath, "utf8").split("\n")[0] as string).goal_contract.threshold.pass_at_or_above).toBe(80);
+    } finally {
+      await handle.close();
+      rmSync(dir, { recursive: true, force: true });
     }
   }, 20000);
 

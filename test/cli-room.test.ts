@@ -261,6 +261,58 @@ describe("roomyx room append", () => {
     expect(second.body).toBe('line one\nline "two"');
   }, 20000);
 
+  test("an edit is appended through --json and folds into the state (D-19)", async () => {
+    dir = mkdtempSync(join(tmpdir(), "roomyx-append-edit-"));
+    const log = join(dir, "room.jsonl");
+    await run(["room", "new", log, "--goal", "Pick a database", "--roster", "a:A"]);
+
+    const envelope = JSON.stringify({
+      from: "owner",
+      kind: "goal_edit",
+      body: "raise the pass mark to 85",
+      change: {
+        type: "goal_contract",
+        goal_contract: {
+          version: 1,
+          goal_statement: "Pick a database",
+          criteria: "AC1-AC3",
+          threshold: { fail_below: 60, pass_at_or_above: 85 },
+        },
+      },
+    });
+    const written = await run(["room", "append", log, "--json", envelope]);
+    expect(written.stderr).toBe("");
+    expect(written.code).toBe(0);
+
+    // The fold is what makes the edit take effect: the header still says 80, and
+    // what the room reads as says 85.
+    const { loadRoomLog } = await import("../src/log/store");
+    const { state } = loadRoomLog(log);
+    expect(state.goal_contract.threshold.pass_at_or_above).toBe(85);
+    expect(state.goal_contract.updated_by).toBe("owner");
+    const header = JSON.parse(readFileSync(log, "utf8").split("\n")[0] as string);
+    expect(header.goal_contract.threshold.pass_at_or_above).toBe(80);
+  }, 20000);
+
+  test("a change that does not match its kind is refused, and nothing is written", async () => {
+    // The rule lives in the log's schema, so the CLI does not restate it — it
+    // just fails to write, which is the outcome that matters.
+    dir = mkdtempSync(join(tmpdir(), "roomyx-append-badchange-"));
+    const log = join(dir, "room.jsonl");
+    await run(["room", "new", log, "--goal", "g", "--roster", "a:A"]);
+    const before = readFileSync(log, "utf8");
+
+    const envelope = JSON.stringify({
+      from: "owner",
+      kind: "goal_edit",
+      body: "mismatched",
+      change: { type: "roster", add: [{ id: "b", name: "B" }] },
+    });
+    const refused = await run(["room", "append", log, "--json", envelope]);
+    expect(refused.code).toBe(1);
+    expect(readFileSync(log, "utf8")).toBe(before);
+  }, 20000);
+
   test("--many writes a batch with consecutive seq, and an invalid line writes nothing", async () => {
     dir = mkdtempSync(join(tmpdir(), "roomyx-append-many-"));
     const log = join(dir, "room.jsonl");

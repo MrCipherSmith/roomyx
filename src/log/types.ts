@@ -1,9 +1,22 @@
+import type { MessageChange } from "./schema";
+
 export interface MessageEnvelope {
   seq: number;
   from: string;
   in_reply_to?: number;
-  kind?: "pitch" | "question" | "challenge" | "answer" | "vote" | "status" | "research";
+  kind?:
+    | "pitch"
+    | "question"
+    | "challenge"
+    | "answer"
+    | "vote"
+    | "status"
+    | "research"
+    | "goal_edit"
+    | "add_participant";
   body: string;
+  /** Present only on an edit message; see `EDIT_KINDS` and D-19. */
+  change?: MessageChange;
 }
 
 export interface RosterEntry {

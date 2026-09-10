@@ -20,6 +20,7 @@ function describeInvalid(error: z.ZodError): string {
       const field = issue.path.join(".") || "message";
       if (field === "kind") return `kind must be one of: ${LEGAL_KINDS}`;
       if (field === "in_reply_to") return "in-reply-to must be a whole number of at least 1";
+      if (field === "change") return issue.message;
       return `${field}: ${issue.message}`;
     })
     .join("; ");
@@ -47,6 +48,8 @@ export interface AppendMessageOptions {
   body: string;
   kind?: MessageEnvelope["kind"];
   inReplyTo?: number;
+  /** Required by the edit kinds, refused on everything else — enforced by the schema. */
+  change?: MessageEnvelope["change"];
 }
 
 /** Refuses to overwrite: a room log is append-only, and clobbering one loses a session. */
@@ -111,20 +114,21 @@ export function appendMessages(
 }
 
 export function appendMessage(path: string, options: AppendMessageOptions): MessageEnvelope & { type: "message" } {
-  if (!existsSync(path)) {
-    throw new Error(`${path} does not exist. Create it with \`roomyx room new\` first.`);
-  }
-  // Allocating `seq` and writing the line is one critical section, not two.
-  // `nextSeq` reads the whole file and returns max+1, and nothing stood between
-  // that and the append: three concurrent `roomyx room append` calls all
-  // allocated `seq: 1` and all three landed on disk. `seq` is the transcript
-  // cursor, so a client polling between two colliding writes advances past both
-  // and never receives the second message — on disk, invisible in the TUI,
-  // permanently.
+  // Delegates to the batch path rather than assembling the envelope again.
   //
-  // The registry has had this discipline for three rounds of review. The data
-  // did not.
-  return withLock(path, () => writeMessage(path, options));
+  // It used to have its own inline construction and its own `writeMessage`, and
+  // the two copies had already drifted: this one silently dropped `change`, so an
+  // edit appended one message at a time was written without the thing that made
+  // it an edit — valid by the schema, accepted, and never applied. Fixing that
+  // instance by adding one spread would have left the class: two places building
+  // one envelope. There is now one implementation, and the only thing this
+  // function adds is the single-message shape of the answer.
+  const written = appendMessages(path, [options]);
+  const first = written[0];
+  if (first === undefined) {
+    throw new Error(`${path}: appending one message produced nothing. This is a bug: report it.`);
+  }
+  return first;
 }
 
 function buildMessage(seq: number, options: AppendMessageOptions): MessageEnvelope & { type: "message" } {
@@ -135,6 +139,7 @@ function buildMessage(seq: number, options: AppendMessageOptions): MessageEnvelo
     body: options.body,
     ...(options.kind ? { kind: options.kind } : {}),
     ...(options.inReplyTo !== undefined ? { in_reply_to: options.inReplyTo } : {}),
+    ...(options.change !== undefined ? { change: options.change } : {}),
   };
 }
 
@@ -143,25 +148,6 @@ function validate(message: MessageEnvelope & { type: "message" }): void {
   if (!parsed.success) throw new LogWriteError(describeInvalid(parsed.error));
 }
 
-function writeMessage(path: string, options: AppendMessageOptions): MessageEnvelope & { type: "message" } {
-  const message: MessageEnvelope & { type: "message" } = {
-    type: "message",
-    seq: nextSeq(path),
-    from: options.from,
-    body: options.body,
-    ...(options.kind ? { kind: options.kind } : {}),
-    ...(options.inReplyTo !== undefined ? { in_reply_to: options.inReplyTo } : {}),
-  };
-
-  // Validated against the reader's own schema, before the write rather than
-  // after it. The log is append-only and roomyx ships no repair command, so a
-  // line the reader refuses is not a failed write — it is a room nobody can
-  // open again. Types alone did not hold this: they are erased at the CLI
-  // boundary, where `--kind` arrived as an unchecked string.
-  validate(message);
-  appendFileSync(path, JSON.stringify(message) + "\n");
-  return message;
-}
 
 /** `id:Name,id2:Name2` — the shape the CLI takes and the log stores. */
 export function parseRoster(spec: string): RosterEntry[] {
