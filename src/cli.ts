@@ -13,6 +13,7 @@ import {
 } from "./installer/registry";
 import { archiveRoom, defaultHistoryPath, readHistory } from "./installer/history";
 import { syncSkill } from "./installer/skill-sync";
+import { installPersonas, personaCount } from "./installer/personas";
 import { appendMessages, createRoomLog, LEGAL_KINDS, parseRoster } from "./log/write";
 import type { AppendMessageOptions } from "./log/write";
 import { acquireWriterLease, readWriterLease, writerLeasePathFor } from "./writer-lease";
@@ -189,6 +190,14 @@ function bundledSkillPath(): string {
   return join(import.meta.dir, "bundled-skills", "startup-room", "SKILL.md");
 }
 
+function bundledPersonasPath(): string {
+  return join(import.meta.dir, "bundled-personas");
+}
+
+function defaultPersonasPath(cwd: string = process.cwd()): string {
+  return join(cwd, ".roomyx", "personas");
+}
+
 const REGISTRY_FLAG = { type: "string", describe: "Registry file (default .roomyx/rooms/registry.json)" } as const;
 
 /**
@@ -244,7 +253,7 @@ const COMMANDS: Record<string, Command> = {
       const { buildPlan, selectedItems } = await import("./installer/init-plan");
       const { applyPlan } = await import("./installer/init-apply");
 
-      const plan = buildPlan({ cwd });
+      const plan = buildPlan({ cwd, personaFiles: personaCount(bundledPersonasPath()) });
       // A terminal on both ends or nothing to ask. `--yes` overrides, because
       // a script that has decided already should not be refused for lacking a
       // tty — but the default must never block a pipeline on a prompt.
@@ -271,6 +280,7 @@ const COMMANDS: Record<string, Command> = {
       const results = applyPlan(selectedItems(chosen), {
         cwd,
         bundledSkillPath: bundledSkillPath(),
+        bundledPersonasPath: bundledPersonasPath(),
         configPath: join(cwd, ".roomyx", "config.json"),
       });
 
@@ -511,6 +521,27 @@ const COMMANDS: Record<string, Command> = {
         console.log(
           `${room.id}  port=${room.port}  log=${room.logPath}  started=${room.startedAt}  did not answer — still registered`,
         );
+      }
+    },
+  },
+
+  personas: {
+    usage: "roomyx personas [flags]",
+    summary: "install the bundled persona library into this project",
+    notes:
+      "Fifty interview personas, plus founder, technical and panel roles, plus\n  a fifty-question interview questionnaire. A room is built out of these —\n  the startup-room skill reads them from the directory below.\n\n  Files that already exist are skipped, never overwritten: a persona is a\n  file you are meant to edit.",
+    flags: {
+      target: { type: "string", describe: "Directory (default .roomyx/personas)" },
+      force: { type: "boolean", describe: "Replace the library, moving the existing directory aside first" },
+    },
+    run: async ({ flags }) => {
+      const target = typeof flags.target === "string" ? resolve(flags.target) : defaultPersonasPath();
+      const result = installPersonas(bundledPersonasPath(), target, { force: flags.force === true });
+
+      if (result.movedAside) console.log(`Moved the previous library to ${result.movedAside}`);
+      console.log(`${result.written} file(s) written to ${result.targetDir}`);
+      if (result.skipped > 0) {
+        console.log(`${result.skipped} left as they were (already present — pass --force to replace the library)`);
       }
     },
   },

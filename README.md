@@ -195,6 +195,32 @@ are pruned from the registry file as a side effect. A pruned room is also
 recorded in the history index at that moment — for a room that crashed, this is
 the only point at which anything notices it ended.
 
+### `roomyx personas [flags]`
+
+Installs the bundled persona library into `.roomyx/personas/`. `roomyx init`
+offers the same thing as a ticked box.
+
+| What | Where |
+| --- | --- |
+| 50 interview personas | `01-…md` … `50-…md`, one ordinary life each |
+| founder roles | `founders/` |
+| engineering roles | `tech/` |
+| judging panel | `panel/` |
+| a 50-question interview script | `questionnaire-50.md` |
+
+A room is built out of these — the `startup-room` skill casts its participants
+from this directory. The 50-criteria scoring rubric travels inside the skill
+itself.
+
+| Flag | Default | Meaning |
+| --- | --- | --- |
+| `--target <dir>` | `.roomyx/personas` | Where the library goes. |
+| `--force` | off | Replace the library, moving the existing directory aside as `.bak-<timestamp>`. |
+
+**Files that already exist are skipped, never overwritten.** They ship as
+markdown so you can edit them; an install that silently reverted your edits
+would be the thing this package refuses to do everywhere else.
+
 ### `roomyx rooms history`
 
 The rooms that have **closed**, newest first — the goal each had, how many

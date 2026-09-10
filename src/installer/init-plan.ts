@@ -17,7 +17,7 @@ import type { SkillRuntime } from "./skill-targets";
  * and pressing Enter, not a side effect of the mechanism existing.
  */
 
-export type PlanItemKind = "skill" | "logs" | "gitignore" | "mcp";
+export type PlanItemKind = "skill" | "personas" | "logs" | "gitignore" | "mcp";
 
 export interface PlanItem {
   readonly id: string;
@@ -43,6 +43,8 @@ export const GROUP_EXTRAS = "Also";
 
 export interface PlanContext {
   cwd: string;
+  /** How many files the bundled persona library holds, for the label. */
+  personaFiles?: number;
   /** Injectable so the tests never look at the operator's real home directory. */
   exists?: (path: string) => boolean;
   /** Injectable for the same reason. */
@@ -82,6 +84,25 @@ export function buildPlan(context: PlanContext): PlanItem[] {
       runtime,
     });
   }
+
+  const personasDir = join(cwd, ".roomyx", "personas");
+  items.push({
+    id: "personas",
+    kind: "personas",
+    group: GROUP_EXTRAS,
+    label: "Persona library",
+    path: personasDir,
+    detail: personasDir,
+    // A room is built out of these, and without them the skill has nothing to
+    // cast. It lands in roomyx's own directory, so nobody is surprised to find
+    // it, and existing files are never overwritten.
+    selected: true,
+    done: exists(personasDir)
+      ? "already there — existing files are kept"
+      : context.personaFiles === undefined
+        ? undefined
+        : `${context.personaFiles} files`,
+  });
 
   const logsDir = join(cwd, ".roomyx", "rooms", "logs");
   items.push({
