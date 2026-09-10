@@ -39,7 +39,7 @@ bun install -g @mrciphersmith/roomyx
 
 ```bash
 cd your-project
-roomyx init                                 # scaffold .roomyx/
+roomyx init                                 # scaffold, then pick what to install
 roomyx room new room.jsonl --goal "Pick a database"   # create a room log
 roomyx serve room.jsonl                     # serve it over MCP
 ```
@@ -107,12 +107,50 @@ nothing to the room. `roomyx client`, with a space, starts that same TUI from
 the single `roomyx` binary; it is an alias for convenience, not a second
 implementation, and it does not tie the TUI's lifetime to anything.
 
-### `roomyx init`
+### `roomyx init [flags]`
 
-Creates `.roomyx/` in the current directory: `config.json`, an empty room
-registry, and a staged copy of the bundled `startup-room` skill. It never
-clobbers a registry that already has rooms in it, and never overwrites an
-existing `config.json`.
+Sets the project up. On a terminal it shows what it can do and waits for you to
+pick; nothing is written until you submit.
+
+```
+┌─ roomyx init — pick what to set up ──────────────────────────────┐
+│Skill — every project on this machine                             │
+│  [x] Claude Code    replaces  /home/you/.claude/skills/startup-… │
+│  [ ] Cursor         /home/you/.cursor/skills/startup-room/SKILL… │
+│                                                                  │
+│Skill — this project only (travels with the repo)                 │
+│  [x] Claude Code    /home/you/proj/.claude/skills/startup-room/… │
+│                                                                  │
+│Also                                                              │
+│  [x] Room-log directory         /home/you/proj/.roomyx/rooms/lo… │
+│  [x] Ignore registry, lockfiles /home/you/proj/.gitignore        │
+│  [x] MCP server for Claude Code /home/you/proj/.mcp.json         │
+│  [ Install ]  ↵                                                  │
+│  ↑/↓ or j/k move · Space toggles · Enter installs · q cancels    │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+Always, first: `.roomyx/` with `config.json`, an empty room registry, and a
+staged copy of the bundled skill. It never clobbers a registry that already has
+rooms in it, and never overwrites an existing `config.json`.
+
+Then, whatever you tick — the skill installed where your agents actually read
+it, the room-log directory, `.gitignore` lines for the machine-local state (not
+for the logs), and the MCP server registered over stdio.
+
+| Flag | Meaning |
+| --- | --- |
+| `--yes` | Apply the default selection without asking. |
+| `--no-interactive` | Scaffold `.roomyx/` only. |
+
+**Through a pipe or in CI it never prompts** — it scaffolds and exits, printing
+what to run next. A prompt nobody is there to answer is a hang, and a hung
+installer is worse than one that did nothing.
+
+Boxes start ticked only where the answer is not in doubt: a runtime whose
+directory exists on this machine, a project that already uses that runtime, the
+log directory the config has always named. A default tick must never surprise
+you with a file — one in `~/.cursor` on a machine without Cursor would.
 
 ### `roomyx room new <path> [flags]` / `roomyx room append <path> [flags]`
 
@@ -179,17 +217,31 @@ signal no handler runs for — when `roomyx rooms list` next finds it gone.
 Starts the management MCP server (room listing + skill-sync). Default port
 `4320`. See **Management server** below for tools and flags.
 
-### `roomyx skills sync --target <claude|codex|keryx|all|path> [flags]`
+`--stdio` speaks MCP over stdin/stdout instead, which is what an MCP client
+spawns and what `roomyx init` registers. Over stdio there is no port and nothing
+left running: the client owns the process. Nothing is printed to stdout in that
+mode — stdout is the protocol channel.
+
+### `roomyx skills sync --target <runtime|all|path> [flags]`
 
 Installs the bundled `startup-room` skill into a runtime's skill location.
+`roomyx init` does this for you with a picker; this is the same thing for a
+script.
 
 | Target | Path |
 | --- | --- |
 | `claude` | `~/.claude/skills/startup-room/SKILL.md` |
 | `codex` | `~/.codex/skills/startup-room/SKILL.md` |
+| `cursor` | `~/.cursor/skills/startup-room/SKILL.md` |
+| `grok` | `~/.grok/skills/startup-room/SKILL.md` |
+| `claude-project` … `grok-project` | the same, under `<cwd>/` instead of `~/` |
 | `keryx` | `<cwd>/.metaproject/project-skills/startup-room/SKILL.md` |
-| `all` | all three of the above |
+| `all` | every row above |
 | anything else | taken as a literal path |
+
+Project-scoped locations rank **higher** than user-scoped ones in every one of
+these runtimes, and they travel with the repository — which is usually what a
+team wants.
 
 | Flag | Default | Meaning |
 | --- | --- | --- |
