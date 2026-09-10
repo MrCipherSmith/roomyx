@@ -6,6 +6,7 @@ import { serve } from "../../src/server/serve";
 import type { ServeHandle } from "../../src/server/serve";
 import {
   checkRoomLiveness,
+  findRoomServing,
   listLiveRooms,
   listRooms,
   listRoomsWithLiveness,
@@ -214,4 +215,26 @@ describe("end to end: all three states in one registry", () => {
     expect(listRooms(registryPath).map((r) => r.id).sort()).toEqual([live.id, quiet.id].sort());
     expect(readHistory(defaultHistoryPath(registryPath)).rooms.map((r) => r.id)).toEqual([crashed.id]);
   }, 25000);
+});
+
+describe("finding the entry that serves a log", () => {
+  test("an unconfirmed entry is still found, because it is still an entry", async () => {
+    // The append guard needs to know *which room is this* so it can ask it
+    // whether a dispatcher is attached. A first probe that times out must not
+    // make that lookup come back empty — a slow machine is not a statement
+    // about whether anyone is writing.
+    const { logPath } = setup();
+    const quiet = registerRoom(registryPath, { port: 1, logPath, pid: process.pid });
+
+    const lists = await listRoomsWithLiveness(registryPath);
+    expect(lists.live).toHaveLength(0);
+    expect(findRoomServing(logPath, lists)?.id).toBe(quiet.id);
+  }, 20000);
+
+  test("a log nobody serves has no entry, in either list", async () => {
+    const { logPath } = setup();
+    registerRoom(registryPath, { port: 1, logPath, pid: process.pid });
+    const lists = await listRoomsWithLiveness(registryPath);
+    expect(findRoomServing(join(dir, "other.jsonl"), lists)).toBeUndefined();
+  }, 20000);
 });

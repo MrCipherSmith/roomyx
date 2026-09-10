@@ -4,7 +4,13 @@ import { join, resolve } from "node:path";
 import { serve } from "./server/serve";
 import { createServerShutdown } from "./server/shutdown";
 import { init } from "./installer/init";
-import { probeRoomState, registerRoom, deregisterRoom, listLiveRooms, listRoomsWithLiveness } from "./installer/registry";
+import {
+  findRoomServing,
+  probeRoomState,
+  registerRoom,
+  deregisterRoom,
+  listRoomsWithLiveness,
+} from "./installer/registry";
 import { archiveRoom, defaultHistoryPath, readHistory } from "./installer/history";
 import { syncSkill } from "./installer/skill-sync";
 import { appendMessages, createRoomLog, LEGAL_KINDS, parseRoster } from "./log/write";
@@ -335,7 +341,11 @@ const COMMANDS: Record<string, Command> = {
       const absoluteRegistry = resolve(typeof flags.registry === "string" ? flags.registry : defaultRegistryPath());
       const leasePath = writerLeasePathFor(absoluteRegistry, absolute);
 
-      const serving = (await listLiveRooms(absoluteRegistry)).find((room) => room.logPath === absolute);
+      // Across BOTH lists: an entry whose first probe timed out is `unconfirmed`,
+      // and it may still have a dispatcher attached — which is the evidence this
+      // guard needs. Searching only the confirmed list is how "the machine was
+      // busy" turns into "nothing is writing into this log".
+      const serving = findRoomServing(absolute, await listRoomsWithLiveness(absoluteRegistry));
 
       // Read the lease BEFORE the probe, and independently of its outcome. A
       // liveness probe that times out says "could not reach it", which is not

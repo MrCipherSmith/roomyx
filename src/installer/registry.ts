@@ -226,6 +226,24 @@ export async function listRoomsWithLiveness(
   return { live, unconfirmed };
 }
 
+/**
+ * The registered entry serving a log, whether or not it was confirmed live.
+ *
+ * For anything that must know *which room is this*, rather than *may I attach to
+ * it*. The distinction matters here because a first probe can time out while the
+ * room is alive: searching only the confirmed list made a slow machine's answer
+ * to "is anyone writing into this log?" come back "nothing is" — which is the
+ * same collapsed question this module's `Liveness` type was introduced to stop
+ * asking. An unconfirmed entry is still an entry, and its second probe may
+ * answer.
+ */
+export function findRoomServing(
+  logPath: string,
+  lists: { live: RoomRegistryEntry[]; unconfirmed: RoomRegistryEntry[] },
+): RoomRegistryEntry | undefined {
+  return [...lists.live, ...lists.unconfirmed].find((room) => room.logPath === logPath);
+}
+
 /** Confirmed live only — what anything that decides what to attach to must read. */
 export async function listLiveRooms(
   registryPath: string,
