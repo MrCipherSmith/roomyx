@@ -9,9 +9,9 @@ here as work.
 
 | | |
 |---|---|
-| Released | `@mrciphersmith/roomyx@0.8.2` (tag `v0.8.2`, published with provenance) |
-| `main` | green: `bun run check` → 376 pass / 0 fail |
-| Flows | 001–004 `done`; PRs #5, #8 were small changes without a flow |
+| Released | `@mrciphersmith/roomyx@0.9.0` (tag `v0.9.0`, published with provenance) |
+| `main` | green: `bun run check` → 387 pass / 0 fail |
+| Flows | 001–004 `done`; PRs #5, #8, #9 were small changes without a flow |
 | Decisions recorded, not implemented | D-18 items 5, 6, 8 |
 
 ## Triage
@@ -49,8 +49,8 @@ landed and the named half did not.
 | **R9** SIGTERM with a client attached | **done** | `closeAllConnections()` and cleanup-after-close (`http-transport.ts`, `server/shutdown.ts`) |
 | release smoke test that cannot fail | **done** | `.github/workflows/release.yml:111` now asserts `--help` exits 0, with the defect in the comment |
 | **R7** a timeout prunes a live room | **done** | flow 004, release `0.8.1`: `Liveness` is `live`/`gone`/`unknown`, only `gone` prunes or archives, and `rooms list` reports an unanswered room instead of dropping it |
-| **R10** `get_transcript` has no `limit` | **open** | `src/server/index.ts:71` — the input schema is `{ since_seq }` and nothing else |
-| **R12** the status bar drops the threshold | **open** | `grep threshold\|criteria src/client/components/status-bar.ts` → no match |
+| **R10** `get_transcript` has no `limit` | **done** | released `0.9.0` (PR #9): the response is `{ messages, has_more, next_seq }`, the default is bounded at 200, and the cursor advances only over messages actually returned |
+| **R12** the status bar drops the threshold | **done** | released `0.9.0` (PR #9): the threshold is on the line, and over-long lines end with `clip()`'s marker instead of being cut by the pane edge |
 | D-18 item 5 `room.get_delta_for` | **open** | not in `src/` |
 | D-18 item 6 owner-command queue | **open** | not in `src/` |
 | D-18 item 8 state-update shape | **not schedulable** | needs a decision first |
@@ -62,31 +62,32 @@ was looking at, not of what is broken.
 
 ## Do now — each is small, and each has a named victim
 
-1. **R10 — `limit` on `room.get_transcript`.** A cold attach at `since_seq: 0`
-   hands the entire transcript to a language model in one text block. The
-   backlog's own framing is the reason to do it: *"That isn't 20 ms of CPU, it's
-   a context window."* Split as the backlog suggests — `limit` and a cursor now,
-   memoization later, and only if someone runs a room long enough to care.
-2. **R12 — the threshold belongs on screen.** The room exists to cross a number
-   and the number is not displayed. Same line as `setNotice`, so a refusal's own
-   sentence gets truncated too. Inherit the wrap primitive rather than hand-roll
-   a second one.
+Nothing small is left open. R10 and R12 shipped in `0.9.0`; R7's timeout half in
+`0.8.1`; S3 in `0.8.2`. The backlog's remaining unscheduled items are checked
+below and each needs a decision or a larger change rather than an afternoon.
 
-## Next, after those
+**R10's other half is still open and deliberately split.** The backlog names two
+halves — `limit`-and-cursor (now done) and memoization. `loadRoomLog` re-reads and
+zod-validates the whole append-only file **on every call**, so the poll loop pays
+a full parse once a second. That was called speculative until someone runs a room
+long enough to care, and it still is: no measurement exists. Do not do it on the
+strength of this line — measure first.
 
-3. **D-18 item 6 — the owner-command queue** (`room.get_pending_owner_commands`,
+## Next
+
+1. **D-18 item 6 — the owner-command queue** (`room.get_pending_owner_commands`,
    `room://owner-queue`, `room.ack_owner_command`). Highest value of the three
    decisions: `room.post_owner_command` still answers `accepted: false` for the
    primary scenario, because a model-driven orchestrator spawns `serve` and
    `onOwnerCommand` is a JS function that cannot be injected into it. `prd.md`
    R5's criterion has no measurable form until an ack exists.
-4. **D-18 item 5 — `room.get_delta_for`.** Do it after item 6, not with it: same
+2. **D-18 item 5 — `room.get_delta_for`.** Do it after item 6, not with it: same
    tool file, and bundling two changes into one review stops the review from
    being about either.
 
 ## Needs a decision before code
 
-5. **D-18 item 8 — a representation for `goal_edit` / `add_participant`.**
+3. **D-18 item 8 — a representation for `goal_edit` / `add_participant`.**
    `loadRoomLog` requires every line after the header to satisfy
    `messageLineSchema`, so a second `state` line makes the room unreadable
    forever, and the header cannot be rewritten. A permitted record type with
@@ -131,10 +132,21 @@ nothing** — check the first reply before dispatching the second.
 
 ## Working notes that cost time
 
-- **`gh` reverts to the other account between calls.** Every push needs
-  `gh auth switch --user MrCipherSmith` in the same command; else the failure is
-  `Permission … denied to aleksandr-tsaitler`, which names the account and not the
-  cause.
+- **`gh auth switch` stopped working mid-session, and the reliable route is an
+  explicit token.** After PR #8, `gh auth switch --user MrCipherSmith` reported
+  success and `gh auth status` agreed, while the merge and the push still ran as
+  `aleksandr-tsaitler` (`does not have the correct permissions to execute
+  MergePullRequest`; `403` on push, because git's credential helper resolves the
+  account independently of gh's active account). What works:
+  `T=$(gh auth token --user MrCipherSmith)` then
+  `GH_TOKEN="$T" gh pr merge …` for gh, and
+  `git push "https://x-access-token:$T@github.com/MrCipherSmith/roomyx.git" <ref>`
+  for git. Do not trust the switch report.
+- **A commit made on the wrong branch is recoverable in seconds, and the window
+  matters.** PR #9's first push went straight to `main` because the branch was
+  never created. `git branch <name>` + `git reset --hard` + `--force-with-lease`
+  fixed it before any tag or release existed. The lesson is the cheap one: check
+  `git branch --show-current` before the first commit of a change, not after.
 - **`flow complete` refuses on `tasks` while the review task is open.** Close it
   in the review round, not at the end. Cost flows 002 and 003 a round each.
 - **IP literals in text written to disk get redacted.** A source file was written
