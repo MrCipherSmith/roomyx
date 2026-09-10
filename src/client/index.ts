@@ -101,11 +101,16 @@ async function runLive(url: string): Promise<void> {
         void roomClient
           .postOwnerCommand(kind, body)
           .then((result) => {
-            viewer.chatView.statusBar.setNotice(
-              result.accepted
-                ? `${kind} accepted${result.reason ? ` — ${result.reason}` : ""}`
-                : `${kind} not accepted — ${result.reason ?? "no reason given"}`,
-            );
+            // Three answers, three sentences. `queued` is not a refusal: the
+            // command is held for a dispatcher that has not read it yet, and
+            // showing that as "not accepted" would report the feature working as
+            // the feature failing.
+            const sentence = {
+              queued: `${kind} queued — a dispatcher reads it with room.get_pending_owner_commands`,
+              accepted: `${kind} accepted${result.reason ? ` — ${result.reason}` : ""}`,
+              refused: `${kind} refused — ${result.reason ?? "no reason given"}`,
+            }[result.status];
+            viewer.chatView.statusBar.setNotice(sentence);
           })
           .catch((error: unknown) => {
             viewer.chatView.statusBar.setNotice(

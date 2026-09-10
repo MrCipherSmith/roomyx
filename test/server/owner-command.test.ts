@@ -6,7 +6,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { serve } from "../../src/server/serve";
 import type { ServeHandle } from "../../src/server/serve";
-import type { OwnerCommand } from "../../src/server/index";
+import type { OwnerCommandEnvelope, OwnerCommandResult } from "../../src/server/index";
 
 const FIXTURE = join(import.meta.dir, "..", "fixtures", "sample-room.jsonl");
 
@@ -31,7 +31,13 @@ function textOf(result: unknown): string {
 }
 
 describe("room.post_owner_command (R5)", () => {
-  test("with no dispatcher attached it refuses, and says why, instead of pretending acceptance", async () => {
+  test("with no dispatcher attached the command is queued, not discarded", async () => {
+    // This case used to assert `accepted: false` with "No dispatcher is
+    // attached". That answer was honest about the old behaviour and wrong about
+    // the requirement: for the orchestrator this package targets, a bare
+    // `serve` is the NORMAL case, so refusing meant the owner channel never
+    // worked. The command is held now, and the response says so without
+    // pretending anything has acted on it.
     handle = await serve(FIXTURE, { port: 0 });
     const client = await connect(handle.url);
 
@@ -39,20 +45,21 @@ describe("room.post_owner_command (R5)", () => {
       name: "room.post_owner_command",
       arguments: { kind: "veto", body: "not that direction" },
     });
-    const parsed = JSON.parse(textOf(result));
-    expect(parsed.accepted).toBe(false);
-    expect(parsed.reason).toContain("No dispatcher");
+    const parsed = JSON.parse(textOf(result)) as OwnerCommandResult;
+    expect(parsed.status).toBe("queued");
+    expect(parsed.id).toBeTruthy();
+    expect(textOf(result)).not.toContain("No dispatcher");
 
     await client.close();
   });
 
   test("forwards the command to the dispatcher the host supplied, and returns its verdict", async () => {
-    const seen: OwnerCommand[] = [];
+    const seen: OwnerCommandEnvelope[] = [];
     handle = await serve(FIXTURE, {
       port: 0,
       onOwnerCommand: (command) => {
         seen.push(command);
-        return { accepted: true, reason: "queued for round 3" };
+        return { status: "accepted" as const, reason: "queued for round 3" };
       },
     });
     const client = await connect(handle.url);
@@ -61,15 +68,21 @@ describe("room.post_owner_command (R5)", () => {
       name: "room.post_owner_command",
       arguments: { kind: "constraint", body: "budget under 10k" },
     });
-    const parsed = JSON.parse(textOf(result));
-    expect(parsed).toEqual({ accepted: true, reason: "queued for round 3" });
-    expect(seen).toEqual([{ kind: "constraint", body: "budget under 10k" }]);
+    const parsed = JSON.parse(textOf(result)) as OwnerCommandResult;
+    expect(parsed.status).toBe("accepted");
+    expect(parsed.reason).toBe("queued for round 3");
+    expect(seen.map((c) => ({ kind: c.kind, body: c.body }))).toEqual([
+      { kind: "constraint", body: "budget under 10k" },
+    ]);
+    // The handler is told which queue entry it is answering, so it can settle or
+    // reference it — the two roads meet at one id.
+    expect(seen[0]?.id).toBe(parsed.id);
 
     await client.close();
   });
 
   test("rejects a kind outside the four the contract defines", async () => {
-    handle = await serve(FIXTURE, { port: 0, onOwnerCommand: () => ({ accepted: true }) });
+    handle = await serve(FIXTURE, { port: 0, onOwnerCommand: () => ({ status: "accepted" as const }) });
     const client = await connect(handle.url);
 
     const result = await client.callTool({
@@ -88,7 +101,7 @@ describe("room.post_owner_command (R5)", () => {
     dir = mkdtempSync(join(tmpdir(), "roomyx-owner-cmd-"));
     const before = readFileSync(FIXTURE, "utf8");
 
-    handle = await serve(FIXTURE, { port: 0, onOwnerCommand: () => ({ accepted: true }) });
+    handle = await serve(FIXTURE, { port: 0, onOwnerCommand: () => ({ status: "accepted" as const }) });
     const client = await connect(handle.url);
     await client.callTool({
       name: "room.post_owner_command",

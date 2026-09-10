@@ -641,6 +641,10 @@ one interactive command really reaches the room") has no measurable form without
 an ack. This is the one part of the room the server *can* push: it receives the
 command itself, over HTTP.
 
+> **Closed in `0.10.0` — see the note at the end of this item.** The status below
+> described the shipped behaviour before that release; it is kept because the
+> distinction it draws is the reason the item existed.
+>
 > **Status, 2026-09-10 — the tool is implemented and unreachable for the
 > consumer it was designed for.** `docs/roomyx/README.md` lists
 > `room.post_owner_command` as `implemented` alongside `spec ready` items, and
@@ -664,6 +668,17 @@ command itself, over HTTP.
   yet" are different answers and must not share a shape.
 - A test fails when the queue is written to the room log: the server still does
   not write it, and this item must not become the writer by accident.
+
+> **Landed in `0.10.0`, and one implementation detail was not in the plan.** The
+> queue is created in `serve()`, not inside `createRoomMcpServer` — because
+> `serveMcpOverHttp` calls that factory **once per MCP session**, so state built
+> inside it belongs to a single client. A queue there would have accepted the
+> TUI's veto into a structure the dispatcher's own session could not read: a
+> feature that passes every single-client test and does nothing in the shape it
+> exists for. Two further decisions were taken while implementing, both recorded
+> in the CHANGELOG: the queue is bounded at 32 unacknowledged commands with a
+> refusal that names the backlog, and a handler that answers settles the entry so
+> the two roads cannot deliver one veto twice.
 
 ### 7. A room can be written while looking supervised, and the log never says so
 
