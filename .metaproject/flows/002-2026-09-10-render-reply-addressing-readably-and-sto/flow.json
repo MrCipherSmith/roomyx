@@ -9,7 +9,7 @@
   "title": "Render reply addressing readably, and stop the kind tag disappearing with a collapsed header (D-17)",
   "status": "in-progress",
   "createdAt": "2026-09-10T09:51:56.559Z",
-  "updatedAt": "2026-09-10T09:53:10.757Z",
+  "updatedAt": "2026-09-10T09:59:30.532Z",
   "source": {
     "type": "description",
     "ref": null
@@ -41,7 +41,7 @@
       "title": "Implement per plan",
       "kind": "implement",
       "origin": "scaffold",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 1,
@@ -55,14 +55,15 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T3",
       "title": "Add/adjust tests and make them pass",
       "kind": "test",
       "origin": "scaffold",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 1,
@@ -76,7 +77,8 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T4",
@@ -97,7 +99,7 @@
       "id": "T5",
       "title": "Prove pane, search and export agree on one real log (verification step)",
       "kind": "test",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -105,13 +107,14 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T6",
       "title": "CHANGELOG entry and package.json patch bump; confirm no surface or log-format change",
       "kind": "docs",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -119,7 +122,8 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     }
   ],
   "history": [
@@ -160,6 +164,26 @@
       "at": "2026-09-10T09:53:10.757Z",
       "event": "task-attempt",
       "detail": "T3: started (attempt 1) — 002-T3 implementation dispatch"
+    },
+    {
+      "at": "2026-09-10T09:59:30.239Z",
+      "event": "task-done",
+      "detail": "T2: Implement per plan"
+    },
+    {
+      "at": "2026-09-10T09:59:30.350Z",
+      "event": "task-done",
+      "detail": "T3: Add/adjust tests and make them pass"
+    },
+    {
+      "at": "2026-09-10T09:59:30.441Z",
+      "event": "task-done",
+      "detail": "T5: Prove pane, search and export agree on one real log (verification step)"
+    },
+    {
+      "at": "2026-09-10T09:59:30.532Z",
+      "event": "task-done",
+      "detail": "T6: CHANGELOG entry and package.json patch bump; confirm no surface or log-format change"
     }
   ]
 }
