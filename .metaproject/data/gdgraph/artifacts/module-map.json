@@ -49,6 +49,7 @@
     "src/server/http-transport.ts",
     "src/server/index.ts",
     "src/server/serve.ts",
+    "src/server/shutdown.ts",
     "src/server/tools/get-agent-detail.ts",
     "src/server/tools/get-state.ts",
     "src/server/tools/get-transcript.ts"
@@ -91,6 +92,7 @@
     "test/server/rebinding-guard.test.ts",
     "test/server/serve.test.ts",
     "test/server/session-lifetime.test.ts",
+    "test/server/shutdown-order.test.ts",
     "test/server/shutdown.test.ts",
     "test/server/tools.test.ts",
     "test/server/transport-gates.test.ts"

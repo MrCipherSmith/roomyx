@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { serve } from "../../src/server/serve";
+import { until } from "../helpers/until";
 import type { ServeHandle } from "../../src/server/serve";
 
 const FIXTURE = join(import.meta.dir, "..", "fixtures", "sample-room.jsonl");
@@ -54,7 +55,10 @@ describe("shutting a served room down", () => {
     // against the old code: bare client hangs, poller does not.
     client = new Client({ name: "shutdown-test", version: "0.1.0" });
     await client.connect(new StreamableHTTPClientTransport(new URL(handle.url)));
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // Wait for the stream the hang depends on, not for a number: a client that
+    // has not attached one cannot pin the server, so a fixed sleep here would
+    // let a slow machine pass this test without ever entering the case.
+    await until(() => client!.transport?.sessionId !== undefined, "the session to be established");
 
     const settled = await Promise.race([
       handle.close().then(() => "closed"),
@@ -76,24 +80,23 @@ describe("shutting a served room down", () => {
       });
       procs.push(proc);
 
-      const deadline = Date.now() + 8000;
       let port = 0;
-      while (Date.now() < deadline && port === 0) {
+      await until(() => {
         try {
           const rooms = (JSON.parse(readFileSync(registryPath, "utf8")) as { rooms: Array<{ port: number }> }).rooms;
           if (rooms.length > 0 && rooms[0]) port = rooms[0].port;
         } catch {
           // not written yet
         }
-        if (port === 0) await new Promise((r) => setTimeout(r, 50));
-      }
-      expect(port).toBeGreaterThan(0);
+        return port > 0;
+      }, "the room to register");
 
       // The precondition the old test never established: something is attached
       // and holding a stream open.
       const attached = new Client({ name: "shutdown-test", version: "0.1.0" });
-      await attached.connect(new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${port}/mcp`)));
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      const attachedTransport = new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${port}/mcp`));
+      await attached.connect(attachedTransport);
+      await until(() => attachedTransport.sessionId !== undefined, "the session to be established");
 
       proc.kill(signal);
       const outcome = await Promise.race([
