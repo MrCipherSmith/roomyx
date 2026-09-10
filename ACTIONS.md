@@ -9,10 +9,10 @@ here as work.
 
 | | |
 |---|---|
-| Released | `@mrciphersmith/roomyx@0.10.3` (tag `v0.10.3`). `0.10.1`/`0.10.2` are the owner's persona work, shipped to `main` in parallel |
-| `main` | green: 419 tests, 0 fail (the count includes the persona library's own tests) |
-| Flows | 001–006 `done`; PRs #5, #8, #9 were small changes without a flow |
-| Decisions recorded, not implemented | none — D-19 decided the last one (2026-09-10) |
+| Released | `@mrciphersmith/roomyx@0.11.0` (tag `v0.11.0`, published with provenance) |
+| `main` | green: 433 tests, 0 fail (the count includes the persona library's own tests) |
+| Flows | 001–007 `done`; PRs #5, #8, #9 were small changes without a flow |
+| Decisions recorded, not implemented | none — D-19 shipped in `0.11.0` |
 
 ## Triage
 
@@ -176,6 +176,15 @@ is. **Never dispatch a second round before reading the first reply.**
 - **`git checkout -- <file>` during a mutation reverts an uncommitted fix.** The
   mutation procedure must be: commit, then mutate, then revert to the commit.
   Cost flow 004 a round of re-applying its own fix.
+- **`git checkout -- <file>` during a mutation reverts uncommitted work.** Hit for
+  the THIRD time (flows 004, 005, 007), each time costing a re-apply. The order is
+  the whole fix: **commit the change, then mutate, then `git checkout`** — the
+  revert then takes only the mutation. Written down twice before and still hit, so
+  treat "commit first" as a step in the mutation procedure rather than a reminder.
+- **`git reset --hard origin/main` after a squash merge discards the flow's own
+  post-completion state**, because it is uncommitted. Order that works: complete
+  the flow, commit its package, then reconcile with `main` — or rebuild the state
+  with the CLI, which owns `flow.json`.
 - **A small change is a PR, not a flow.** PRs #5 and #8 were made without a flow
   package; inventing one for #8 created a `flows/005-*` directory with no
   `flow.json`, which `keryx flow list` does not see and nothing would ever close.
