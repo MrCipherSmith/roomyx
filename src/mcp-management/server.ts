@@ -45,7 +45,7 @@ export function createManagementMcpServer(options: ManagementOptions): McpServer
       description: "Rooms currently registered and confirmed live (liveness-checked, not just registry presence).",
     },
     async () => ({
-      content: [{ type: "text", text: JSON.stringify(await listLiveRooms(options.registryPath)) }],
+      content: [{ type: "text", text: JSON.stringify(await listLiveRooms(options.registryPath, { prune: false })) }],
     }),
   );
 

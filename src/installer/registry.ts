@@ -113,7 +113,11 @@ export function listRooms(registryPath: string): RoomRegistryEntry[] {
  * answers). Dead entries are pruned from the persisted file, not just
  * omitted from the returned list.
  */
-export async function listLiveRooms(registryPath: string): Promise<RoomRegistryEntry[]> {
+export async function listLiveRooms(
+  registryPath: string,
+  options: { prune?: boolean } = {},
+): Promise<RoomRegistryEntry[]> {
+  const prune = options.prune ?? true;
   if (hasNoRegistry(registryPath)) return [];
   const rooms = withLock(registryPath, () => readRegistryUnlocked(registryPath).rooms);
   const checks = await Promise.all(
@@ -123,7 +127,12 @@ export async function listLiveRooms(registryPath: string): Promise<RoomRegistryE
     }),
   );
   const live = checks.filter((c) => c.alive).map((c) => c.room);
-  if (live.length !== rooms.length) {
+  // The MCP surface passes `prune: false`. It is the one place a network caller
+  // could cause a filesystem write, and the content is not caller-controlled —
+  // but "the MCP surface only reads" is worth being exactly true rather than
+  // nearly, and the 500ms probe is load-sensitive enough that a busy machine
+  // could prune a live-but-slow room on someone else's call.
+  if (prune && live.length !== rooms.length) {
     // Re-take the lock for the write: another process may have registered or
     // deregistered a room while the (network) liveness checks above were in
     // flight. Re-read under the lock and only remove entries this pass
@@ -177,7 +186,20 @@ async function isRoomLive(room: RoomRegistryEntry, timeoutMs = 500): Promise<boo
   });
   try {
     await Promise.race([client.connect(transport), timeout]);
-    return true;
+    // Connecting proves something MCP-speaking answers on that port. Asking it
+    // which log it serves is what proves it is *this* room — the pid check
+    // above narrows the window and does not close it, because a pid can be
+    // recycled and every serve defaults to the same port.
+    const result = await Promise.race([client.callTool({ name: "room.get_state", arguments: {} }), timeout]);
+    const content = result.content as Array<{ type: string; text: string }> | undefined;
+    const text = content?.[0]?.text;
+    if (text === undefined) return false;
+    const state = JSON.parse(text) as { log_path?: string };
+    // An older server that predates `log_path` answers without it. Treat that
+    // as "cannot be shown to be a different room" rather than as dead: failing
+    // toward the previous behaviour is the safe direction here, because the
+    // cost of wrongly pruning a live room is higher than of keeping a stale one.
+    return state.log_path === undefined || state.log_path === room.logPath;
   } catch {
     return false;
   } finally {

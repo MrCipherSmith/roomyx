@@ -1,4 +1,5 @@
 import { createServer as createHttpServer } from "node:http";
+import type { IncomingMessage } from "node:http";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -74,6 +75,25 @@ export async function serveMcpOverHttp(
   // which matters because the allowlists below cannot be built without it.
   let boundPort = 0;
 
+  /**
+   * The Host values this server will answer to.
+   *
+   * The loopback three, plus the bound host when the operator has explicitly
+   * acknowledged binding a non-loopback one. Without that last part the escape
+   * hatch bound the address and the rebinding guard then refused every request
+   * that arrived at it — measured, 403 `Invalid Host header` against the very
+   * address `--acknowledge-non-loopback` had just permitted. A flag that
+   * appears to work and does not is worse than one that refuses.
+   *
+   * This does not widen the guard for anyone who did not ask: without the flag
+   * the server will not bind a non-loopback host at all.
+   */
+  function allowedHosts(): string[] {
+    const loopback = [`127.0.0.1:${boundPort}`, `localhost:${boundPort}`, `[::1]:${boundPort}`];
+    if (LOOPBACK_HOSTS.has(host)) return loopback;
+    return [...loopback, `${host}:${boundPort}`];
+  }
+
   async function createSession(): Promise<StreamableHTTPServerTransport> {
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => crypto.randomUUID(),
@@ -96,7 +116,7 @@ export async function serveMcpOverHttp(
       // the Origin check when the header is absent, so the list below exists
       // to be matched by nothing.
       enableDnsRebindingProtection: true,
-      allowedHosts: [`127.0.0.1:${boundPort}`, `localhost:${boundPort}`, `[::1]:${boundPort}`],
+      allowedHosts: allowedHosts(),
       allowedOrigins: [`http://127.0.0.1:${boundPort}`, `http://localhost:${boundPort}`],
       onsessioninitialized: (sessionId) => {
         sessions.set(sessionId, { transport, lastSeenMs: Date.now() });
@@ -105,8 +125,15 @@ export async function serveMcpOverHttp(
         sessions.delete(sessionId);
       },
     });
-    // The DELETE is one way a session can end; the transport closing for any
-    // other reason is another, and only the first was being listened for.
+    // The DELETE is one way a session can end; the transport closing for its
+    // own reasons is another, and only the first was being listened for.
+    //
+    // Measured, so the scope is not overstated: this does NOT fire when a
+    // client simply calls `close()` — such a session still answers 200 after
+    // three seconds, because the server never learns the client went away. An
+    // abandoned session is the sweeper's job. This is belt-and-braces for a
+    // transport that closes itself, and it is deliberately not pinned by a
+    // test, because no test can reach it from outside.
     transport.onclose = () => {
       const id = transport.sessionId;
       if (id !== undefined) sessions.delete(id);
@@ -150,6 +177,28 @@ export async function serveMcpOverHttp(
   }, IDLE_SESSION_MS / 2);
   sweeper.unref();
 
+  /**
+   * The same Host/Origin decision the SDK makes, applied to the one response we
+   * write ourselves. Returns the rejection message, or null to proceed.
+   *
+   * Deliberately mirrors rather than reuses: the SDK's check is private to the
+   * transport, and a transport is exactly what this branch exists to avoid
+   * creating.
+   */
+  function rebindingRejection(req: IncomingMessage): string | null {
+    const origin = req.headers.origin;
+    if (typeof origin === "string" && origin.length > 0) {
+      if (![`http://127.0.0.1:${boundPort}`, `http://localhost:${boundPort}`].includes(origin)) {
+        return `Invalid Origin header: ${origin}`;
+      }
+    }
+    const hostHeader = req.headers.host;
+    if (typeof hostHeader === "string" && !allowedHosts().includes(hostHeader)) {
+      return `Invalid Host header: ${hostHeader}`;
+    }
+    return null;
+  }
+
   const httpServer = createHttpServer((req, res) => {
     const sessionIdHeader = req.headers["mcp-session-id"];
     const sessionId = typeof sessionIdHeader === "string" ? sessionIdHeader : undefined;
@@ -161,6 +210,19 @@ export async function serveMcpOverHttp(
     // entered `sessions`, so it could not be closed even by `closeSessions` on
     // shutdown — a leak reachable by anyone sending a random header.
     if (sessionId !== undefined && existing === undefined) {
+      // Validated first. `handleRequest` is where the SDK checks Host and
+      // Origin, so returning before it made this the one response path the
+      // rebinding guard never saw: measured, `Host: evil.example` alone got
+      // 403 and the same Host plus an unknown session id got a roomyx-authored
+      // 404. Nothing was exploitable — session ids are 122-bit random, so the
+      // oracle is worthless — but "every path except one" is the property that
+      // stops being true quietly the next time a branch is added up here.
+      const rejection = rebindingRejection(req);
+      if (rejection) {
+        res.writeHead(403, { "content-type": "application/json" });
+        res.end(JSON.stringify({ error: rejection }));
+        return;
+      }
       res.writeHead(404, { "content-type": "application/json" });
       res.end(JSON.stringify({ error: `Unknown session ${sessionId}` }));
       return;

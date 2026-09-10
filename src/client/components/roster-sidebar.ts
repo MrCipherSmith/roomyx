@@ -20,6 +20,11 @@ import type { RosterEntry } from "../../log/types";
  * drawn at all.
  */
 function clip(label: string, width: number): string {
+  // Unreachable from `ChatView`, which constructs this with a hardcoded width
+  // of 24 — a mutation pass confirmed deleting it changes nothing. Kept as a
+  // total function rather than as a guard: `clip` is exported-shaped and a
+  // caller with a narrower gutter is exactly what the deferred resize work will
+  // introduce. Recorded so it is not read as protection it does not provide.
   if (width <= 0) return "";
   if (label.length <= width) return label;
   return width === 1 ? "…" : `${label.slice(0, width - 1)}…`;
