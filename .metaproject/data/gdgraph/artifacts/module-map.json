@@ -61,6 +61,7 @@
   "server": [
     "src/server/http-transport.ts",
     "src/server/index.ts",
+    "src/server/owner-queue.ts",
     "src/server/serve.ts",
     "src/server/shutdown.ts",
     "src/server/tools/get-agent-detail.ts",
@@ -99,6 +100,7 @@
     "test/client/scroll.test.ts",
     "test/client/search-prompt.test.ts",
     "test/client/shutdown-order.test.ts",
+    "test/client/status-bar.test.ts",
     "test/client/tool-error.test.ts",
     "test/client/transcript.test.ts",
     "test/client/wrap-defect.test.ts",
@@ -116,6 +118,7 @@
     "test/mcp-management/server.test.ts",
     "test/server/dispatcher-attached.test.ts",
     "test/server/owner-command.test.ts",
+    "test/server/owner-queue.test.ts",
     "test/server/rebinding-guard.test.ts",
     "test/server/serve.test.ts",
     "test/server/session-lifetime.test.ts",

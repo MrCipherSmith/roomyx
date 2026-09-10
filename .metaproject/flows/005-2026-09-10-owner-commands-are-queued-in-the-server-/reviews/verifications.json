@@ -1,0 +1,19 @@
+{
+ "status": "DONE",
+ "verifier": "flow-orchestrator-mutation-pass",
+ "summary": "4 checks: 1 site-check for the cycle, 3 executed mutations re-run against this head",
+ "verifications": [
+  {
+   "finding": "2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-10#R1-01",
+   "verdict": "refuted",
+   "method": "site-check",
+   "evidence": "Checked at c542f47108fcc8387bdbcf1972139ff115acddeb: src/server/owner-queue.ts contains no import from ./index (grep returns nothing), index.ts imports both the vocabulary and the queue from ./owner-queue, and the dead re-export is gone. The cycle the finding names no longer exists in either direction."
+  }
+ ],
+ "stats": {
+  "confirmed": 0,
+  "refuted": 1,
+  "unverifiable": 0,
+  "not_checked": 0
+ }
+}
