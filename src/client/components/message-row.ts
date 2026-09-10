@@ -1,5 +1,7 @@
 import { BoxRenderable, TextRenderable } from "@opentui/core";
 import type { RenderContext } from "@opentui/core";
+import { messageTag } from "../transcript";
+import type { ReplyTarget } from "../transcript";
 import type { MessageEnvelope } from "../../log/types";
 
 /**
@@ -23,6 +25,14 @@ import type { MessageEnvelope } from "../../log/types";
  * The tag stays ASCII on purpose: `↩` and `→` are East-Asian-ambiguous, so
  * their width depends on the reader's terminal, and a wrong guess shifts the
  * whole wrapped row.
+ *
+ * A third defect lived in this file and is kept written down for the same
+ * reason: the tag was added *inside* the header, and the header is suppressed
+ * for consecutive turns by one speaker — so the second turn lost its kind and
+ * its reply pointer, and two materially different messages rendered
+ * identically. Whether a header is drawn is a question about the speaker;
+ * whether a tag is drawn is a question about the message, and they are not the
+ * same question. See D-17.
  */
 export const SPEAKER_FG = "#ffffff";
 export const TAG_FG = "#8a8a8a";
@@ -36,12 +46,8 @@ export interface MessageRowOptions {
   showHeader: boolean;
   /** False for the first row, which needs no separating blank line above it. */
   separate: boolean;
-}
-
-function tagFor(message: MessageEnvelope): string {
-  return [message.kind, message.in_reply_to === undefined ? null : `re #${message.in_reply_to}`]
-    .filter((part): part is string => Boolean(part))
-    .join(" ");
+  /** The turn this one answers, already resolved to a speaker by the caller. */
+  replyTo?: ReplyTarget;
 }
 
 export function createMessageRow(
@@ -55,12 +61,17 @@ export function createMessageRow(
     marginTop: options.separate ? 1 : 0,
   });
 
+  const tag = messageTag(message, options.replyTo);
+
   if (options.showHeader) {
     const header = new BoxRenderable(ctx, { flexDirection: "row", height: 1 });
     header.add(new TextRenderable(ctx, { content: fromName, fg: SPEAKER_FG, attributes: 1, height: 1 }));
-    const tag = tagFor(message);
     if (tag) header.add(new TextRenderable(ctx, { content: `  ${tag}`, fg: TAG_FG, height: 1 }));
     row.add(header);
+  } else if (tag) {
+    // Its own indented line, because there is no header to sit in. The kind and
+    // the pointer must not be collapsible with the speaker's name.
+    row.add(new TextRenderable(ctx, { content: tag, fg: TAG_FG, height: 1, marginLeft: 2 }));
   }
 
   row.add(

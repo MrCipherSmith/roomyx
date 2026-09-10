@@ -1,0 +1,440 @@
+diff --git a/src/client/components/message-row.ts b/src/client/components/message-row.ts
+index cf26245..187a815 100644
+--- a/src/client/components/message-row.ts
++++ b/src/client/components/message-row.ts
+@@ -1,5 +1,7 @@
+ import { BoxRenderable, TextRenderable } from "@opentui/core";
+ import type { RenderContext } from "@opentui/core";
++import { messageTag } from "../transcript";
++import type { ReplyTarget } from "../transcript";
+ import type { MessageEnvelope } from "../../log/types";
+ 
+ /**
+@@ -23,6 +25,14 @@ import type { MessageEnvelope } from "../../log/types";
+  * The tag stays ASCII on purpose: `↩` and `→` are East-Asian-ambiguous, so
+  * their width depends on the reader's terminal, and a wrong guess shifts the
+  * whole wrapped row.
++ *
++ * A third defect lived in this file and is kept written down for the same
++ * reason: the tag was added *inside* the header, and the header is suppressed
++ * for consecutive turns by one speaker — so the second turn lost its kind and
++ * its reply pointer, and two materially different messages rendered
++ * identically. Whether a header is drawn is a question about the speaker;
++ * whether a tag is drawn is a question about the message, and they are not the
++ * same question. See D-17.
+  */
+ export const SPEAKER_FG = "#ffffff";
+ export const TAG_FG = "#8a8a8a";
+@@ -36,12 +46,8 @@ export interface MessageRowOptions {
+   showHeader: boolean;
+   /** False for the first row, which needs no separating blank line above it. */
+   separate: boolean;
+-}
+-
+-function tagFor(message: MessageEnvelope): string {
+-  return [message.kind, message.in_reply_to === undefined ? null : `re #${message.in_reply_to}`]
+-    .filter((part): part is string => Boolean(part))
+-    .join(" ");
++  /** The turn this one answers, already resolved to a speaker by the caller. */
++  replyTo?: ReplyTarget;
+ }
+ 
+ export function createMessageRow(
+@@ -55,12 +61,17 @@ export function createMessageRow(
+     marginTop: options.separate ? 1 : 0,
+   });
+ 
++  const tag = messageTag(message, options.replyTo);
++
+   if (options.showHeader) {
+     const header = new BoxRenderable(ctx, { flexDirection: "row", height: 1 });
+     header.add(new TextRenderable(ctx, { content: fromName, fg: SPEAKER_FG, attributes: 1, height: 1 }));
+-    const tag = tagFor(message);
+     if (tag) header.add(new TextRenderable(ctx, { content: `  ${tag}`, fg: TAG_FG, height: 1 }));
+     row.add(header);
++  } else if (tag) {
++    // Its own indented line, because there is no header to sit in. The kind and
++    // the pointer must not be collapsible with the speaker's name.
++    row.add(new TextRenderable(ctx, { content: tag, fg: TAG_FG, height: 1, marginLeft: 2 }));
+   }
+ 
+   row.add(
+diff --git a/src/client/screens/chat-view.ts b/src/client/screens/chat-view.ts
+index 1f74e05..a0bbecc 100644
+--- a/src/client/screens/chat-view.ts
++++ b/src/client/screens/chat-view.ts
+@@ -37,6 +37,12 @@ export class ChatView {
+   private readonly scroll: ScrollBoxRenderable;
+   private readonly ctx: RenderContext;
+   private rosterById = new Map<string, RosterEntry>();
++  /**
++   * Every message seen so far, by `seq`, so a reply pointer can name its
++   * parent. Kept here rather than in `Transcript` because the roster — the
++   * thing that turns an id into a name — is here too.
++   */
++  private messagesBySeq = new Map<number, MessageEnvelope>();
+   private rows: Renderable[] = [];
+   private readonly rosterVisible: boolean;
+ 
+@@ -112,11 +118,23 @@ export class ChatView {
+ 
+   appendMessages(messages: MessageEnvelope[]): void {
+     for (const message of messages) {
++      // Resolved before this message is recorded, so a pointer can only ever
++      // name an *earlier* turn — the log is append-only and the parent is
++      // always already here. That is what lets a tag be known when the row is
++      // built and keeps rendering incremental: no drawn row is ever amended.
++      const parent =
++        message.in_reply_to === undefined ? undefined : this.messagesBySeq.get(message.in_reply_to);
++      const replyTo =
++        parent === undefined
++          ? undefined
++          : { name: this.rosterById.get(parent.from)?.name ?? parent.from, body: parent.body };
+       this.appendEntry({
+         kind: "message",
+         message,
+         fromName: this.rosterById.get(message.from)?.name ?? message.from,
++        ...(replyTo === undefined ? {} : { replyTo }),
+       });
++      this.messagesBySeq.set(message.seq, message);
+     }
+   }
+ 
+@@ -206,6 +224,7 @@ export class ChatView {
+             // changed.
+             showHeader: this.transcript.startsRun(index),
+             separate,
++            ...(entry.replyTo === undefined ? {} : { replyTo: entry.replyTo }),
+           });
+ 
+     this.rows.push(row);
+diff --git a/src/client/transcript.ts b/src/client/transcript.ts
+index db6f704..09106e2 100644
+--- a/src/client/transcript.ts
++++ b/src/client/transcript.ts
+@@ -25,6 +25,13 @@ export interface MessageEntry {
+   message: MessageEnvelope;
+   /** Resolved display name, so the model can be searched by what is on screen. */
+   fromName: string;
++  /**
++   * The turn this one answers, resolved to a speaker by whoever built the
++   * entry. Absent when the message answers nothing, or answers a `seq` this
++   * log does not contain — and absent means nothing is drawn, which is the
++   * point: the number it replaced named nobody (D-17).
++   */
++  replyTo?: ReplyTarget;
+ }
+ 
+ export type Entry = MessageEntry | SystemEntry;
+@@ -75,7 +82,7 @@ export class Transcript {
+         const haystack =
+           entry.kind === "system"
+             ? entry.text
+-            : `${entry.fromName} ${entry.message.kind ?? ""} ${entry.message.body}`;
++            : `${entry.fromName} ${messageTag(entry.message, entry.replyTo)} ${entry.message.body}`;
+         return haystack.toLowerCase().includes(needle) ? index : -1;
+       })
+       .filter((index) => index >= 0);
+@@ -114,11 +121,48 @@ export class Transcript {
+     return this.visible()
+       .map((entry) => {
+         if (entry.kind === "system") return `— ${entry.text} —`;
+-        const tag = [entry.message.kind, entry.message.in_reply_to === undefined ? null : `re #${entry.message.in_reply_to}`]
+-          .filter((part): part is string => Boolean(part))
+-          .join(" ");
++        const tag = messageTag(entry.message, entry.replyTo);
+         return `${entry.fromName}${tag ? `  ${tag}` : ""}\n  ${entry.message.body}`;
+       })
+       .join("\n\n");
+   }
+ }
++
++/**
++ * The one place the kind + reply tag is spelled.
++ *
++ * It used to be assembled twice — in `message-row.ts` for the pane, and inline
++ * in `toText()` for the export — so the two could disagree about what a message
++ * said, and neither was visible to `matches()`. The tag is drawn on screen,
++ * which is the whole test of whether a search has to find it.
++ */
++export const QUOTE_CELLS = 24;
++
++export interface ReplyTarget {
++  /** The parent's resolved display name. Never a sequence number: a number names nobody. */
++  name: string;
++  /** The parent's body, for the short quote. */
++  body: string;
++}
++
++/**
++ * Cut to size in ASCII.
++ *
++ * `clip()` — the client's other cutter — marks a cut with `…`, and this line
++ * must not: U+2026 is East-Asian-ambiguous, so its width depends on the
++ * reader's terminal, and the tag is laid out against the same pane the body
++ * wraps in. A quote is context, not content; it does not get to move where a
++ * sentence breaks.
++ */
++function quote(body: string): string {
++  // Whitespace is flattened first: a parent's newline would otherwise put a
++  // second line under a tag that is `height: 1`.
++  const flat = body.replace(/\s+/g, " ").trim();
++  if (flat.length <= QUOTE_CELLS) return flat;
++  return `${flat.slice(0, QUOTE_CELLS - 3).trimEnd()}...`;
++}
++
++export function messageTag(message: MessageEnvelope, replyTo?: ReplyTarget): string {
++  const pointer = replyTo === undefined ? "" : `-> ${replyTo.name} "${quote(replyTo.body)}"`;
++  return [message.kind, pointer].filter((part): part is string => Boolean(part)).join(" ");
++}
+diff --git a/test/client/message-row.test.ts b/test/client/message-row.test.ts
+index f9fe3fb..329440c 100644
+--- a/test/client/message-row.test.ts
++++ b/test/client/message-row.test.ts
+@@ -8,9 +8,16 @@ import type { MessageEnvelope } from "../../src/log/types";
+  * The pre-existing render test checked roster names and the goal line and
+  * never once looked at a message body, which is how a truncating row and two
+  * silently-dropped envelope fields shipped.
++ *
++ * `after` exists for the filter test: the tag a message draws must not depend
++ * on which other messages happen to be visible beside it (D-17 item 5).
+  */
+-
+-async function frameFor(messages: MessageEnvelope[], width = 60, height = 24): Promise<string> {
++async function frameWith(
++  messages: MessageEnvelope[],
++  after?: (view: ChatView) => void,
++  width = 60,
++  height = 24,
++): Promise<string> {
+   const { renderer, renderOnce, captureCharFrame } = await createTestRenderer({ width, height });
+   const view = new ChatView(renderer, { width, height });
+   renderer.root.add(view.node);
+@@ -19,12 +26,17 @@ async function frameFor(messages: MessageEnvelope[], width = 60, height = 24): P
+     { id: "b", name: "Bob" },
+   ]);
+   view.appendMessages(messages);
++  if (after) after(view);
+   await renderOnce();
+   const frame = captureCharFrame();
+   renderer.destroy();
+   return frame;
+ }
+ 
++async function frameFor(messages: MessageEnvelope[], width = 60, height = 24): Promise<string> {
++  return frameWith(messages, undefined, width, height);
++}
++
+ describe("a message row", () => {
+   test("a body wider than the pane wraps instead of being cut", async () => {
+     // The tail is what matters: truncation always takes the end of the
+@@ -40,12 +52,13 @@ describe("a message row", () => {
+     expect(frame).not.toMatch(/alph\s*\n/);
+   });
+ 
+-  test("kind and in_reply_to are shown", async () => {
++  test("the kind and the reply target are shown together", async () => {
+     const frame = await frameFor([
+       { seq: 1, from: "a", body: "opening" },
+       { seq: 2, from: "b", kind: "challenge", in_reply_to: 1, body: "disputed" },
+     ]);
+-    expect(frame).toContain("challenge re #1");
++    expect(frame).toContain("challenge");
++    expect(frame).toContain("-> Ann");
+   });
+ 
+   test("either field alone renders, and neither leaves a stray tag behind", async () => {
+@@ -53,8 +66,10 @@ describe("a message row", () => {
+     expect(kindOnly).toMatch(/Ann\s+vote/);
+     expect(kindOnly).toContain("yes");
+ 
++    // A reply to a seq that is not in this log resolves to nothing. Drawing
++    // the number instead is what D-17 removes: it names no speaker.
+     const replyOnly = await frameFor([{ seq: 2, from: "a", in_reply_to: 7, body: "because" }]);
+-    expect(replyOnly).toMatch(/Ann\s+re #7/);
++    expect(replyOnly).not.toContain("#7");
+ 
+     const plain = await frameFor([{ seq: 3, from: "a", body: "hello" }]);
+     const header = plain.split("\n").find((line) => line.includes("Ann")) ?? "";
+@@ -88,3 +103,97 @@ describe("a message row", () => {
+     for (const body of ["first", "second", "third", "fourth"]) expect(frame).toContain(body);
+   });
+ });
++
++describe("the reply pointer", () => {
++  test("it names the author of the message being answered, not the sequence number", async () => {
++    const frame = await frameFor([
++      { seq: 1, from: "a", body: "opening" },
++      { seq: 2, from: "b", kind: "challenge", in_reply_to: 1, body: "disputed" },
++    ]);
++    expect(frame).toContain("-> Ann");
++    // The whole point: a number names nobody without counting upwards.
++    expect(frame).not.toContain("#1");
++  });
++
++  test("it quotes the parent briefly and on one line", async () => {
++    const parent = "a very long opening statement about databases and their tradeoffs worth weighing";
++    const frame = await frameFor([
++      { seq: 1, from: "a", body: parent },
++      { seq: 2, from: "b", kind: "answer", in_reply_to: 1, body: "agreed" },
++    ]);
++    const tagLine = frame.split("\n").find((line) => line.includes("-> Ann")) ?? "";
++    // Cut with ASCII, not `…`: an ambiguous-width glyph shifts the wrap.
++    expect(tagLine).toContain("...");
++    expect(tagLine).not.toContain("\u2026");
++    // And the quote is clipped to the budget, not the parent pasted whole.
++    // (The parent itself is also drawn, as the message it is — so this checks
++    // the quoted span, not the frame.)
++    const quoted = tagLine.slice(tagLine.indexOf('"') + 1, tagLine.lastIndexOf('"'));
++    expect(quoted.endsWith("...")).toBe(true);
++    expect(quoted.length).toBeLessThanOrEqual(24);
++  });
++
++  test("the tag survives a collapsed header, and the header stays collapsed", async () => {
++    const frame = await frameFor([
++      { seq: 1, from: "a", kind: "pitch", body: "first" },
++      { seq: 2, from: "a", kind: "challenge", in_reply_to: 1, body: "second" },
++    ]);
++    // One header for the run — the speaker's name is not repeated...
++    const lines = frame.split("\n");
++    expect(lines.filter((line) => line.trim().startsWith("Ann")).length).toBe(1);
++    // ...but the second turn's kind and pointer are still on screen, on their
++    // own line. They used to be drawn inside the header, so collapsing it
++    // erased them.
++    const tagLine = lines.find((line) => line.includes("challenge")) ?? "";
++    expect(tagLine).toContain("-> Ann");
++    expect(tagLine.trim().startsWith("Ann")).toBe(false);
++    expect(frame).toContain("second");
++  });
++
++  test("a message's tag is the same filtered and unfiltered", async () => {
++    // Ann, Bob, Ann: unfiltered, Ann's second turn follows Bob and gets a
++    // header. Filtered to Ann, it follows her own turn — and before D-17 the
++    // collapsed header took the tag with it, so filtering *hid* the kind.
++    const messages: MessageEnvelope[] = [
++      { seq: 1, from: "a", kind: "pitch", body: "opening" },
++      { seq: 2, from: "b", kind: "challenge", body: "disputed" },
++      { seq: 3, from: "a", kind: "vote", in_reply_to: 1, body: "still mine" },
++    ];
++    const unfiltered = await frameFor(messages);
++    const filtered = await frameWith(messages, (view) => view.setFilter("a"));
++    for (const frame of [unfiltered, filtered]) {
++      expect(frame).toContain("vote");
++      expect(frame).toContain("-> Ann");
++    }
++  });
++
++  test("search finds a row by the text its pointer shows", async () => {
++    // The tag is on screen, so `/` must find it — the rule the haystack in
++    // matches() states and did not keep.
++    const messages: MessageEnvelope[] = [
++      { seq: 1, from: "a", body: "opening the argument" },
++      { seq: 2, from: "b", kind: "challenge", in_reply_to: 1, body: "disputed" },
++    ];
++    let matches: number[] = [];
++    await frameWith(messages, (view) => {
++      view.transcript.setQuery("-> Ann");
++      matches = view.transcript.matches();
++    });
++    expect(matches).toEqual([1]);
++  });
++
++  test("the export writes the pointer the pane shows", async () => {
++    const messages: MessageEnvelope[] = [
++      { seq: 1, from: "a", body: "opening" },
++      { seq: 2, from: "b", kind: "challenge", in_reply_to: 1, body: "disputed" },
++    ];
++    const frame = await frameFor(messages);
++    let exported = "";
++    await frameWith(messages, (view) => {
++      exported = view.transcript.toText();
++    });
++    expect(exported).toContain("challenge -> Ann");
++    expect(frame).toContain("challenge");
++    expect(frame).toContain("-> Ann");
++  });
++});
+diff --git a/test/client/reply-pointer-real-log.test.ts b/test/client/reply-pointer-real-log.test.ts
+new file mode 100644
+index 0000000..c817af7
+--- /dev/null
++++ b/test/client/reply-pointer-real-log.test.ts
+@@ -0,0 +1,78 @@
++import { describe, expect, test } from "bun:test";
++import { readFileSync } from "node:fs";
++import { join } from "node:path";
++import { createTestRenderer } from "@opentui/core/testing";
++import { ChatView } from "../../src/client/screens/chat-view";
++import type { MessageEnvelope, RosterEntry } from "../../src/log/types";
++
++/**
++ * The verification step of flow 002, run against a real room log rather than a
++ * fixture: `screenshots/review-room.jsonl` is the transcript of the 2026-09-09
++ * TUI review — four participants, nine messages, four of them replies, two of
++ * those answering the *same* earlier message.
++ *
++ * A fixture would have been written by the same person who wrote the fix. This
++ * log was not: it is the record of a conversation that happened, and it is the
++ * one that showed the defect (`answer  re #4` twice, naming nobody).
++ */
++const LOG = join(import.meta.dir, "..", "..", "docs", "roomyx", "screenshots", "review-room.jsonl");
++
++function realRoom(): { roster: RosterEntry[]; messages: MessageEnvelope[] } {
++  const lines = readFileSync(LOG, "utf8")
++    .split("\n")
++    .filter((line) => line.trim().length > 0);
++  const state = JSON.parse(lines[0] as string) as { roster: RosterEntry[] };
++  const messages = lines.slice(1).map((line) => {
++    const { type: _type, ...envelope } = JSON.parse(line) as MessageEnvelope & { type: string };
++    return envelope;
++  });
++  return { roster: state.roster, messages };
++}
++
++describe("the reply pointer on a real room log", () => {
++  test("no rendered row names a reply by its sequence number", async () => {
++    const { roster, messages } = realRoom();
++    const { renderer, renderOnce, captureCharFrame } = await createTestRenderer({ width: 120, height: 60 });
++    const view = new ChatView(renderer, { width: 120, height: 60 });
++    renderer.root.add(view.node);
++    view.setRoster(roster);
++    view.appendMessages(messages);
++    await renderOnce();
++    const frame = captureCharFrame();
++    renderer.destroy();
++
++    expect(messages.filter((m) => m.in_reply_to !== undefined).length).toBe(4);
++    expect(frame).not.toContain("re #");
++
++    // Every reply names the author of the message it answers. Four of nine
++    // messages reply, and two of them answer seq 4 — the case where a number
++    // gave the reader two identical, unresolvable tags.
++    const bySeq = new Map(messages.map((m) => [m.seq, m]));
++    const nameById = new Map(roster.map((entry) => [entry.id, entry.name]));
++    const expected = messages
++      .filter((m) => m.in_reply_to !== undefined)
++      .map((m) => `-> ${nameById.get(bySeq.get(m.in_reply_to as number)!.from) as string}`);
++    expect(expected).toEqual(["-> Paul", "-> Paul", "-> Inés", "-> Ken"]);
++    for (const pointer of expected) expect(frame).toContain(pointer);
++  });
++
++  test("search finds each reply by the pointer the pane shows", async () => {
++    const { roster, messages } = realRoom();
++    const { renderer, renderOnce } = await createTestRenderer({ width: 120, height: 60 });
++    const view = new ChatView(renderer, { width: 120, height: 60 });
++    renderer.root.add(view.node);
++    view.setRoster(roster);
++    view.appendMessages(messages);
++
++    view.transcript.setQuery("-> Paul");
++    const matches = view.transcript.matches();
++    expect(matches).toHaveLength(2);
++
++    // And what the export writes is what the pane drew, for the whole room.
++    const exported = view.transcript.toText();
++    for (const pointer of ["-> Paul", "-> Inés", "-> Ken"]) expect(exported).toContain(pointer);
++    expect(exported).not.toContain("re #");
++    renderer.destroy();
++    await renderOnce();
++  });
++});

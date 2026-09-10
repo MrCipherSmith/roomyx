@@ -13,6 +13,36 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.7.2] — 2026-09-10
+
+A patch. Found by reading a real room log: the reply structure the log schema
+exists to record was, in the pane that displays it, a number.
+
+### Fixed
+
+- **A reply names the participant it answers, instead of a sequence number.**
+  The tag read `answer re #4` — a number the client never resolved to a speaker,
+  neither in the pane nor in the file `w` writes out. In the log this was
+  measured against, four of nine messages reply and two of them answer the same
+  message, so two rows rendered as identical, unresolvable tags. The pointer now
+  reads `answer -> Inés "..."`, carrying a short clipped quote of the parent.
+- **The kind and the reply pointer no longer vanish when a header is
+  collapsed.** Both were drawn inside the header, which is suppressed for
+  consecutive turns by one speaker, so a second turn looked exactly like a plain
+  continuation. Because the run was computed over the visible list, filtering to
+  one participant could also *hide* a tag that was there unfiltered.
+- **`/` finds a row by the text its pointer shows.** The tag is on screen and
+  the search haystack did not include it.
+
+### Notes
+
+- Rendering only: no MCP tool surface, CLI flag or room-log format changed.
+- The pointer uses an ASCII `->` and `...` rather than `→` and `…`, which are
+  East-Asian-ambiguous: their width depends on the reader's terminal, and a
+  wrong guess shifts the whole wrapped row.
+- The tripwire in `test/client/wrap-defect.test.ts` is untouched and still
+  failing as designed.
+
 ## [0.7.1] — 2026-09-10
 
 A patch. Found while writing setup prompts for an operator: following the

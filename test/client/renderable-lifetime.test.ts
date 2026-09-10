@@ -88,6 +88,41 @@ describe("renderable lifetime", () => {
     v.destroy();
   });
 
+  test("filtering back and forth does not accumulate tag rows either", async () => {
+    // The case above has no `kind` and no `in_reply_to`, so every row it
+    // builds is name + body: it never allocates the tag renderable, and it
+    // never takes the collapsed-header branch that draws one on its own line.
+    // A leak specific to tagged rows would pass that test and fail this one.
+    const v = await view();
+    v.chat.setRoster([
+      { id: "a", name: "Ann" },
+      { id: "b", name: "Bob" },
+    ]);
+    const messages: MessageEnvelope[] = Array.from({ length: 60 }, (_, i) => ({
+      seq: i + 1,
+      from: i % 2 === 0 ? "a" : "b",
+      kind: "challenge",
+      // Every message answers the one before it, so the tag is present on all
+      // sixty, and the reply always resolves.
+      ...(i > 0 ? { in_reply_to: i } : {}),
+      body: `message ${i}`,
+    }));
+    v.chat.appendMessages(messages);
+    await v.renderOnce();
+
+    v.chat.setFilter("a");
+    await v.renderOnce();
+    const afterFirstFilter = registry().size;
+
+    for (let i = 0; i < 12; i += 1) {
+      v.chat.setFilter(i % 2 === 0 ? null : "a");
+    }
+    await v.renderOnce();
+
+    expect(registry().size).toBeLessThanOrEqual(afterFirstFilter);
+    v.destroy();
+  });
+
   test("filtering back and forth does not accumulate rows", async () => {
     const v = await view();
     v.chat.setRoster([

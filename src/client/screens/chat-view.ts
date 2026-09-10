@@ -37,6 +37,12 @@ export class ChatView {
   private readonly scroll: ScrollBoxRenderable;
   private readonly ctx: RenderContext;
   private rosterById = new Map<string, RosterEntry>();
+  /**
+   * Every message seen so far, by `seq`, so a reply pointer can name its
+   * parent. Kept here rather than in `Transcript` because the roster — the
+   * thing that turns an id into a name — is here too.
+   */
+  private messagesBySeq = new Map<number, MessageEnvelope>();
   private rows: Renderable[] = [];
   private readonly rosterVisible: boolean;
 
@@ -112,11 +118,23 @@ export class ChatView {
 
   appendMessages(messages: MessageEnvelope[]): void {
     for (const message of messages) {
+      // Resolved before this message is recorded, so a pointer can only ever
+      // name an *earlier* turn — the log is append-only and the parent is
+      // always already here. That is what lets a tag be known when the row is
+      // built and keeps rendering incremental: no drawn row is ever amended.
+      const parent =
+        message.in_reply_to === undefined ? undefined : this.messagesBySeq.get(message.in_reply_to);
+      const replyTo =
+        parent === undefined
+          ? undefined
+          : { name: this.rosterById.get(parent.from)?.name ?? parent.from, body: parent.body };
       this.appendEntry({
         kind: "message",
         message,
         fromName: this.rosterById.get(message.from)?.name ?? message.from,
+        ...(replyTo === undefined ? {} : { replyTo }),
       });
+      this.messagesBySeq.set(message.seq, message);
     }
   }
 
@@ -206,6 +224,7 @@ export class ChatView {
             // changed.
             showHeader: this.transcript.startsRun(index),
             separate,
+            ...(entry.replyTo === undefined ? {} : { replyTo: entry.replyTo }),
           });
 
     this.rows.push(row);
