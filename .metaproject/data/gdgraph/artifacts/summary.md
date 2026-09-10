@@ -5,8 +5,8 @@
 - Source files indexed: 102
 - Imported asset files indexed: 0
 - Total nodes: 102
-- Edges: 187
-- Import edges: 187
+- Edges: 188
+- Import edges: 188
 - Asset edges: 0
 - Unresolved imports: 0
 - Import resolution: 100%
