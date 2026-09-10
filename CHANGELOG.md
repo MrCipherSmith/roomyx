@@ -8,6 +8,80 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com). Versions
 are [semantic](https://semver.org), with the `0.x` convention that breaking
 changes land in the minor position.
 
+## [Unreleased]
+
+Everything below is a defect that 0.6.0's own fixes introduced, or a
+verification claim about them that turned out to be false. Both classes were
+found by review rounds run *against the fixes* rather than against the code
+they fixed — the class that is systematically under-found, because a fix
+arrives framed as an answer and gets read as one. Full record in
+[`docs/roomyx/fix-round-2026-09-09.md`](docs/roomyx/fix-round-2026-09-09.md).
+
+### Fixed — regressions 0.6.0 introduced
+
+- **`roomyx mcp` worked once and then went dead.** The idle session sweeper
+  reasoned from roomyx's own TUI, which polls every second, and applied that to
+  clients whose next call comes when a model decides to. Measured: connect, call
+  a tool, idle 95 seconds, and the next call fails permanently — the SDK client
+  never clears its session id on a 404 and never re-initialises. Eviction is
+  one-way, so the window now means *certainly* gone, not probably.
+- **A persistent tool error was appended to the transcript once per poll** —
+  about eighty identical lines a minute, each allocating a renderable that was
+  never freed, which is the pool exhaustion 0.6.0 fixed elsewhere arriving
+  through a different door. Reported once per distinct message now.
+- **A request carrying no session id still minted an untracked transport.** The
+  404 added in 0.6.0 closed the half where a *wrong* id was supplied and the
+  comment claimed both. (The unbounded memory growth this was filed under does
+  not reproduce — 400 such requests retain the same heap either way. The
+  mechanism was real; the leak was not.)
+- **A stopped client could not be restarted.** `stop()` cancelled the pending
+  reconnect but left the handle set, and that handle is the single-flight token.
+- **Every transcript export was refused in a container with no working
+  directory.** The containment check compared a value to the expression that had
+  produced it, and its other half inverted at the filesystem root — so the
+  message said the working directory had been escaped when nothing had.
+
+### Fixed — the rest of the review
+
+- `--acknowledge-non-loopback` binds a host the rebinding guard will now accept.
+  It bound the address and then refused every request arriving at it.
+- The unknown-session 404 is Host- and Origin-checked like every other response.
+- `roomyx.rooms.list` no longer prunes the registry, so the MCP surface only
+  reads. It is a network-triggered write with a load-sensitive 500 ms probe
+  behind it.
+- Liveness identifies the room. `room.get_state` carries `log_path` and the
+  probe compares it, so a recycled port can no longer resurrect a dead room. A
+  server without the field is treated as *not shown to be a different room*,
+  because wrongly pruning a live room costs more than keeping a stale one.
+- `roomyx init` no longer clobbers a hand-edited staged skill; the duplicate
+  `ManagementServeOptions` is gone; `--toString` is refused like any other
+  unknown flag; the search counter no longer prints `0/N`.
+
+### Fixed — tests that were not holding what they claimed
+
+Found by mutation: remove the fix, require the test to fail.
+
+- The first-message fix, the client's shutdown ordering, the roster
+  skip-rebuild, the client's session release, and the server's shutdown
+  re-entry guard **all survived their own deletion** with the suite green. Each
+  is pinned now, and each pin was itself checked by mutation.
+- Two testable units came out of code no test could reach — `runClient` and
+  `cli.ts` both refuse to be imported — so the ordering and the re-entry guard
+  are asserted directly rather than inferred from a subprocess.
+- A raw NUL byte made one test file binary to git and invisible to ripgrep, so
+  the project's own mandated search path reported a fix as untested.
+- Fixed sleeps standing in for conditions are predicate waits, through one
+  shared helper. The four that remain are two hang detectors and two assertions
+  about absence, where a duration is the right instrument.
+
+### Known
+
+- **Neither reconnect mechanism is pinned by a test.** The generation counter
+  and the single-flight check can both be deleted with the suite green, and the
+  test written to close that gap does not: the full pre-fix shape passes it. It
+  is kept for a cheap invariant and labelled in its own header as *not* a
+  barrier, because a test that reads as one and is not is worse than none.
+
 ## [0.6.0] — 2026-09-09
 
 Two passes over the published 0.5.0: running it by hand and putting ten
