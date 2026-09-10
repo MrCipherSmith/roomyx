@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { messageLineSchema, stateLineSchema } from "./schema";
-import type { AgentDetail, MessageEnvelope, RoomState, RosterEntry } from "./types";
+import type { AgentDelta, AgentDetail, MessageEnvelope, RoomState, RosterEntry } from "./types";
 
 /**
  * `JSON.parse`, with the one thing it never says: where.
@@ -97,4 +97,50 @@ export function getAgentDetail(
   const own = messages.filter((m) => m.from === agentId);
   const lastSeenSeq = own.length > 0 ? Math.max(...own.map((m) => m.seq)) : 0;
   return { found: true, agent, messages: own, lastSeenSeq };
+}
+
+/**
+ * The messages a participant has not seen, and the cursor that says so.
+ *
+ * This is the arithmetic the dispatcher re-derived in its own context on every
+ * turn — the phrase in the bundled skill is "everything since your last turn" —
+ * moved into the server that already knows how to compute it: `getAgentDetail`
+ * has always reported `lastSeenSeq` as the maximum of an agent's own `seq`.
+ *
+ * Two rules, and the second is the one that survives an explicit cursor:
+ *
+ * 1. The default cursor is that maximum, and the delta is `seq > cursor`.
+ * 2. Its own messages are excluded **at any cursor** — an agent does not need to
+ *    be told what it said. With `sinceSeq: 0` this is the only rule doing work.
+ *
+ * Stateless on purpose. A cursor the server stored would belong to one server
+ * instance, and `serveMcpOverHttp` builds one per session (the lesson flow 005
+ * paid for); deriving it from the log on every call is what makes the answer
+ * shareable without any state at all.
+ *
+ * **What this is not:** a record of what was delivered. The convention is a
+ * good guess at what a participant has not seen, and a dispatcher may have
+ * failed to send a delta or sent one twice. `cursor_from` names which cursor was
+ * used so the guess is visible rather than implied.
+ */
+export function getAgentDelta(
+  messages: MessageEnvelope[],
+  roster: RosterEntry[],
+  agentId: string,
+  sinceSeq?: number,
+): AgentDelta {
+  const agent = roster.find((r) => r.id === agentId);
+  if (!agent) return { found: false };
+
+  const own = messages.filter((m) => m.from === agentId);
+  const lastOwnSeq = own.length > 0 ? Math.max(...own.map((m) => m.seq)) : 0;
+  const since = sinceSeq ?? lastOwnSeq;
+
+  return {
+    found: true,
+    agent,
+    messages: messages.filter((m) => m.seq > since && m.from !== agentId),
+    since_seq: since,
+    cursor_from: sinceSeq === undefined ? "agent-last-message" : "caller",
+  };
 }

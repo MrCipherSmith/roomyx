@@ -60,6 +60,27 @@ export interface RoomState {
   dispatcherAttached?: boolean;
 }
 
+/**
+ * What a participant has not seen, according to the convention the dispatcher
+ * used to apply by hand: everything after that participant's own last message,
+ * excluding its own.
+ *
+ * `cursor_from` is not decoration. The server knows the convention; it does
+ * **not** know what was delivered to anyone — a dispatcher may have failed to
+ * send, or sent twice — and a caller must not have to guess which of the two
+ * produced the cursor it is looking at.
+ */
+export type AgentDelta =
+  | {
+      found: true;
+      agent: RosterEntry;
+      messages: MessageEnvelope[];
+      /** The cursor this delta was computed from. */
+      since_seq: number;
+      cursor_from: "agent-last-message" | "caller";
+    }
+  | { found: false };
+
 export type AgentDetail =
   | { found: true; agent: RosterEntry; messages: MessageEnvelope[]; lastSeenSeq: number }
   | { found: false };

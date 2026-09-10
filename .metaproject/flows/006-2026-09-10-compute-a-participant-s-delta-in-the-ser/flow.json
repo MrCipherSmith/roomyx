@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 2,
+  "gates": {
+    "tasks": true,
+    "review": true
+  },
+  "id": "006",
+  "slug": "compute-a-participant-s-delta-in-the-ser",
+  "title": "Compute a participant's delta in the server, so the dispatcher stops carrying the cursor map (D-18 item 5)",
+  "status": "in-progress",
+  "createdAt": "2026-09-10T13:00:15.965Z",
+  "updatedAt": "2026-09-10T13:00:51.136Z",
+  "source": {
+    "type": "description",
+    "ref": null
+  },
+  "acChecksum": "sha256:f16783d868f8326c38734a93a3e3d045bfc499af8070e0681133d41f63660432",
+  "acConfirmed": {},
+  "pr": {
+    "url": null
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Collect remaining context",
+      "kind": "context",
+      "origin": "scaffold",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "completed"
+    },
+    {
+      "id": "T2",
+      "title": "Implement per plan",
+      "kind": "implement",
+      "origin": "scaffold",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T3",
+      "title": "Add/adjust tests and make them pass",
+      "kind": "test",
+      "origin": "scaffold",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T4",
+      "title": "Self-review and prepare draft PR",
+      "kind": "review",
+      "origin": "scaffold",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T5",
+      "title": "End to end over a real MCP client: each fixture participant's delta, and the description as a client receives it",
+      "kind": "test",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T6",
+      "title": "CHANGELOG and version per D-13; the tool description must not overclaim delivery",
+      "kind": "docs",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-10T13:00:15.965Z",
+      "event": "created"
+    },
+    {
+      "at": "2026-09-10T13:00:49.705Z",
+      "event": "task-added",
+      "detail": "T5: End to end over a real MCP client: each fixture participant's delta, and the description as a client receives it"
+    },
+    {
+      "at": "2026-09-10T13:00:50.072Z",
+      "event": "task-added",
+      "detail": "T6: CHANGELOG and version per D-13; the tool description must not overclaim delivery"
+    },
+    {
+      "at": "2026-09-10T13:00:50.396Z",
+      "event": "frozen",
+      "detail": "8 criteria; checksum recorded"
+    },
+    {
+      "at": "2026-09-10T13:00:50.748Z",
+      "event": "started"
+    },
+    {
+      "at": "2026-09-10T13:00:51.136Z",
+      "event": "task-done",
+      "detail": "T1: Collect remaining context"
+    }
+  ]
+}
