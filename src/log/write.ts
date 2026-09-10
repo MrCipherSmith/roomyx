@@ -20,6 +20,7 @@ function describeInvalid(error: z.ZodError): string {
       const field = issue.path.join(".") || "message";
       if (field === "kind") return `kind must be one of: ${LEGAL_KINDS}`;
       if (field === "in_reply_to") return "in-reply-to must be a whole number of at least 1";
+      if (field === "change") return issue.message;
       return `${field}: ${issue.message}`;
     })
     .join("; ");
@@ -47,6 +48,8 @@ export interface AppendMessageOptions {
   body: string;
   kind?: MessageEnvelope["kind"];
   inReplyTo?: number;
+  /** Required by the edit kinds, refused on everything else — enforced by the schema. */
+  change?: MessageEnvelope["change"];
 }
 
 /** Refuses to overwrite: a room log is append-only, and clobbering one loses a session. */
@@ -135,6 +138,7 @@ function buildMessage(seq: number, options: AppendMessageOptions): MessageEnvelo
     body: options.body,
     ...(options.kind ? { kind: options.kind } : {}),
     ...(options.inReplyTo !== undefined ? { in_reply_to: options.inReplyTo } : {}),
+    ...(options.change !== undefined ? { change: options.change } : {}),
   };
 }
 
@@ -144,14 +148,13 @@ function validate(message: MessageEnvelope & { type: "message" }): void {
 }
 
 function writeMessage(path: string, options: AppendMessageOptions): MessageEnvelope & { type: "message" } {
-  const message: MessageEnvelope & { type: "message" } = {
-    type: "message",
-    seq: nextSeq(path),
-    from: options.from,
-    body: options.body,
-    ...(options.kind ? { kind: options.kind } : {}),
-    ...(options.inReplyTo !== undefined ? { in_reply_to: options.inReplyTo } : {}),
-  };
+  // The envelope is assembled by `buildMessage`, the same function the batch path
+  // uses. It used to be assembled here too, inline, and the two copies had
+  // already drifted once: this one silently dropped `change`, so an edit appended
+  // one message at a time was written without the thing that makes it an edit —
+  // a valid message by the schema, and therefore accepted, and therefore a change
+  // nobody would ever apply.
+  const message = buildMessage(nextSeq(path), options);
 
   // Validated against the reader's own schema, before the write rather than
   // after it. The log is append-only and roomyx ships no repair command, so a

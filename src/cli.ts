@@ -109,7 +109,7 @@ function bodyFromFile(file: string): string {
   return raw.replace(/\r?\n$/, "");
 }
 
-const ENVELOPE_KEYS = ["from", "body", "kind", "in_reply_to"] as const;
+const ENVELOPE_KEYS = ["from", "body", "kind", "in_reply_to", "change"] as const;
 
 /**
  * Parses one envelope, refusing keys that would silently vanish.
@@ -135,7 +135,7 @@ function envelopeFrom(text: string): AppendMessageOptions {
       throw new ArgError(`--json has an unknown key "${key}". Allowed: ${ENVELOPE_KEYS.join(", ")}.`);
     }
   }
-  const { from, body, kind, in_reply_to: inReplyTo } = envelope;
+  const { from, body, kind, in_reply_to: inReplyTo, change } = envelope;
   if (typeof from !== "string" || from === "") throw new ArgError('--json needs a non-empty "from".');
   if (typeof body !== "string") throw new ArgError('--json needs a string "body".');
   if (kind !== undefined && (typeof kind !== "string" || !(MESSAGE_KINDS as readonly string[]).includes(kind))) {
@@ -144,11 +144,20 @@ function envelopeFrom(text: string): AppendMessageOptions {
   if (inReplyTo !== undefined && (typeof inReplyTo !== "number" || !Number.isInteger(inReplyTo) || inReplyTo < 1)) {
     throw new ArgError('--json "in_reply_to" must be a whole number of at least 1.');
   }
+  // The change is passed through unexamined here and validated where the rule
+  // lives (the log's own schema, imported by the writer). Re-checking its shape
+  // in the CLI would be a second copy of a rule the log already owns — and the
+  // two copies would drift, which is the failure `src/log/schema.ts` exists to
+  // make impossible.
+  if (change !== undefined && (typeof change !== "object" || change === null)) {
+    throw new ArgError('--json "change" must be an object.');
+  }
   return {
     from,
     body,
     kind: kind as MessageEnvelope["kind"],
     inReplyTo: inReplyTo as number | undefined,
+    change: change as MessageEnvelope["change"],
   };
 }
 

@@ -410,6 +410,38 @@ record; every subsequent line is a `message` record.
 - `roster` entries are `{ id, name }` — `id` is what `room.get_agent_detail`
   takes as `agent_id`; `name` is the display name used in `from`.
 
+### Edits: how a room's state changes
+
+The first line is a room's **original** state and it is never rewritten — the log
+is append-only, and it cannot be followed by a second `state` line either, because
+every line after the first must be a `message`. So an edit is a **message**:
+
+```jsonl
+{"type":"message","seq":5,"from":"owner","kind":"goal_edit","body":"raise the pass mark to 85","change":{"type":"goal_contract","goal_contract":{"version":1,"goal_statement":"...","criteria":"...","threshold":{"fail_below":60,"pass_at_or_above":85}}}}
+{"type":"message","seq":6,"from":"owner","kind":"add_participant","body":"adding Omar","change":{"type":"roster","add":[{"id":"omar","name":"Омар"}]}}
+```
+
+- `change` is **optional**, so every message written by an earlier version still
+  validates. It is present only on the two edit kinds, and its `type` must match
+  the kind: `goal_edit` carries a `goal_contract`, `add_participant` carries
+  `roster`.
+- **What a room reads as** is its first line *folded* with every edit, in `seq`
+  order, last one winning. That is what `room.get_state` returns. The file keeps
+  the original contract — the fold is an interpretation, never a rewrite — so a
+  transcript stays exactly as it was written.
+- An edit is also an ordinary message, so it appears in the transcript: this
+  project puts state changes in the transcript as text precisely so a person can
+  see what happened, rather than having it land in a record nobody reads.
+- A `goal_edit` with no `change` is a **valid message that simply is not an
+  edit** — the fold ignores it, and nothing about it is an error. Whether an edit
+  kind *should* carry its change is a rule about applying a message, not about the
+  message being well-formed, and an ill-formed line would make a room unreadable
+  forever (the log has no repair command). A `change` whose `type` does not match
+  its kind **is** ill-formed, and the writer refuses it.
+- The body of an edit is prose (`"raise the pass mark to 85"`), not JSON: the
+  transcript is what a person reads, and the structure travels beside it in
+  `change`.
+
 This format is this package's own design choice, not dictated by either JSON
 Schema: the specification defers the on-disk representation to implementation,
 and the schemas describe one message and one goal contract, not the log file as
