@@ -88,3 +88,9 @@ Known section.
 - 2026-09-10T04:44:36.071Z - implemented: draft PR: https://github.com/MrCipherSmith/roomyx/pull/1 (warning: PR is not a draft)
 - 2026-09-10T04:44:36.326Z - completing
 - 2026-09-10T04:44:40.277Z - completion-failed: review: 1 of 5 conditions failed — head-commit (violated): the latest round ran against 20646ab261d54edc6f69e0919d7d0f3deefbae2c, but the PR head is cd214973fc31d0c54264e55dc73c487d0c1bd4db. A clean round against a stale SHA proves nothing about what will merge — re-run the round. The round cap (3) is reached with the gate unsatisfied: the flow stays in-progress and the decision is the operator's. Completing here would reintroduce the leak this gate closes.
+- 2026-09-10T04:46:36.295Z - implemented: draft PR: https://github.com/MrCipherSmith/roomyx/pull/2 (warning: PR is not a draft)
+- 2026-09-10T04:46:36.571Z - completing
+- 2026-09-10T04:46:40.278Z - completion-failed: review: 1 of 5 conditions failed — external-comments (unobserved): the external-comment collection did not run: nothing records whether anyone commented on MrCipherSmith/roomyx#2 (`.metaproject/reviews/pr-comments/MrCipherSmith__roomyx__2.json` does not exist). Zero collected comments and no collection at all are different facts, and only one of them is clean. Run `keryx review comments collect --repo MrCipherSmith/roomyx --pr 2 --sha <pr-head>`, or inject `FlowServiceDeps.externalCommentsGate` with a collector of your own. The round cap (3) is reached with the gate unsatisfied: the flow stays in-progress and the decision is the operator's. Completing here would reintroduce the leak this gate closes.
+- 2026-09-10T04:46:52.606Z - implemented: draft PR: https://github.com/MrCipherSmith/roomyx/pull/2 (warning: PR is not a draft)
+- 2026-09-10T04:46:52.730Z - completing
+- 2026-09-10T04:46:56.131Z - done: all gates passed
