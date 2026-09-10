@@ -97,6 +97,14 @@ export function appendMessages(
     const base = nextSeq(path);
     const built = batch.map((options, index) => buildMessage(base + index, options));
     for (const message of built) validate(message);
+    // All-or-nothing covers every failure this function can SEE: a bad envelope
+    // in the batch throws before the first byte. It does NOT cover an I/O failure
+    // partway through the appends below — a full disk or a signal mid-loop leaves
+    // the earlier lines written. Making that atomic would mean writing a
+    // temporary file and renaming it, which the append-only contract rules out:
+    // the log is appended to in place by design, and a rename would replace the
+    // file a live reader has open. Stated rather than left implied, because
+    // "atomic" without a stated bound is the claim a later reader would trust.
     for (const message of built) appendFileSync(path, JSON.stringify(message) + "\n");
     return built;
   });
