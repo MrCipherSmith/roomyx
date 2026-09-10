@@ -2,6 +2,9 @@
   "eslint.config.js": [
     "eslint.config.js"
   ],
+  "scripts": [
+    "scripts/soak.ts"
+  ],
   "cli.ts": [
     "src/cli.ts"
   ],

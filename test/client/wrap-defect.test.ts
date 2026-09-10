@@ -27,6 +27,14 @@ import { ChatView } from "../../src/client/screens/chat-view";
  * not eating the column (the loss happens with three messages and no scrollbar
  * exactly as with sixteen), and it is not simply narrow terminals (120 columns
  * is clean while 90 is not).
+ *
+ * **It is not synthetic.** `scripts/replay.ts` plays a real recorded room —
+ * `docs/roomyx/screenshots/review-room.jsonl`, nine messages from an actual
+ * review — through the real view and sweeps every frame. At width 80, the most
+ * ordinary terminal width there is, the word `continuation` never appears
+ * whole: only `continuatio`. At 60, 100 and 140 it is intact. So a reader on a
+ * default terminal loses characters out of real sentences, which is a stronger
+ * statement than the constructed case below and was worth finding.
  */
 const BODY =
   "Mira's right and I'll take the correction. The footer isn't the thing that entrenches the keymap — " +
