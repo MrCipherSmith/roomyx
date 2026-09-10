@@ -81,11 +81,13 @@ describe("a persistent fault does not accelerate the client", () => {
     dirs.push(dir);
     const logPath = join(dir, "room.jsonl");
     createRoomLog(logPath, { goalStatement: "rate", roster: [{ id: "a", name: "Ann" }] });
-    // A line the reader's schema refuses: the connection is healthy and the
-    // tool call is not, which is the shape the defect needed.
-    appendFileSync(logPath, `${JSON.stringify({ type: "message", seq: 1, from: "", body: "broken" })}\n`);
-
     handle = await serve(logPath, { port: 0 });
+    // A line the reader's schema refuses: the connection is healthy and the
+    // tool call is not, which is the shape the defect needed. Appended after
+    // the server is up, because `serve` no longer starts on a log it cannot
+    // read — and a room damaged mid-flight is the case that guard cannot cover
+    // anyway, so this is the truer setup.
+    appendFileSync(logPath, `${JSON.stringify({ type: "message", seq: 1, from: "", body: "broken" })}\n`);
     const proxy = countingProxy(handle.url);
     try {
       client = new RoomClient({ url: proxy.url, stateIntervalMs: 100, transcriptIntervalMs: 100 }, {});
