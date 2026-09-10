@@ -62,7 +62,9 @@ export function createManagementMcpServer(options: ManagementOptions): McpServer
         // visits could drive it cross-origin. The CLI keeps the literal-path
         // escape hatch, because that is the operator on their own machine;
         // the network surface does not get one.
-        target: z.enum([...NAMED_TARGETS, "all"]).describe("A runtime by name, or `all`."),
+        // `"all"` leads so the tuple has a known element at position 0 —
+        // NAMED_TARGETS is built from the runtime table and is a plain array.
+        target: z.enum(["all", ...NAMED_TARGETS] as [string, ...string[]]).describe("A runtime by name, or `all`."),
       },
     },
     // No `yes`, and no `dryRun`. `yes` is what D-02's overwrite guard turns

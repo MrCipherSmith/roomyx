@@ -72,12 +72,66 @@ interface Command {
 
 const COMMANDS: Record<string, Command> = {
   init: {
-    usage: "roomyx init",
-    summary: "scaffold .roomyx/ in this project",
-    flags: {},
-    run: async () => {
-      const result = init({ cwd: process.cwd(), bundledSkillPath: bundledSkillPath() });
+    usage: "roomyx init [flags]",
+    summary: "scaffold .roomyx/, then set up skills, MCP and git for this project",
+    notes:
+      "Interactive when the terminal allows it: tick what you want, see every\n  path before agreeing to it, and nothing is written until you submit.\n  Through a pipe or in CI it scaffolds .roomyx/ and asks nothing, so it can\n  never hang waiting for a keypress nobody is there to make.",
+    flags: {
+      yes: { type: "boolean", describe: "Apply the default selection without asking" },
+      "no-interactive": { type: "boolean", describe: "Scaffold .roomyx/ only" },
+    },
+    run: async ({ flags }) => {
+      const cwd = process.cwd();
+      const result = init({ cwd, bundledSkillPath: bundledSkillPath() });
       console.log(result.created ? `Created ${result.roomyxDir}` : `${result.roomyxDir} already initialized`);
+
+      const { buildPlan, selectedItems } = await import("./installer/init-plan");
+      const { applyPlan } = await import("./installer/init-apply");
+
+      const plan = buildPlan({ cwd });
+      // A terminal on both ends or nothing to ask. `--yes` overrides, because
+      // a script that has decided already should not be refused for lacking a
+      // tty — but the default must never block a pipeline on a prompt.
+      const interactive = process.stdout.isTTY === true && process.stdin.isTTY === true;
+      if (flags["no-interactive"] === true || (!interactive && flags.yes !== true)) {
+        console.log("");
+        console.log("Nothing else was written. To install the skill and register the MCP server:");
+        console.log("  roomyx init --yes          # the default selection, no prompt");
+        console.log("  roomyx init                # pick, in a terminal");
+        return;
+      }
+
+      let chosen = plan;
+      if (flags.yes !== true) {
+        const { runInitPicker } = await import("./client/init-screen");
+        const picked = await runInitPicker(plan);
+        if (picked === null) {
+          console.log("Cancelled — nothing else was written.");
+          return;
+        }
+        chosen = picked;
+      }
+
+      const results = applyPlan(selectedItems(chosen), {
+        cwd,
+        bundledSkillPath: bundledSkillPath(),
+        configPath: join(cwd, ".roomyx", "config.json"),
+      });
+
+      console.log("");
+      for (const line of results) {
+        console.log(`${line.ok ? "  ok " : "  !! "} ${line.label}`);
+        console.log(`       ${line.path} — ${line.message}`);
+      }
+
+      const failed = results.filter((line) => !line.ok).length;
+      if (failed > 0) console.log(`\n${failed} item(s) failed. Everything else was applied.`);
+      if (results.some((line) => line.ok && line.id.startsWith("skill:"))) {
+        // The one thing an operator reliably forgets, and the symptom is
+        // "roomyx installed the skill and my agent still cannot see it".
+        console.log("\nRestart your agent — skills are discovered at startup.");
+      }
+      console.log("\nNext: roomyx room new .roomyx/rooms/logs/<name>.jsonl --goal \"<what the room is for>\"");
     },
   },
 
@@ -289,6 +343,7 @@ const COMMANDS: Record<string, Command> = {
     summary: "start the management MCP server",
     notes: "Default port 4320, so it does not collide with `roomyx serve`.",
     flags: {
+      stdio: { type: "boolean", describe: "Speak MCP over stdin/stdout instead of HTTP (what an MCP client spawns)" },
       port: { type: "number", describe: "Listen port (default 4320; 0 picks an ephemeral one)" },
       host: { type: "string", describe: "Bind address (default 127.0.0.1)" },
       "acknowledge-non-loopback": { type: "boolean", describe: "Required to bind a non-loopback host" },
@@ -296,18 +351,36 @@ const COMMANDS: Record<string, Command> = {
       config: { type: "string", describe: "Config file (default .roomyx/config.json)" },
     },
     run: async ({ flags }) => {
-      const handle = await serveManagement(
-        {
-          registryPath: typeof flags.registry === "string" ? flags.registry : defaultRegistryPath(),
-          bundledSkillPath: bundledSkillPath(),
-          configPath: typeof flags.config === "string" ? flags.config : defaultConfigPath(),
-        },
-        {
-          port: typeof flags.port === "number" ? flags.port : undefined,
-          host: typeof flags.host === "string" ? flags.host : undefined,
-          acknowledgeNonLoopback: flags["acknowledge-non-loopback"] === true,
-        },
-      );
+      const managementOptions = {
+        registryPath: typeof flags.registry === "string" ? flags.registry : defaultRegistryPath(),
+        bundledSkillPath: bundledSkillPath(),
+        configPath: typeof flags.config === "string" ? flags.config : defaultConfigPath(),
+      };
+
+      if (flags.stdio === true) {
+        // The transport an MCP client actually wants: it spawns the process and
+        // owns its lifetime, so there is no port to pick, nothing to leave
+        // running, and no registration that points at something not started
+        // yet. This is what `roomyx init` writes into `.mcp.json`.
+        //
+        // **Nothing may be printed to stdout here** — stdout is the protocol
+        // channel, and one stray line of greeting is a parse error at the far
+        // end. The HTTP branch below prints because it has a stdout to itself.
+        const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
+        const { createManagementMcpServer } = await import("./mcp-management/server");
+        const server = createManagementMcpServer(managementOptions);
+        await server.connect(new StdioServerTransport());
+        // The client closes the pipe when it is done; there is no port to
+        // release, so the signal handlers the HTTP branch installs would have
+        // nothing to do.
+        return;
+      }
+
+      const handle = await serveManagement(managementOptions, {
+        port: typeof flags.port === "number" ? flags.port : undefined,
+        host: typeof flags.host === "string" ? flags.host : undefined,
+        acknowledgeNonLoopback: flags["acknowledge-non-loopback"] === true,
+      });
 
       console.log(`roomyx mcp listening at ${handle.url}`);
       console.log("tools: roomyx.rooms.list, roomyx.skills.sync");
@@ -317,7 +390,7 @@ const COMMANDS: Record<string, Command> = {
   },
 
   "skills sync": {
-    usage: "roomyx skills sync --target <claude|codex|keryx|all|path> [flags]",
+    usage: "roomyx skills sync --target <runtime|all|path> [flags]",
     summary: "install the bundled startup-room skill",
     notes:
       "Without --yes nothing is written: the run reports what it would do and\n  stops. D-02 — landing on a real skill file is a deliberate act, not a\n  side effect of the mechanism existing.",

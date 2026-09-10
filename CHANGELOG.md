@@ -13,6 +13,55 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.7.0] — 2026-09-10
+
+A minor, because two things an existing caller relied on changed. The feature is
+that `roomyx init` now finishes the job instead of leaving you a staged file no
+runtime reads.
+
+### Changed — breaking
+
+- **`roomyx skills sync --target all` now writes nine files, not three.** The
+  runtime table grew: Cursor and Grok were added, and every one of the four
+  agents now has a project-scoped location as well as a user-scoped one. `all`
+  genuinely means all, so a caller who typed it before now reaches more places.
+  If you wanted the old set, name them: `--target claude`, `--target codex`,
+  `--target keryx`.
+- **`roomyx init` is interactive on a terminal.** It used to scaffold `.roomyx/`
+  and exit. It still does exactly that through a pipe, in CI, or with
+  `--no-interactive` — so nothing scripted changes — but on a terminal it now
+  shows what it can do and waits for you to pick.
+
+### Added
+
+- **An init picker.** Skill targets for Claude Code, Codex, Cursor, Grok and
+  keryx, at both scopes, each showing the exact path it would write. Arrows or
+  `j`/`k` move, Space ticks, Enter installs, `q` cancels. Nothing is written
+  until you submit. Boxes start ticked only where the answer is not in doubt —
+  a runtime whose directory exists on this machine, a project that already uses
+  that runtime — because a default tick must never surprise you with a file.
+- **Three more things init offers**, all opt-out in the same list: the room-log
+  directory `config.json` has named since the first release and nothing ever
+  created; `.gitignore` lines for the registry and lockfiles (the room logs are
+  deliberately *not* ignored — the transcript is the point); and registration of
+  the roomyx MCP server in `.mcp.json` and `.cursor/mcp.json`.
+- **`roomyx mcp --stdio`.** The transport an MCP client actually spawns. This is
+  what init registers: an HTTP URL would name a port nothing is listening on
+  until you remember to start a server, so the registration would be broken by
+  default. Over stdio the client owns the lifetime and there is no port.
+
+### Fixed
+
+- **`roomyx init` no longer leaves you with a skill nothing can see.** The
+  staged copy under `.roomyx/skills/` is not a directory any runtime scans, and
+  installing was a separate command nothing pointed at. Reported from a real
+  install: package installed, `init` run, agent still blind.
+- Two list-rendering defects found by the tests while writing them, both
+  width-dependent: the label column pushed the "replaces" warning off a
+  40-column pane, so a row about to overwrite a file read like a fresh install;
+  and a plan taller than the terminal drew the hint line through the bottom
+  border.
+
 ## [0.6.3] — 2026-09-10
 
 A patch: closed rooms are now remembered and can be reread. Purely additive —
