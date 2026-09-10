@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { SKILL_RUNTIMES } from "./skill-targets";
 import type { SkillRuntime } from "./skill-targets";
@@ -39,6 +40,7 @@ export interface PlanItem {
 
 export const GROUP_USER = "Skill — every project on this machine";
 export const GROUP_PROJECT = "Skill — this project only (travels with the repo)";
+export const GROUP_PERSONAS = "Persona library — a room is cast from these";
 export const GROUP_EXTRAS = "Also";
 
 export interface PlanContext {
@@ -47,7 +49,7 @@ export interface PlanContext {
   personaFiles?: number;
   /** Injectable so the tests never look at the operator's real home directory. */
   exists?: (path: string) => boolean;
-  /** Injectable for the same reason. */
+  /** Injectable so a test never writes into the operator's real home directory. */
   home?: string;
 }
 
@@ -85,24 +87,43 @@ export function buildPlan(context: PlanContext): PlanItem[] {
     });
   }
 
-  const personasDir = join(cwd, ".roomyx", "personas");
-  items.push({
-    id: "personas",
-    kind: "personas",
-    group: GROUP_EXTRAS,
-    label: "Persona library",
-    path: personasDir,
-    detail: personasDir,
-    // A room is built out of these, and without them the skill has nothing to
-    // cast. It lands in roomyx's own directory, so nobody is surprised to find
-    // it, and existing files are never overwritten.
-    selected: true,
-    done: exists(personasDir)
-      ? "already there — existing files are kept"
-      : context.personaFiles === undefined
-        ? undefined
-        : `${context.personaFiles} files`,
-  });
+  // Two scopes, the same shape as the skill rows above — and for the same
+  // reason. A copy in the project travels with the repository and is what a
+  // team shares; a copy under the home directory is there for every project on
+  // the machine, including throwaway ones. The skill prefers the project copy
+  // and falls back to the home one, which is the order every runtime already
+  // uses for skills.
+  const homeDir = context.home ?? homedir();
+  const personaScopes: [string, string, string, boolean][] = [
+    [
+      "personas:user",
+      "For every project",
+      join(homeDir, ".roomyx", "personas"),
+      // Not ticked by default. The project copy is the one the skill prefers and
+      // the one that travels with the repo; a second copy under the home
+      // directory is convenience, and 87 files appearing in a directory the
+      // operator did not know existed is the surprise the tick rule forbids.
+      false,
+    ],
+    ["personas:project", "In this project", join(cwd, ".roomyx", "personas"), true],
+  ];
+
+  for (const [id, label, path, ticked] of personaScopes) {
+    items.push({
+      id,
+      kind: "personas",
+      group: GROUP_PERSONAS,
+      label,
+      path,
+      detail: path,
+      selected: ticked && !exists(path),
+      done: exists(path)
+        ? "already there — existing files are kept"
+        : context.personaFiles === undefined
+          ? undefined
+          : `${context.personaFiles} files`,
+    });
+  }
 
   const logsDir = join(cwd, ".roomyx", "rooms", "logs");
   items.push({
