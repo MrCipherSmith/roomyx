@@ -1,0 +1,274 @@
+{
+  "schemaVersion": 1,
+  "scope": "blast-radius",
+  "depth": 2,
+  "maxFiles": 40,
+  "changedFiles": [
+    ".metaproject/data/gdgraph/artifacts/module-map.json",
+    ".metaproject/data/gdgraph/artifacts/summary.md",
+    ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/acceptance-criteria.md",
+    ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/context.md",
+    ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/description.md",
+    ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/flow.json",
+    ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/journal.md",
+    ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/plan.md",
+    ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/reviews/pr-body.md",
+    ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/reviews/target.diff",
+    ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/tasks.md",
+    "CHANGELOG.md",
+    "docs/roomyx/decisions.md",
+    "docs/roomyx/improvement-backlog.md",
+    "package.json",
+    "src/client/components/message-row.ts",
+    "src/client/screens/chat-view.ts",
+    "src/client/transcript.ts",
+    "test/client/message-row.test.ts",
+    "test/client/renderable-lifetime.test.ts",
+    "test/client/reply-pointer-real-log.test.ts"
+  ],
+  "files": [
+    {
+      "file": "src/client/viewer.ts",
+      "hop": 1,
+      "fanIn": 2,
+      "via": "src/client/screens/chat-view.ts",
+      "path": [
+        "src/client/viewer.ts",
+        "src/client/screens/chat-view.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "scripts/replay.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/client/screens/chat-view.ts",
+      "path": [
+        "scripts/replay.ts",
+        "src/client/screens/chat-view.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "scripts/soak.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/client/screens/chat-view.ts",
+      "path": [
+        "scripts/soak.ts",
+        "src/client/screens/chat-view.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "test/client/first-message.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/client/screens/chat-view.ts",
+      "path": [
+        "test/client/first-message.test.ts",
+        "src/client/screens/chat-view.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/help-overlay.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/client/screens/chat-view.ts",
+      "path": [
+        "test/client/help-overlay.test.ts",
+        "src/client/screens/chat-view.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/render.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/client/screens/chat-view.ts",
+      "path": [
+        "test/client/render.test.ts",
+        "src/client/screens/chat-view.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/roster-overflow.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/client/screens/chat-view.ts",
+      "path": [
+        "test/client/roster-overflow.test.ts",
+        "src/client/screens/chat-view.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/scroll.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/client/screens/chat-view.ts",
+      "path": [
+        "test/client/scroll.test.ts",
+        "src/client/screens/chat-view.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/transcript.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/client/transcript.ts",
+      "path": [
+        "test/client/transcript.test.ts",
+        "src/client/transcript.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/wrap-defect.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/client/screens/chat-view.ts",
+      "path": [
+        "test/client/wrap-defect.test.ts",
+        "src/client/screens/chat-view.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "src/client/index.ts",
+      "hop": 2,
+      "fanIn": 1,
+      "via": "src/client/screens/chat-view.ts",
+      "path": [
+        "src/client/index.ts",
+        "src/client/viewer.ts",
+        "src/client/screens/chat-view.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "test/client/read-only.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/client/screens/chat-view.ts",
+      "path": [
+        "test/client/read-only.test.ts",
+        "src/client/viewer.ts",
+        "src/client/screens/chat-view.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    }
+  ],
+  "dropped": [],
+  "unresolved": [
+    {
+      "file": ".metaproject/data/gdgraph/artifacts/module-map.json",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/data/gdgraph/artifacts/summary.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/acceptance-criteria.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/context.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/description.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/flow.json",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/journal.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/plan.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/reviews/pr-body.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/reviews/target.diff",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/tasks.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": "CHANGELOG.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": "docs/roomyx/decisions.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": "docs/roomyx/improvement-backlog.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": "package.json",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    }
+  ],
+  "counts": {
+    "changedFilesSeen": 21,
+    "changedFilesResolved": 6,
+    "changedFilesUnresolved": 15,
+    "candidates": 12,
+    "retained": 12,
+    "droppedByCap": 0,
+    "droppedByPreFilter": 0,
+    "relatedTestsAdded": 0,
+    "testsRetained": 8,
+    "hopHistogram": {
+      "1": 10,
+      "2": 2
+    }
+  },
+  "graph": {
+    "nodes": 97,
+    "edges": 176
+  }
+}

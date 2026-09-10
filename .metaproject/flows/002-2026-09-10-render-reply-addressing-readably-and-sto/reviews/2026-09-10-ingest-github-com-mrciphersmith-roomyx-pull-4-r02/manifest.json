@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "reviewId": "2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-4-r02",
+  "mode": "ingest",
+  "status": "draft",
+  "target": {
+    "kind": "report",
+    "ref": "https://github.com/MrCipherSmith/roomyx/pull/4",
+    "head": "1dd758132ab595324a7704155231686cd759eec0"
+  },
+  "artifacts": {
+    "scope": ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/reviews/2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-4-r02/scope.md",
+    "coverage": ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/reviews/2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-4-r02/coverage.md",
+    "report": ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/reviews/2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-4-r02/report.md",
+    "findings": ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/reviews/2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-4-r02/findings.json",
+    "learning": ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/reviews/2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-4-r02/learning.md",
+    "decisions": ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto/reviews/2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-4-r02/decisions.md"
+  },
+  "coverage": [
+    {
+      "reviewer": "review-orchestrator",
+      "status": "run",
+      "reason": "selected for managed review package"
+    }
+  ],
+  "filter_stats": {
+    "schema_version": 1,
+    "total": 4,
+    "dropped_prefilter": null,
+    "dropped_low_confidence": null,
+    "dropped_refuted": 0,
+    "dropped_scope_b": 4,
+    "dropped_findings_cap": 0,
+    "retained": 0,
+    "dismissed_by_round": null,
+    "by_reason": {
+      "scope_b:non-regression-severity": 4
+    },
+    "not_measured": [
+      {
+        "stage": "low_confidence",
+        "reason": "this pipeline has no confidence threshold: `confidence` is recorded on every finding and no stage filters on it. The field is declared because the roadmap names it, and reports `null` so that a threshold added later cannot be mistaken for one that had always dropped nothing."
+      },
+      {
+        "stage": "prefilter",
+        "reason": "no `--scope` was supplied to this ingest. Nothing ran, so nothing is known — this is NOT `dropped 0`."
+      },
+      {
+        "stage": "round_dismissed",
+        "reason": "the round recorded no dismissals channel (`--refuted` was not supplied). This is NOT `dismissed 0`: what survives to findings.json is then the survivors of an unlogged triage, which is why measuring such a corpus returns 100% precision by construction."
+      }
+    ]
+  },
+  "createdAt": "2026-09-10T10:03:28.206Z",
+  "updatedAt": "2026-09-10T10:03:28.206Z",
+  "flow": {
+    "id": "002",
+    "path": ".metaproject/flows/002-2026-09-10-render-reply-addressing-readably-and-sto"
+  }
+}
