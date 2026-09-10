@@ -1,6 +1,6 @@
 # roomyx — specification
 
-Version: 0.5.0
+Version: 0.7.2
 
 ## Module Identity
 

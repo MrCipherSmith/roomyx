@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { copyFileSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { isAbsolute, join } from "node:path";
+import { realpathSync } from "node:fs";
 
 const FIXTURE = join(import.meta.dir, "fixtures", "sample-room.jsonl");
 const CLI = join(import.meta.dir, "..", "src", "cli.ts");
@@ -129,7 +130,12 @@ describe("cli serve lifecycle (AC2: real running instance, not just registry.ts 
     });
 
     const registered = await waitForRegistration(registryPath, 5000);
-    expect(registered?.logPath).toBe(join(dir, "room.jsonl"));
+    // Resolved, because the registry stores what the process resolved. On macOS
+    // `mkdtempSync(tmpdir())` hands back `/var/folders/...`, which is a symlink
+    // to `/private/var/folders/...`: comparing against the unresolved spelling
+    // failed on this platform while the recorded path was correct, and it is the
+    // one assertion in this suite that could not pass here.
+    expect(registered?.logPath).toBe(join(realpathSync(dir), "room.jsonl"));
     expect(isAbsolute(registered?.logPath ?? "")).toBe(true);
   }, 10000);
 });

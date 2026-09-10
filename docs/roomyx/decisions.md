@@ -1,6 +1,6 @@
 # roomyx — Decisions
 
-Version: 0.5.0
+Version: 0.7.2
 
 Формат по конвенции keryx (`docs/requirements/keryx-mcp-client/decisions.md`): решение + причина + (где применимо) отвергнутая альтернатива. Нумерация локальна для этого пакета.
 
