@@ -209,12 +209,15 @@ offers the same thing as a ticked box.
 | a 50-question interview script | `questionnaire-50.md` |
 
 A room is built out of these — the `startup-room` skill casts its participants
-from this directory. The 50-criteria scoring rubric travels inside the skill
+from this directory. It looks in `.roomyx/personas/` first and falls back to
+`~/.roomyx/personas/`, so a project copy overrides the machine-wide one — the
+same order every runtime uses for skills. The 50-criteria scoring rubric travels inside the skill
 itself.
 
 | Flag | Default | Meaning |
 | --- | --- | --- |
 | `--target <dir>` | `.roomyx/personas` | Where the library goes. |
+| `--global` | off | Install for every project, into `~/.roomyx/personas`. |
 | `--force` | off | Replace the library, moving the existing directory aside as `.bak-<timestamp>`. |
 
 **Files that already exist are skipped, never overwritten.** They ship as

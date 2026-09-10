@@ -2,7 +2,14 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
-import { buildPlan, selectedItems, GROUP_EXTRAS, GROUP_PROJECT, GROUP_USER } from "../../src/installer/init-plan";
+import {
+  buildPlan,
+  selectedItems,
+  GROUP_EXTRAS,
+  GROUP_PERSONAS,
+  GROUP_PROJECT,
+  GROUP_USER,
+} from "../../src/installer/init-plan";
 import { applyPlan } from "../../src/installer/init-apply";
 import { SKILL_RUNTIMES, resolveTargets } from "../../src/installer/skill-targets";
 
@@ -102,7 +109,7 @@ describe("what init offers", () => {
   test("items arrive grouped, in the order the groups are shown", () => {
     const root = tempDir();
     const groups = [...new Set(buildPlan({ cwd: root }).map((i) => i.group))];
-    expect(groups).toEqual([GROUP_USER, GROUP_PROJECT, GROUP_EXTRAS]);
+    expect(groups).toEqual([GROUP_USER, GROUP_PROJECT, GROUP_PERSONAS, GROUP_EXTRAS]);
   });
 
   test("building a plan writes nothing at all", () => {
@@ -213,5 +220,51 @@ describe("applying a plan", () => {
     applyPlan(selectedItems(plan), { cwd: root, bundledSkillPath: BUNDLED, bundledPersonasPath: PERSONAS, configPath });
     expect(existsSync(join(root, ".roomyx", "rooms", "logs"))).toBe(false);
     expect(existsSync(join(root, ".mcp.json"))).toBe(false);
+  });
+});
+
+describe("the persona library in the picker", () => {
+  test("is offered at both scopes — machine-wide and this project", () => {
+    // The operator's own framing: the same global/project question the skill
+    // rows already ask. A library installed only into one project is invisible
+    // to the next one; a library installed only into the home directory does
+    // not travel with the repo.
+    const root = tempDir();
+    const items = buildPlan({ cwd: root, home: join(root, "home"), personaFiles: 87 });
+    const personas = items.filter((i) => i.kind === "personas");
+
+    expect(personas).toHaveLength(2);
+    expect(personas.every((i) => i.group === GROUP_PERSONAS)).toBe(true);
+    expect(personas.find((i) => i.id === "personas:user")?.path).toBe(join(root, "home", ".roomyx", "personas"));
+    expect(personas.find((i) => i.id === "personas:project")?.path).toBe(join(root, ".roomyx", "personas"));
+  });
+
+  test("the project copy is ticked, the machine-wide one is not", () => {
+    // The project copy is what the skill prefers and what travels with the
+    // repository. 87 files appearing under a home directory nobody asked about
+    // is the surprise the default-tick rule forbids.
+    const root = tempDir();
+    const items = buildPlan({ cwd: root, home: join(root, "home") });
+    expect(items.find((i) => i.id === "personas:project")?.selected).toBe(true);
+    expect(items.find((i) => i.id === "personas:user")?.selected).toBe(false);
+  });
+
+  test("a library already installed is listed, and not ticked again", () => {
+    const root = tempDir();
+    mkdirSync(join(root, ".roomyx", "personas"), { recursive: true });
+    const item = buildPlan({ cwd: root, home: join(root, "home") }).find((i) => i.id === "personas:project")!;
+    expect(item.selected).toBe(false);
+    expect(item.done).toContain("already there");
+  });
+
+  test("applying the machine-wide row writes where the row said, and nowhere else", () => {
+    const root = tempDir();
+    const home = join(root, "home");
+    const configPath = withConfig(root);
+    const item = buildPlan({ cwd: root, home }).find((i) => i.id === "personas:user")!;
+
+    applyPlan([item], { cwd: root, bundledSkillPath: BUNDLED, bundledPersonasPath: PERSONAS, configPath });
+    expect(existsSync(join(home, ".roomyx", "personas", "questionnaire-50.md"))).toBe(true);
+    expect(existsSync(join(root, ".roomyx", "personas"))).toBe(false);
   });
 });
