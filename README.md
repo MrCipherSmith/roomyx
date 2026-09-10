@@ -195,6 +195,24 @@ are pruned from the registry file as a side effect. A pruned room is also
 recorded in the history index at that moment — for a room that crashed, this is
 the only point at which anything notices it ended.
 
+### `roomyx setup [flags]`
+
+Sets the **machine** up, without touching the current project: the same picker
+`roomyx init` shows, narrowed to the rows that land under your home directory —
+the skill for each agent runtime you use, and the persona library in
+`~/.roomyx/personas`. Nothing is created in the working directory.
+
+This is what to run right after `npm install -g @mrciphersmith/roomyx`. An npm
+lifecycle script cannot ask instead: npm runs one with no terminal (CI,
+`npm ci`, Docker builds), skips it entirely under `--ignore-scripts`, re-runs it
+on every `npm update`, and under `npm i -g` may run it as a different user. A
+prompt there either hangs the install or never happens — and a postinstall
+writing into `~/.claude` is exactly what supply-chain hardening exists to stop.
+
+| Flag | Meaning |
+| --- | --- |
+| `--yes` | Apply the default selection without asking. |
+
 ### `roomyx personas [flags]`
 
 Installs the bundled persona library into `.roomyx/personas/`. `roomyx init`

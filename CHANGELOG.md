@@ -13,6 +13,34 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [Unreleased]
+
+### Added
+
+- **`roomyx setup`** — the machine-wide half of `roomyx init`, for when there is
+  no project yet. Same picker, narrowed to the rows that land on the machine
+  (the skill for each runtime, and the persona library under `~/.roomyx`), and
+  it writes nothing into the working directory. This is what to run straight
+  after installing from npm: an npm lifecycle script cannot ask, because npm
+  runs one with no terminal in CI, `npm ci` and Docker, and skips it entirely
+  under `--ignore-scripts`.
+- The persona library is ticked in `setup` and unticked in `init`, and the
+  difference is the point: in a project the machine-wide copy duplicates one the
+  project already gets and the skill prefers, but `setup` has no project copy to
+  fall back on.
+
+### Fixed
+
+- **`done` on a plan item meant two things at once.** It meant "already
+  installed", and also carried the persona file count — so a caller asking "is
+  this already there?" read `87 files` as yes. `roomyx setup` was that caller,
+  and it silently stopped ticking the persona library. The count moved to
+  `detail`, where a description belongs.
+- **`buildPlan({ home })` was honoured by the persona rows and ignored by the
+  skill rows**, which read `homedir()` inside the runtime table. A test
+  asserting "nothing here lands outside this directory" was passing against the
+  real `~`. The home is a parameter now, and the test means what it says.
+
 ## [0.11.0] — 2026-09-10
 
 A minor, for the reason D-13 gives: `room.get_state` now returns a **changed

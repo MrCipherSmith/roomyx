@@ -9,6 +9,7 @@ import {
   GROUP_PERSONAS,
   GROUP_PROJECT,
   GROUP_USER,
+  machineItems,
 } from "../../src/installer/init-plan";
 import { applyPlan } from "../../src/installer/init-apply";
 import { SKILL_RUNTIMES, resolveTargets } from "../../src/installer/skill-targets";
@@ -266,5 +267,43 @@ describe("the persona library in the picker", () => {
     applyPlan([item], { cwd: root, bundledSkillPath: BUNDLED, bundledPersonasPath: PERSONAS, configPath });
     expect(existsSync(join(home, ".roomyx", "personas", "questionnaire-50.md"))).toBe(true);
     expect(existsSync(join(root, ".roomyx", "personas"))).toBe(false);
+  });
+});
+
+describe("the machine-only plan", () => {
+  test("keeps every row that lands on the machine and drops every project one", () => {
+    // What `roomyx setup` offers: the thing to run straight after installing
+    // from npm, where there is no project yet and npm's own lifecycle scripts
+    // cannot ask anything (no terminal in CI or `npm ci`, skipped entirely
+    // under --ignore-scripts).
+    const root = tempDir();
+    const items = machineItems(buildPlan({ cwd: root, home: join(root, "home") }));
+
+    expect(items.every((i) => i.scope === "user")).toBe(true);
+    expect(items.map((i) => i.id)).toContain("skill:claude");
+    expect(items.map((i) => i.id)).toContain("personas:user");
+    for (const projectOnly of ["skill:claude-project", "personas:project", "logs", "gitignore", "mcp:claude"]) {
+      expect(items.map((i) => i.id)).not.toContain(projectOnly);
+    }
+  });
+
+  test("nothing in it writes into the working directory", () => {
+    // The promise the command makes. A row that quietly touched the cwd would
+    // make `setup` the thing it exists not to be.
+    const root = tempDir();
+    const home = join(root, "home");
+    const items = machineItems(buildPlan({ cwd: root, home }));
+    for (const item of items) expect(item.path.startsWith(home)).toBe(true);
+  });
+
+  test("`done` means already-installed and nothing else", () => {
+    // It carried the file count for one release, so a caller asking "is this
+    // already there?" got "87 files" and read it as yes — which is exactly how
+    // `roomyx setup` silently stopped ticking the persona library.
+    const root = tempDir();
+    const items = buildPlan({ cwd: root, home: join(root, "home"), personaFiles: 87 });
+    const fresh = items.find((i) => i.id === "personas:user")!;
+    expect(fresh.done).toBeUndefined();
+    expect(fresh.detail).toContain("87 files");
   });
 });

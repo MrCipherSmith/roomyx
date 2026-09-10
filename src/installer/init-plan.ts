@@ -25,6 +25,14 @@ export interface PlanItem {
   readonly kind: PlanItemKind;
   /** Heading this item is listed under. */
   readonly group: string;
+  /**
+   * Whether this lands on the machine or in the project.
+   *
+   * Carried as data rather than inferred from the group, because `roomyx setup`
+   * selects on it: the group is what the row is printed under, and inferring a
+   * behavioural rule from a display string is how the two drift apart.
+   */
+  readonly scope: "user" | "project";
   readonly label: string;
   /** Where it actually lands on disk. What `init-apply` acts on. */
   readonly path: string;
@@ -66,18 +74,20 @@ export interface PlanContext {
 export function buildPlan(context: PlanContext): PlanItem[] {
   const { cwd } = context;
   const exists = context.exists ?? existsSync;
+  const home = context.home ?? homedir();
   const items: PlanItem[] = [];
 
   for (const runtime of SKILL_RUNTIMES) {
-    const path = runtime.path(cwd);
+    const path = runtime.path(cwd, home);
     // Presence of the runtime's own directory, not of our skill: this decides
     // whether to *offer it ticked*, never whether to offer it at all. A runtime
     // installed after roomyx would otherwise be unreachable.
-    const present = exists(runtime.marker(cwd));
+    const present = exists(runtime.marker(cwd, home));
     items.push({
       id: `skill:${runtime.name}`,
       kind: "skill",
       group: runtime.scope === "user" ? GROUP_USER : GROUP_PROJECT,
+      scope: runtime.scope,
       label: runtime.label,
       path,
       detail: path,
@@ -93,8 +103,8 @@ export function buildPlan(context: PlanContext): PlanItem[] {
   // the machine, including throwaway ones. The skill prefers the project copy
   // and falls back to the home one, which is the order every runtime already
   // uses for skills.
-  const homeDir = context.home ?? homedir();
-  const personaScopes: [string, string, string, boolean][] = [
+  const homeDir = home;
+  const personaScopes: [string, string, string, boolean, "user" | "project"][] = [
     [
       "personas:user",
       "For every project",
@@ -104,24 +114,28 @@ export function buildPlan(context: PlanContext): PlanItem[] {
       // directory is convenience, and 87 files appearing in a directory the
       // operator did not know existed is the surprise the tick rule forbids.
       false,
+      "user",
     ],
-    ["personas:project", "In this project", join(cwd, ".roomyx", "personas"), true],
+    ["personas:project", "In this project", join(cwd, ".roomyx", "personas"), true, "project"],
   ];
 
-  for (const [id, label, path, ticked] of personaScopes) {
+  for (const [id, label, path, ticked, scope] of personaScopes) {
     items.push({
       id,
       kind: "personas",
       group: GROUP_PERSONAS,
+      scope,
       label,
       path,
-      detail: path,
+      // The file count belongs to the description of the target, not to
+      // `done`. It lived in `done` for one release and made that field mean
+      // two things — "already satisfied" and "here is how big this is" — so a
+      // caller asking "is this already installed?" got "87 files" and read it
+      // as yes. `roomyx setup` was that caller, and it silently stopped
+      // ticking the library.
+      detail: context.personaFiles === undefined ? path : `${path}  (${context.personaFiles} files)`,
       selected: ticked && !exists(path),
-      done: exists(path)
-        ? "already there — existing files are kept"
-        : context.personaFiles === undefined
-          ? undefined
-          : `${context.personaFiles} files`,
+      done: exists(path) ? "already there — existing files are kept" : undefined,
     });
   }
 
@@ -130,6 +144,7 @@ export function buildPlan(context: PlanContext): PlanItem[] {
     id: "logs",
     kind: "logs",
     group: GROUP_EXTRAS,
+    scope: "project",
     label: "Room-log directory",
     path: logsDir,
     detail: logsDir,
@@ -145,6 +160,7 @@ export function buildPlan(context: PlanContext): PlanItem[] {
     id: "gitignore",
     kind: "gitignore",
     group: GROUP_EXTRAS,
+    scope: "project",
     label: "Ignore registry, lockfiles",
     path: join(cwd, ".gitignore"),
     // The registry holds pids and ports of processes on *this* machine, and the
@@ -163,6 +179,7 @@ export function buildPlan(context: PlanContext): PlanItem[] {
       id,
       kind: "mcp",
       group: GROUP_EXTRAS,
+      scope: "project",
       label,
       path,
       detail: path,
@@ -187,4 +204,12 @@ function mcpTargets(cwd: string): [string, string, string][] {
 /** The items a plan would actually act on. */
 export function selectedItems(items: readonly PlanItem[]): PlanItem[] {
   return items.filter((item) => item.selected);
+}
+
+/**
+ * The rows that land on the machine rather than in a project — what
+ * `roomyx setup` offers when there is no project to set up.
+ */
+export function machineItems(items: readonly PlanItem[]): PlanItem[] {
+  return items.filter((item) => item.scope === "user");
 }

@@ -9,6 +9,7 @@ function item(over: Partial<PlanItem> = {}): PlanItem {
     id: "skill:claude",
     kind: "skill",
     group: "Skill — every project on this machine",
+    scope: "user",
     label: "Claude Code",
     path: "/home/someone/.claude/skills/startup-room/SKILL.md",
     detail: "/home/someone/.claude/skills/startup-room/SKILL.md",
