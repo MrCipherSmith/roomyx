@@ -25,6 +25,13 @@ export interface MessageEntry {
   message: MessageEnvelope;
   /** Resolved display name, so the model can be searched by what is on screen. */
   fromName: string;
+  /**
+   * The turn this one answers, resolved to a speaker by whoever built the
+   * entry. Absent when the message answers nothing, or answers a `seq` this
+   * log does not contain — and absent means nothing is drawn, which is the
+   * point: the number it replaced named nobody (D-17).
+   */
+  replyTo?: ReplyTarget;
 }
 
 export type Entry = MessageEntry | SystemEntry;
@@ -75,7 +82,7 @@ export class Transcript {
         const haystack =
           entry.kind === "system"
             ? entry.text
-            : `${entry.fromName} ${entry.message.kind ?? ""} ${entry.message.body}`;
+            : `${entry.fromName} ${messageTag(entry.message, entry.replyTo)} ${entry.message.body}`;
         return haystack.toLowerCase().includes(needle) ? index : -1;
       })
       .filter((index) => index >= 0);
@@ -114,11 +121,48 @@ export class Transcript {
     return this.visible()
       .map((entry) => {
         if (entry.kind === "system") return `— ${entry.text} —`;
-        const tag = [entry.message.kind, entry.message.in_reply_to === undefined ? null : `re #${entry.message.in_reply_to}`]
-          .filter((part): part is string => Boolean(part))
-          .join(" ");
+        const tag = messageTag(entry.message, entry.replyTo);
         return `${entry.fromName}${tag ? `  ${tag}` : ""}\n  ${entry.message.body}`;
       })
       .join("\n\n");
   }
+}
+
+/**
+ * The one place the kind + reply tag is spelled.
+ *
+ * It used to be assembled twice — in `message-row.ts` for the pane, and inline
+ * in `toText()` for the export — so the two could disagree about what a message
+ * said, and neither was visible to `matches()`. The tag is drawn on screen,
+ * which is the whole test of whether a search has to find it.
+ */
+export const QUOTE_CELLS = 24;
+
+export interface ReplyTarget {
+  /** The parent's resolved display name. Never a sequence number: a number names nobody. */
+  name: string;
+  /** The parent's body, for the short quote. */
+  body: string;
+}
+
+/**
+ * Cut to size in ASCII.
+ *
+ * `clip()` — the client's other cutter — marks a cut with `…`, and this line
+ * must not: U+2026 is East-Asian-ambiguous, so its width depends on the
+ * reader's terminal, and the tag is laid out against the same pane the body
+ * wraps in. A quote is context, not content; it does not get to move where a
+ * sentence breaks.
+ */
+function quote(body: string): string {
+  // Whitespace is flattened first: a parent's newline would otherwise put a
+  // second line under a tag that is `height: 1`.
+  const flat = body.replace(/\s+/g, " ").trim();
+  if (flat.length <= QUOTE_CELLS) return flat;
+  return `${flat.slice(0, QUOTE_CELLS - 3).trimEnd()}...`;
+}
+
+export function messageTag(message: MessageEnvelope, replyTo?: ReplyTarget): string {
+  const pointer = replyTo === undefined ? "" : `-> ${replyTo.name} "${quote(replyTo.body)}"`;
+  return [message.kind, pointer].filter((part): part is string => Boolean(part)).join(" ");
 }
