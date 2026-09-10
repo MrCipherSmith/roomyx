@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { init } from "../../src/installer/init";
@@ -138,6 +138,38 @@ describe("the staged skill is synced, not copied once", () => {
       expect(readdirSync(stagingDir)).toEqual(["SKILL.md"]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("a staged copy that is already the bundled skill is adopted", () => {
+  test("a moved project can refresh again, because the hash gets recorded", () => {
+    // The sync records its hashes by absolute path, so moving a project leaves
+    // the staging directory with no recorded hash for its new location — and the
+    // unrecorded-content refusal then keeps the copy stale forever. When the
+    // content is byte-identical to the bundled skill there is nothing the
+    // refusal protects: a write cannot lose anything, and it records the hash
+    // that makes the next real upgrade refresh. Found by reviewing this
+    // change's own work, not by the suite.
+    const source = mkdtempSync(join(tmpdir(), "roomyx-init-adopt-a-"));
+    const moved = mkdtempSync(join(tmpdir(), "roomyx-init-adopt-b-"));
+    try {
+      init({ cwd: source, bundledSkillPath: BUNDLED_SKILL });
+      cpSync(join(source, ".roomyx"), join(moved, ".roomyx"), { recursive: true });
+
+      const afterMove = init({ cwd: moved, bundledSkillPath: BUNDLED_SKILL });
+      expect(afterMove.skillWarnings ?? []).toEqual([]);
+
+      // And now a real upgrade lands: the proof the hash was recorded.
+      const upgraded = join(source, "bundled-v2.md");
+      writeFileSync(upgraded, "# Startup Room v2\n");
+      init({ cwd: moved, bundledSkillPath: upgraded });
+      expect(readFileSync(join(moved, ".roomyx", "skills", "startup-room", "SKILL.md"), "utf8")).toBe(
+        "# Startup Room v2\n",
+      );
+    } finally {
+      rmSync(source, { recursive: true, force: true });
+      rmSync(moved, { recursive: true, force: true });
     }
   });
 });
