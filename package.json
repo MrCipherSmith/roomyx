@@ -37,7 +37,8 @@
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src test",
-    "check": "bun run lint && bun run typecheck && bun test"
+    "check": "bun run lint && bun run typecheck && bun test",
+    "soak": "bun scripts/soak.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.0",

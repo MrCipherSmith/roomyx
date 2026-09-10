@@ -334,3 +334,28 @@ Full architecture and the reasoning behind each decision:
 ## License
 
 MIT
+
+## Soak testing
+
+```bash
+bun run soak                    # ~2 min, about 3 hours of a live room
+bun scripts/soak.ts --polls 20000   # ~7 min, about a working day
+```
+
+The three worst defects this project has shipped were invisible to a unit test
+by construction: an idle client that exhausted the native renderable pool after
+about 2.7 hours, a server that retained every session it ever accepted, and one
+malformed log line that took a client from one connection to 510 in ten seconds.
+Each is a function of volume over time, and the suite's longest test runs forty
+seconds and asserts a state.
+
+`scripts/soak.ts` compresses the clock by poll count rather than by wall time —
+the 2.7-hour death is 3275 state polls, which at a 20 ms interval is sixty-five
+seconds — and drives a real `ChatView` and a real `RoomClient` against a real
+`roomyx serve`, through a proxy that counts every request. It reports **trends**,
+not thresholds: a threshold has to be guessed and is wrong on someone else's
+machine, while "the renderable count grew with the transcript and not with the
+poll loop" is true or false everywhere.
+
+It is not in `bun test` on purpose. It takes minutes, and a suite people skip is
+worse than one they run.
