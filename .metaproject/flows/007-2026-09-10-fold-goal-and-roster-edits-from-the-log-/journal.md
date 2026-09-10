@@ -64,3 +64,27 @@ flow's own post-completion state, because it had never been committed. The state
 was rebuilt with the CLI (which owns `flow.json`) rather than by hand, and that
 ordering is what to follow: complete the flow, commit its package, then reconcile
 with `main`.
+
+## Post-completion: this flow's decision number was wrong
+
+This flow implemented what its documents call **D-19**. That number collided: while
+the flow ran, the repository owner shipped their own D-19 — "the persona library
+travels in the package" — to `main`, and it was published under that number in
+CHANGELOG `0.10.1`.
+
+The decision is now **D-20**. Renumbering the loser rather than the winner is not a
+preference: a published number is referenced by a release, and reusing it would
+make `0.10.1`'s note point at a different decision than the one it describes.
+
+**This package keeps the old number deliberately.** These are the documents that
+were reviewed at the time, and the review artifacts are evidence of what was
+examined; rewriting them to match a later renumbering would falsify the record.
+The living documents — `decisions.md`, `ACTIONS.md`, the test comments — carry
+D-20.
+
+The cause is worth naming because it is the same shape as the defects this project
+keeps finding in code: two writers, one shared resource, each taking "the next free
+one". Decision numbers, like version numbers and envelope fields, are a shared
+resource in a repository that is written to concurrently — and the fix is the same
+one the version collisions got: take the number at merge time, not at authoring
+time.

@@ -10,7 +10,7 @@ import { LogWriteError } from "../../src/log/write";
  * A room's state lives in the first line and cannot be rewritten — the log is
  * append-only, and a second state line makes the room unreadable forever, because
  * `loadRoomLog` requires every line after the header to be a message. So an edit
- * has to be a message (D-19), and the reader folds them.
+ * has to be a message (D-20), and the reader folds them.
  *
  * This file pins the two halves that make that safe: a log with NO edits must
  * read exactly as it did before, and an edit that cannot be folded must not take
