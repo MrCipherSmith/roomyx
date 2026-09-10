@@ -67,11 +67,26 @@ export function createRoomMcpServer(logPath: string, options: RoomMcpServerOptio
     "room.get_transcript",
     {
       title: "Room transcript delta",
-      description: "Messages with seq greater than since_seq, in order.",
-      inputSchema: { since_seq: z.number().int().min(0) },
+      description:
+        "Messages with seq greater than since_seq, in order — at most `limit` of them. " +
+        "The result carries has_more and next_seq so a page can be told from a complete answer: " +
+        "pass next_seq back as since_seq to continue.",
+      inputSchema: {
+        since_seq: z.number().int().min(0),
+        limit: z.number().int().min(0).optional(),
+      },
     },
-    async ({ since_seq }) => ({
-      content: [{ type: "text", text: JSON.stringify(getTranscriptTool(logPath, since_seq)) }],
+    async ({ since_seq, limit }) => ({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            limit === undefined
+              ? getTranscriptTool(logPath, since_seq)
+              : getTranscriptTool(logPath, since_seq, limit),
+          ),
+        },
+      ],
     }),
   );
 

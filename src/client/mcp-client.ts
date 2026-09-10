@@ -1,6 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { MessageEnvelope, RoomState } from "../log/types";
+import type { TranscriptPage } from "../server/tools/get-transcript";
 
 export type ConnectionStatus = "connecting" | "connected" | "disconnected";
 
@@ -244,12 +245,19 @@ export class RoomClient {
     const again = () => {
       this.transcriptTimer = setTimeout(() => this.pollTranscript(generation), this.transcriptIntervalMs);
     };
-    this.callTool<MessageEnvelope[]>("room.get_transcript", { since_seq: this.sinceSeq })
-      .then((messages) => {
+    // No `limit`: the poll asks for what has arrived since the last one, which is
+    // normally nothing to a couple of messages. The server's default only
+    // matters to a caller doing a cold attach, and it pages there.
+    this.callTool<TranscriptPage>("room.get_transcript", { since_seq: this.sinceSeq })
+      .then((page) => {
         if (this.isStale(generation)) return;
-        if (messages.length > 0) {
-          this.sinceSeq = Math.max(this.sinceSeq, ...messages.map((m) => m.seq));
-          this.events.onNewMessages?.(messages);
+        if (page.messages.length > 0) {
+          // The cursor comes from the page rather than from `max` of what arrived:
+          // the server knows which messages it actually sent, and a page is
+          // bounded, so "the last seq I received" and "the cursor" are the same
+          // number only by luck.
+          this.sinceSeq = Math.max(this.sinceSeq, page.next_seq);
+          this.events.onNewMessages?.(page.messages);
         }
         again();
       })
