@@ -438,3 +438,256 @@ Recorded because they are the reason to trust the list.
 - **Marcus**, conceding it back: *"The slot was never deciding what gets fixed.
   It was deciding what the list says. I was holding the fifth slot for work
   already scheduled."*
+
+---
+
+## Filed after the room — the reply pointer (against 0.7.1)
+
+Not from the 2026-09-09 session, and not reproduced by running either: found by
+reading the code and two real room logs. Filed separately for exactly that
+reason — everything above rests on 0.4.0 and on a reproduction, and this does
+not.
+
+**What the pane shows today.** A message row is a header (bright name) plus a dim
+tag built from `[kind, in_reply_to]`, and a body indented two columns
+(`src/client/components/message-row.ts`). The tag prints the reply target as a raw
+sequence number: `answer  re #4`. Nothing in the client ever resolves that number
+to a speaker — `Transcript.toText()`, which is what `w` writes out, prints the
+same `re #4` (`src/client/transcript.ts`).
+
+**Measured in a real room.** `screenshots/review-room.jsonl`: nine messages, four
+participants. `in_reply_to` is carried by four of the nine (5→4, 6→4, 7→1, 8→7) —
+a fan-in onto one message, and a chain of depth two. Two rows in that room
+therefore render as identical `answer  re #4`, and a reader cannot learn who #4
+was without counting upwards. `@Name` appears zero times in any body; addressing
+in that room is done in prose.
+
+**Defect 1 — the tag is invisible to search.** `Transcript.matches()` builds its
+haystack from `fromName`, `kind` and `body`. The reply tag is on screen and `/`
+cannot find it, while `kind` — equally on screen — can. The comment a few lines
+above the haystack states the rule this breaks: match *what a reader can actually
+see*.
+
+**Defect 2 — the tag disappears with the header.** The tag is added inside
+`if (options.showHeader)` (`message-row.ts`), and `showHeader` is
+`transcript.startsRun(index)` (`chat-view.ts`), which is false for consecutive
+messages from one speaker. So a second consecutive turn by the same participant
+loses both its `kind` and its reply pointer, and two materially different messages
+become indistinguishable. Worse, `startsRun` is computed over `visible()`, so the
+set of tags drawn depends on the active participant filter: a message can gain a
+tag by being filtered to that it did not have unfiltered. Code-level, not yet
+reproduced by running.
+
+**Defect 3 — the tag is assembled twice.** `tagFor()` in `message-row.ts` and the
+inline expression in `transcript.ts` are two copies of one format, so changing one
+leaves the export and the pane disagreeing.
+
+**Acceptance criteria** (draft; gated by D-17 in `decisions.md`):
+
+- `in_reply_to` renders as the parent author's name; the raw seq is not shown in
+  the UI.
+- A short quote of the parent sits beside it, clipped to the pane, introducing no
+  new wrap boundary.
+- `kind` and the reply pointer are drawn even when the header is collapsed.
+- `/` finds a row by the text the pointer shows, and `toText()` prints the same
+  text the pane shows.
+- A test fails when the pointer is suppressed under a collapsed header — and when
+  `matches()` misses text that is on the screen.
+- Direction is carried by an ASCII sign and a name, not by colour alone: the
+  palette is three tones, and neither a screen reader nor a `tee` sees colour
+  (`tui-review.md`).
+
+**Not scheduled**, and deliberately not scored. The five above were ranked by a
+room whose own log records that the rubric measured *well-formed* five times and
+*worth doing* once; reusing those scores here would borrow authority this finding
+has not earned.
+
+---
+
+## Writer ownership, the owner-command queue, and the read-side delta — against 0.7.1
+
+Gated by D-18 in `decisions.md`. **Nothing here was reproduced by running** —
+two facts come from reading the code (`src/cli.ts`, `room append`) and one from
+`SKILL.md:139`, and the guard it changes already has a passing test in
+`test/cli-room.test.ts`. Every other claim in this section is a design claim,
+and is labelled as one.
+
+Build order is not the same as value: **1 → 2 → 3** are one coherent change
+(ownership) and ship together; **4, 5, 6** are independent and can go in any
+order; **7** depends on 3; **8** is not schedulable at all.
+
+### 1. `room.get_state` does not say whether anyone is dispatching
+
+*What.* Add `dispatcherAttached: boolean` — `options.onOwnerCommand !== undefined`,
+which the server already knows.
+
+*Why.* "A live room serves this log" and "a live room with a writer in it" are
+indistinguishable from outside, and the refusal text in `src/cli.ts` admits it
+in a comment ("roomyx cannot tell the two apart"). Every later item reads this
+field.
+
+*Failing test* (extend `test/server/tools.test.ts`):
+- A test fails when `room.get_state` omits `dispatcherAttached`.
+- A test fails when it reports `true` for a server built without `onOwnerCommand`,
+  or `false` for one built with it.
+- A test fails when the field's absence is treated as `false` by a consumer —
+  the probe precedent in `types.ts` (`log_path`) is that an absent value must
+  mean "cannot be shown", never a silent default.
+
+*Note.* Whether the field is required is a D-13 choice, not a detail: `log_path`
+was left optional for exactly this reason.
+
+### 2. `--force` is the guard's own escape hatch, in the default path
+
+*What.* Remove `--force`; add `--take-over`, which succeeds only against a dead
+room or an expired lease.
+
+*Why.* The refusal is the entire mechanism, and `SKILL.md:143` tells the primary
+consumer to override it "and it is correct here". A guard whose documented happy
+path is `--force` guards nothing. The common case that `--force` covers today —
+a live room with no dispatcher — needs no flag at all once item 1 exists.
+
+*Failing test* (rewrite the `--force` half of the existing guard test in
+`test/cli-room.test.ts` — it is currently **passing**, so this item deliberately
+breaks a green test rather than adding a red one):
+- A test fails when `roomyx room append --force …` is still accepted as a flag.
+- A test fails when `--take-over` writes against a live room with
+  `dispatcherAttached: true` and a fresh lease held by another process.
+- A test fails when appending to a live room with `dispatcherAttached: false`
+  is refused — that room has no writer to race, and the current refusal is a
+  false claim about it.
+- A test fails when the refusal message still asks the operator to pass a flag
+  that no longer exists.
+
+### 3. Nothing owns the pen — liveness is inferred from a port
+
+*What.* A machine-local lease sidecar next to the registry, taken by whoever
+writes (CLI or an embedding host), with a staleness ceiling modelled on
+`withLock`'s.
+
+*Why.* Today "who may write" is inferred from "something answers MCP on that
+port", which is a different question. It is also why a recycled port can
+resurrect a dead room as live (`types.ts`, the `log_path` comment), and why
+`--force` had to exist at all.
+
+*Failing test* (new `test/writer-lease.test.ts`):
+- A test fails when two processes both hold a write lease for one log at the
+  same instant.
+- A test fails when a lease older than the ceiling is not reclaimable.
+- A test fails when a lease whose holder has exited is still treated as held.
+- A test fails when release unlinks a lease another process has since taken —
+  the same owner-token failure `releaseLockIfOwned` exists to prevent.
+
+### 4. A message body cannot survive the shell it is passed through
+
+*What.* `room append --json <envelope>` (the whole envelope, not six flags),
+`--body-file -` reading stdin, and `--many` taking JSONL on stdin.
+
+*Why.* `appendMessage` builds JSON around whatever string arrives in `--body`;
+a body containing a quote or a newline is a write the reader's contract may
+refuse, and the log is append-only with no repair command. `--many` also turns
+N subprocess invocations per turn into one.
+
+*Failing test* (extend `test/cli-room.test.ts`):
+- A test fails when a body containing a `"`, a newline, or a leading `-`
+  cannot be appended and read back byte-identical through `--json`.
+- A test fails when `--body-file -` does not read the body from stdin.
+- A test fails when `--many` allocates non-consecutive `seq` values, or leaves
+  the log unreadable when one line of the batch is invalid — a batch that
+  half-writes is worse than one that refuses.
+
+### 5. The dispatcher's delta is computed in the model's context, every turn
+
+*What.* `room.get_delta_for(agent_id, since_seq?)` — everything after that
+agent's own last message, excluding its own.
+
+*Why.* This is the per-turn arithmetic the dispatcher does by hand, and the
+convention already exists in the code: `get_agent_detail` computes `lastSeenSeq`
+as `max` of the agent's own `seq`. What leaves the context is the cursor map and
+the manual filter; what stays is the judgement and the `SendMessage`.
+
+*Failing test* (extend `test/server/tools.test.ts`):
+- A test fails when the delta includes the agent's own messages.
+- A test fails when the delta excludes a message at `seq` equal to the agent's
+  last own message, or includes one already sent.
+- A test fails when an explicit `since_seq` does not override the default.
+- A test fails when the tool's own description claims the result is *what was
+  delivered* — the server cannot know that, and a doc that overclaims is the
+  defect this project keeps re-filing.
+
+### 6. An owner command is accepted by a function and delivered to nothing
+
+*What.* Keep commands in the server; expose them as `room.get_pending_owner_commands`
+and the `room://owner-queue` resource; add `room.ack_owner_command`. `onOwnerCommand`
+stays as the second road into the same queue.
+
+*Why.* `room.post_owner_command` returns `accepted: true` from a handler that may
+be a stub, and against a bare `roomyx serve` it returns `accepted: false` with
+"no dispatcher is attached" — for the orchestrator the design actually targets,
+that is the normal case, because the handler is a JS function and a spawned
+process cannot be given one. R5's acceptance criterion in `prd.md` ("at least
+one interactive command really reaches the room") has no measurable form without
+an ack. This is the one part of the room the server *can* push: it receives the
+command itself, over HTTP.
+
+*Failing test* (extend `test/server/owner-command.test.ts`, plus a new
+`test/server/owner-queue.test.ts`):
+- A test fails when a posted command is not readable back through
+  `room.get_pending_owner_commands`.
+- A test fails when `resources/list` does not advertise `room://owner-queue`.
+- A test fails when `room.ack_owner_command` accepts an unknown id, or when an
+  acked command remains pending.
+- A test fails when the post response reports `accepted: false` for a command
+  that is in fact queued — "nothing will act on this" and "nobody has read it
+  yet" are different answers and must not share a shape.
+- A test fails when the queue is written to the room log: the server still does
+  not write it, and this item must not become the writer by accident.
+
+### 7. A room can be written while looking supervised, and the log never says so
+
+*What.* A `kind: "status"` line in the transcript when an append takes ownership
+from a room that was live but not dispatching, or whose lease had expired.
+
+*Why.* "State changes must also enter the transcript as ordinary text" is already
+this project's rule for the pane (`tui-review.md`, Ken's finding), and it applies
+to the room's own history for the same reason: a reader opening the log later
+cannot see that a room was written by hand while its server was dead. No new kind
+is needed — `status` is already in `MESSAGE_KINDS`.
+
+*Failing test* (extend `test/cli-room.test.ts`):
+- A test fails when an append that reclaimed an expired lease leaves no trace
+  in the log.
+- A test fails when the trace uses a kind outside `MESSAGE_KINDS`.
+- A test fails when the trace line's body does not name what it replaced
+  (which room id, whose lease, how stale).
+
+### 8. `goal_edit` and `add_participant` have no representation in the log — not schedulable
+
+*What.* Nothing, yet. This is the open question, named so it is not lost.
+
+*Why.* `loadRoomLog` parses line 1 as `state` and **requires** every following
+line to satisfy `messageLineSchema`; a second state line makes the whole room
+unreadable forever, and a first line cannot be rewritten because the log is
+append-only. The only writer of a state line is `createRoomLog`. Meanwhile
+`goalContractSchema` carries `updated_in_round` and `updated_by: "owner"`, which
+nothing ever writes — fields that were designed for an update path that was never
+built.
+
+*Why it cannot be a test yet.* There is no shape to assert against, and inventing
+one here would be writing the decision in a test file. The two candidate shapes —
+a permitted record type with last-wins semantics, or a distinguished message kind
+— differ in what `room.get_state` means, in whether history can be replayed, and
+in what `learn`/`history` summarise. That is a decision, not an implementation.
+
+*Test that marks the decision instead:* whichever shape is chosen, a test must
+fail when a log containing an owner's goal edit is read back with the original
+goal contract still in force.
+
+### What this section does not fix
+
+- **The subagent still cannot be woken by anything but its parent** (D-16, item 3).
+  Items 5 and 6 reduce what the dispatcher must *carry*, not what it must *call*.
+- **It is not absolute enforcement.** The lease distinguishes cases; a process
+  willing to delete the sidecar is not stopped, because it owns the filesystem.
+  What is bought is that the default path stops containing an override.
+- **Nothing about D-17** (the reply pointer), the wrap defect, or D-03.
