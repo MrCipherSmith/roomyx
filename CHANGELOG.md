@@ -13,6 +13,40 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.8.2] — 2026-09-10
+
+A patch. Closes the backlog's S3 and corrects two documents that described a
+package this is not.
+
+### Fixed
+
+- **The staged skill is synced, not copied once.** `roomyx init` copied
+  `.roomyx/skills/startup-room/SKILL.md` when it was absent and did nothing when
+  it was present, so after a package upgrade the staged copy kept the old text
+  forever — no hash, no backup, no warning. Guarded with `existsSync` it had
+  stopped clobbering hand edits and started going stale silently instead. It now
+  goes through `syncSkill`: the copy is refreshed when it is still ours,
+  left exactly as it is when it has been hand-edited or was never recorded, and
+  in that case `init` says so instead of staying quiet. A re-run that changes
+  nothing writes nothing — a backup of an identical file once per run would bury
+  the backups that matter.
+
+### Changed
+
+- **`docs/roomyx/improvement-backlog.md` no longer prescribes `--force`.** Its
+  R3 definition of done still read "`--force` overrides", describing a flag
+  0.8.0 removed. An amendment records what the refusal actually depends on now
+  — `dispatcherAttached`, the writer lease, and `--take-over` for a writer that
+  is provably gone — and marks the old sentence as history rather than
+  instruction. The backlog is the document an implementer works from.
+- **`room.post_owner_command` is documented as implemented *and unreachable for
+  the consumer it was designed for*.** Both files now say it: the tool is
+  registered, tested and answers correctly, and its handler is a JS function
+  that the orchestrator spawning `serve` as a child process cannot attach, so a
+  bare `roomyx serve` answers `accepted: false`. "Implemented" without that
+  distinction reads as "this works for you", which is the misreading a status
+  field exists to prevent. D-18 item 6 closes the gap.
+
 ## [0.8.1] — 2026-09-10
 
 A patch. Found by triaging the action list against the code: this defect had

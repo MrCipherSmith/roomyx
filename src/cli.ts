@@ -234,6 +234,12 @@ const COMMANDS: Record<string, Command> = {
       const cwd = process.cwd();
       const result = init({ cwd, bundledSkillPath: bundledSkillPath() });
       console.log(result.created ? `Created ${result.roomyxDir}` : `${result.roomyxDir} already initialized`);
+      for (const warning of result.skillWarnings ?? []) {
+        // Said out loud rather than swallowed: the staged copy is now known to
+        // differ from the bundled skill, and whoever sees this decides what to
+        // do about it.
+        console.log(`  ! ${warning}`);
+      }
 
       const { buildPlan, selectedItems } = await import("./installer/init-plan");
       const { applyPlan } = await import("./installer/init-apply");

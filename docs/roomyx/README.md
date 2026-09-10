@@ -10,6 +10,16 @@ Version: 0.7.2
 
 **`implemented`**: MCP server read-side (R2-R4 tools, flow 001) AND the loopback HTTP transport + full TUI client (flow `002-2026-09-09-roomyx-transport-tui-client-chat-view-`, 2026-09-09) — `bun src/cli.ts serve <logPath>` binds and prints the address; `bun src/client/index.ts --connect <url>` renders a real chat view (roster + scrolling transcript + status bar) and a per-agent modal, verified with real captured terminal frames via `@opentui/core`'s own headless test renderer (`test/client/render.test.ts`), not just "doesn't crash." 30/30 tests pass, independently reviewed (found and fixed 4 real issues, including a modal that silently never rendered as an overlay — see flow 002's journal for the full account), all completion gates green. `room.post_owner_command` (R5), auto-launch of the TUI as an orchestrator child process, and live dispatcher integration (SKILL.md writing to a real log during an actual room) remain `spec ready`, explicitly out of scope for both flows so far.
 
+**Read that list carefully, because one entry is not like the others.**
+`room.post_owner_command` is *implemented and unreachable for the consumer it was
+designed for*: the tool is registered, tested and answers correctly, but its
+handler (`onOwnerCommand`) is a JS function supplied by an embedding host, and
+the orchestrator this package targets spawns `serve` as a child process — so it
+cannot attach one. A bare `roomyx serve` therefore answers `accepted: false`,
+which is the honest answer to "nothing will act on this" and not a working owner
+channel. `decisions.md` D-16 item 4 and D-18 item 6 are what close that gap;
+until they land, treat the tool as an embedding seam.
+
 ## Document Index
 
 | Документ | Назначение |
