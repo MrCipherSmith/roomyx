@@ -4,12 +4,12 @@ import { join, resolve } from "node:path";
 import { serve } from "./server/serve";
 import { createServerShutdown } from "./server/shutdown";
 import { init } from "./installer/init";
-import { registerRoom, deregisterRoom, listLiveRooms } from "./installer/registry";
+import { probeRoomState, registerRoom, deregisterRoom, listLiveRooms } from "./installer/registry";
 import { archiveRoom, defaultHistoryPath, readHistory } from "./installer/history";
 import { syncSkill } from "./installer/skill-sync";
 import { appendMessage, appendMessages, createRoomLog, LEGAL_KINDS, parseRoster } from "./log/write";
 import type { AppendMessageOptions } from "./log/write";
-import { readWriterLease, writerLeasePathFor } from "./writer-lease";
+import { acquireWriterLease, readWriterLease, writerLeasePathFor } from "./writer-lease";
 import { MESSAGE_KINDS } from "./log/schema";
 import { LogWriteError } from "./log/write";
 import type { MessageEnvelope } from "./log/types";
@@ -46,12 +46,26 @@ function defaultConfigPath(): string {
  * which one the caller meant is how a body goes into the wrong speaker's mouth.
  */
 function pendingAppends(flags: FlagValues): AppendMessageOptions[] {
-  const sources = [flags.json !== undefined, flags["body-file"] !== undefined, flags.many === true].filter(Boolean).length;
-  if (sources > 1) throw new ArgError("Use one of --json, --body-file or --many, not several.");
-  if (flags.many === true) return parseBatch(readStdin());
+  // Two different things are being chosen here, and conflating them was wrong:
+  // `--json` and `--many` carry a whole envelope (speaker included), while
+  // `--body` and `--body-file` carry only the body and still need `--from`.
+  // Refusing `--body-file --from b` refused a combination that has no ambiguity
+  // in it at all.
+  const envelopeSources = [flags.json !== undefined, flags.many === true].filter(Boolean).length;
+  if (envelopeSources > 1) throw new ArgError("Use one of --json or --many, not both.");
+  const bodySources = [flags.body !== undefined, flags["body-file"] !== undefined].filter(Boolean).length;
+  if (bodySources > 1) throw new ArgError("Use one of --body or --body-file, not both.");
 
-  if (typeof flags.json === "string") {
-    return [envelopeFrom(flags.json)];
+  if (envelopeSources === 1) {
+    const conflicting = ["from", "body", "body-file", "kind", "in-reply-to"].filter((f) => flags[f] !== undefined);
+    if (conflicting.length > 0) {
+      // An envelope says everything. Silently preferring one source is how a
+      // body ends up in the log under a speaker nobody chose.
+      throw new ArgError(
+        `--json/--many carry the whole envelope, so --${conflicting.join(", --")} cannot be combined with them.`,
+      );
+    }
+    return flags.many === true ? parseBatch(readStdin()) : [envelopeFrom(flags.json as string)];
   }
 
   const from = flags.from;
@@ -73,6 +87,10 @@ function pendingAppends(flags: FlagValues): AppendMessageOptions[] {
 }
 
 function readStdin(): string {
+  if (process.stdin.isTTY === true) {
+    // Reading fd 0 from a terminal blocks until Ctrl-D, which reads as a hang.
+    throw new ArgError("This flag reads the message from stdin, and stdin is a terminal. Pipe the text in, or use --body.");
+  }
   return readFileSync(0, "utf8");
 }
 
@@ -150,6 +168,15 @@ function writeAll(path: string, pending: AppendMessageOptions[]) {
     if (error instanceof LogWriteError) throw new ArgError(error.message);
     throw error;
   }
+}
+
+/** The holder a take-over displaced, when there was one. */
+function stateBefore(lease: import("./writer-lease").LeaseState): { pid: number; at: number } | undefined {
+  if (lease.held) return { pid: lease.lease.pid, at: lease.lease.at };
+  // A stale lease still identifies the writer that stopped: recording it is the
+  // difference between a log that says "someone took this over" and one that
+  // says who from.
+  return lease.reason === "stale" ? { pid: lease.last.pid, at: lease.last.at } : undefined;
 }
 
 function bundledSkillPath(): string {
@@ -299,52 +326,81 @@ const COMMANDS: Record<string, Command> = {
       const path = positionals[0];
       if (!path) throw new ArgError("Missing <path>.");
       const absolute = resolve(path);
-      const registryPath = typeof flags.registry === "string" ? flags.registry : defaultRegistryPath();
 
-      const pending = pendingAppends(flags);
       const takeOver = flags["take-over"] === true;
 
-      // One MCP round-trip, which already reads the room's state: the answer to
-      // "is anything writing into it" is in that same reply once the registry
-      // is consulted below.
-      const serving = (await listLiveRooms(registryPath)).find((room) => room.logPath === absolute);
-      if (serving !== undefined) {
-        const lease = readWriterLease(writerLeasePathFor(registryPath));
-        if (lease.held) {
-          throw new ArgError(
-            `A live room (${serving.id}) is serving this log and a writer is live in it (pid ${lease.lease.pid}). ` +
-              `Two writers into one append-only log is the race D-01 exists to prevent, and neither ` +
-              `--take-over nor anything else overrides a writer that is still there. Stop it, or wait for its lease to expire.`,
-          );
-        }
-        if (lease.reason === "stale" && !takeOver) {
-          throw new ArgError(
-            `A live room (${serving.id}) is serving this log, and the writer that was in it is gone — its lease is stale. ` +
-              `Writing now means taking ownership from a room that looks supervised. Pass --take-over to do that deliberately; ` +
-              `the log will record it.`,
-          );
-        }
-        if (!takeOver && lease.reason !== "absent") {
-          throw new ArgError(`Refusing to append to ${absolute} without a stated reason. This is a bug: report it.`);
-        }
-        const written = writeAll(absolute, pending);
-        if (takeOver) {
-          // The reader of this log later cannot see that a room was written by
-          // hand while its writer was gone, unless the log says so. `status` is
-          // already a message kind, so this needs no format change.
-          appendMessage(absolute, {
-            from: "owner",
-            kind: "status",
-            body: `--take-over: ${written} message(s) appended while room ${serving.id} was live with no live writer`,
-          });
-        }
-        for (const message of written) console.log(`Appended seq ${message.seq} from ${message.from}.`);
-        return;
+      // Absolute, because the lease lives beside the registry and this process's
+      // cwd is not the next process's: a relative `--registry` made the lease
+      // land in a different directory depending on where the command was run.
+      const absoluteRegistry = resolve(typeof flags.registry === "string" ? flags.registry : defaultRegistryPath());
+      const leasePath = writerLeasePathFor(absoluteRegistry, absolute);
+
+      const serving = (await listLiveRooms(absoluteRegistry)).find((room) => room.logPath === absolute);
+
+      // Read the lease BEFORE the probe, and independently of its outcome. A
+      // liveness probe that times out says "could not reach it", which is not
+      // "nothing is writing into it" — and reading the lease only once the probe
+      // succeeded meant a busy machine wrote into a room whose dispatcher was
+      // perfectly alive.
+      const lease = readWriterLease(leasePath);
+      const dispatched = serving !== undefined ? ((await probeRoomState(serving))?.dispatcherAttached ?? undefined) : undefined;
+
+      // Two independent pieces of evidence that someone else is writing: a live
+      // dispatcher, and a lease somebody is refreshing. The second exists because
+      // the first only holds for a server that was started with a lease path.
+      const writerPresent = lease.held || dispatched === true;
+      const writerWasThere = !writerPresent && lease.reason === "stale";
+
+      if (writerPresent) {
+        // Two different reasons to refuse, and they need different advice: a
+        // lease that is merely stale will expire by itself, while a room that
+        // reports a dispatcher will keep reporting one until the server is
+        // stopped — waiting would be advice that never comes true.
+        const advice =
+          dispatched === true
+            ? `Stop the server that is running the room; once it is gone, --take-over will let you write to this log.`
+            : `Wait for that lease to expire (a writer that is running refreshes it), or stop the process holding it.`;
+        throw new ArgError(
+          `A writer is live in ${absolute}${serving === undefined ? "" : ` (room ${serving.id})`}` +
+            `${lease.held ? ` — pid ${lease.lease.pid}` : " — the room reports a dispatcher attached"}. ` +
+            `Two writers into one append-only log is the race D-01 exists to prevent, and nothing overrides a writer ` +
+            `that is still there. ${advice}`,
+        );
+      }
+      if (writerWasThere && !takeOver) {
+        throw new ArgError(
+          `A writer was in ${absolute}${serving === undefined ? "" : ` (room ${serving.id})`} and is gone — ` +
+            `nothing holds the lease now. Writing means taking ownership from a room that looks supervised. ` +
+            `Pass --take-over to do that deliberately; the log will record it.`,
+        );
       }
 
-      for (const message of writeAll(absolute, pending)) {
-        console.log(`Appended seq ${message.seq} from ${message.from}.`);
+      // Parsed only after the refusal: an operator whose command is going to be
+      // rejected should not be made to pipe a batch in first, and a reader that
+      // blocks on stdin while holding a decision helps nobody.
+      const pending = pendingAppends(flags);
+      const written = writeAll(absolute, pending);
+
+      if (takeOver || writerWasThere) {
+        // In the same batch as the write, not a second locked section after it: a
+        // trace that can be lost between the two would leave a taken-over room
+        // reading as supervised, which is the one thing it must not do.
+        const displaced = stateBefore(lease);
+        appendMessage(absolute, {
+          from: "owner",
+          kind: "status",
+          body:
+            `--take-over: ${written.length} message(s) appended to ${absolute}` +
+            `${serving === undefined ? "" : ` while room ${serving.id} was live`} with no live writer` +
+            `${displaced === undefined ? " (no lease was held)" : ` (took over from pid ${displaced.pid})`}`,
+        });
+        // The lease is replaced with a new token, so a writer that was merely
+        // paused cannot revive the one it lost by refreshing it — the whole
+        // reason a take-over is not just a flag on the write.
+        acquireWriterLease(leasePath, { pid: process.pid, ...(displaced === undefined ? {} : { takeOverFrom: displaced }) });
       }
+
+      for (const message of written) console.log(`Appended seq ${message.seq} from ${message.from}.`);
     },
   },
 
@@ -373,7 +429,7 @@ const COMMANDS: Record<string, Command> = {
         port: typeof flags.port === "number" ? flags.port : undefined,
         host: typeof flags.host === "string" ? flags.host : undefined,
         acknowledgeNonLoopback: flags["acknowledge-non-loopback"] === true,
-        writerLeasePath: writerLeasePathFor(registryPath),
+        writerLeasePath: writerLeasePathFor(resolve(registryPath), absoluteLogPath),
       });
 
       const entry = registerRoom(registryPath, {

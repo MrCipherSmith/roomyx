@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
-import { randomUUID } from "node:crypto";
+import { dirname, join } from "node:path";
+import { createHash, randomUUID } from "node:crypto";
 
 /**
  * Who is holding the pen on a room log, as a fact rather than an inference.
@@ -27,7 +27,10 @@ import { randomUUID } from "node:crypto";
  *
  * The lease lives beside the registry, not beside the log: a room log travels
  * with the repository, while who holds the pen is a property of this machine's
- * running processes.
+ * running processes. It is keyed by the **log**, though — one file per room —
+ * because a project runs several rooms at once (the README's whole point in
+ * giving `serve` an ephemeral port default), and a single lease file shared by
+ * all of them meant the first room's writer refused writes to the second's log.
  */
 
 /** How often a holder re-states that it is still there. */
@@ -46,14 +49,35 @@ export interface WriterLease {
   pid: number;
   /** Epoch ms of the last heartbeat, so staleness needs no file mtime. */
   at: number;
+  /**
+   * Set when a writer took this lease over from one that had stopped — the pid
+   * that did it, and when. It is why the token is replaced on take-over: the
+   * previous holder's heartbeat has to fail, or a writer that was merely paused
+   * revives the lease it lost and two processes write the same log.
+   */
+  takenOverFrom?: { pid: number; at: number };
 }
 
 export type LeaseState =
   | { held: true; lease: WriterLease }
-  | { held: false; reason: "absent" | "stale" };
+  /**
+   * `stale` carries the lease it found, because "a writer stopped here, pid N,
+   * at T" is the fact a take-over needs to record — and reading the file only to
+   * discard who was in it leaves the log unable to say what it displaced.
+   */
+  | { held: false; reason: "absent" }
+  | { held: false; reason: "stale"; last: WriterLease };
 
-export function writerLeasePathFor(registryPath: string): string {
-  return `${registryPath}.writer`;
+/**
+ * One lease file per room, under a directory beside the registry.
+ *
+ * The file name is a hash of the log's absolute path: the log path is what
+ * identifies the room, and a name derived from it keeps two rooms apart without
+ * putting a path (which contains separators) into a file name.
+ */
+export function writerLeasePathFor(registryPath: string, logPath: string): string {
+  const name = createHash("sha256").update(logPath).digest("hex").slice(0, 16);
+  return join(dirname(registryPath), "writers", `${name}.json`);
 }
 
 function parseLease(raw: string): WriterLease | undefined {
@@ -86,18 +110,22 @@ export function readWriterLease(path: string, options: { now?: number } = {}): L
   const lease = parseLease(raw);
   if (lease === undefined) return { held: false, reason: "absent" };
   const now = options.now ?? Date.now();
-  if (now - lease.at > LEASE_STALE_MS) return { held: false, reason: "stale" };
+  if (now - lease.at > LEASE_STALE_MS) return { held: false, reason: "stale", last: lease };
   return { held: true, lease };
 }
 
 /** Takes the lease unconditionally, replacing whatever was there. */
-export function acquireWriterLease(path: string, options: { pid: number; now?: number }): WriterLease {
+export function acquireWriterLease(
+  path: string,
+  options: { pid: number; now?: number; takeOverFrom?: { pid: number; at: number } },
+): WriterLease {
   mkdirSync(dirname(path), { recursive: true });
   const lease: WriterLease = {
     token: randomUUID(),
     pid: options.pid,
     at: options.now ?? Date.now(),
   };
+  if (options.takeOverFrom !== undefined) lease.takenOverFrom = options.takeOverFrom;
   writeFileSync(path, JSON.stringify(lease));
   return lease;
 }

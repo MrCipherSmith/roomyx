@@ -9,7 +9,7 @@
   "title": "Make writer ownership explicit: refuse honestly, and replace --force with a take-over that cannot be abused (D-18 items 1-4, 7)",
   "status": "in-progress",
   "createdAt": "2026-09-10T10:22:25.101Z",
-  "updatedAt": "2026-09-10T10:29:21.260Z",
+  "updatedAt": "2026-09-10T10:32:08.016Z",
   "source": {
     "type": "description",
     "ref": null
@@ -82,8 +82,14 @@
       "status": "todo",
       "dependsOn": [],
       "attempts": {
-        "count": 0,
-        "log": []
+        "count": 1,
+        "log": [
+          {
+            "at": "2026-09-10T10:32:08.016Z",
+            "outcome": "started",
+            "detail": "003-T4 review round 1: 4 major + 6 minor, all in the code this flow introduced"
+          }
+        ]
       },
       "acRefs": [],
       "evidenceRefs": [],
@@ -198,6 +204,11 @@
       "at": "2026-09-10T10:29:21.260Z",
       "event": "task-done",
       "detail": "T7: SKILL.md loses --force; CHANGELOG minor bump to 0.8.0; confirm the log format is unchanged"
+    },
+    {
+      "at": "2026-09-10T10:32:08.016Z",
+      "event": "task-attempt",
+      "detail": "T4: started (attempt 1) — 003-T4 review round 1: 4 major + 6 minor, all in the code this flow introduced"
     }
   ]
 }

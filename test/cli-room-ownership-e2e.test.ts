@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { copyFileSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { registerRoom } from "../src/installer/registry";
+import { deregisterRoom, registerRoom } from "../src/installer/registry";
 import { serve } from "../src/server/serve";
 import type { ServeHandle } from "../src/server/serve";
 import { LEASE_STALE_MS, acquireWriterLease, writerLeasePathFor } from "../src/writer-lease";
@@ -46,7 +46,7 @@ describe("a room with a live dispatcher, across processes", () => {
     handle = await serve(log, {
       port: 0,
       onOwnerCommand: () => ({ accepted: true }),
-      writerLeasePath: writerLeasePathFor(registryPath),
+      writerLeasePath: writerLeasePathFor(registryPath, log),
     });
     const entry = registerRoom(registryPath, { port: handle.port, logPath: log, pid: process.pid });
 
@@ -66,12 +66,12 @@ describe("a room with a live dispatcher, across processes", () => {
     expect(readFileSync(log, "utf8")).toBe(before);
   }, 25000);
 
-  test("a writer that died while its server kept serving: --take-over writes, and the log says so", async () => {
+  test("the writer's server is gone and its lease is stale: --take-over writes, and the log says so", async () => {
     dir = mkdtempSync(join(tmpdir(), "roomyx-owner-e2e-stale-"));
     const log = join(dir, "room.jsonl");
     copyFileSync(FIXTURE, log);
     const registryPath = join(dir, "registry.json");
-    const leasePath = writerLeasePathFor(registryPath);
+    const leasePath = writerLeasePathFor(registryPath, log);
 
     handle = await serve(log, {
       port: 0,
@@ -80,16 +80,27 @@ describe("a room with a live dispatcher, across processes", () => {
     });
     const entry = registerRoom(registryPath, { port: handle.port, logPath: log, pid: process.pid });
 
-    // The server keeps answering; the lease stops being renewed and goes stale.
-    // This is the state the row exists for, and it cannot be produced by
-    // stopping the server — a stopped server is a different case (no live room
-    // at all, which needs no flag).
+    // The server is stopped and the lease it held is left behind, unrefreshed,
+    // until it goes stale. That is the case --take-over exists for: the writer
+    // is provably gone, and the log would otherwise be unwritable until an
+    // operator deleted a file by hand.
+    //
+    // Deliberately NOT "age the lease while the server keeps answering": a room
+    // that still reports a dispatcher is not provably gone, and the CLI refuses
+    // that case even with --take-over. Recovery there means stopping the server.
     acquireWriterLease(leasePath, { pid: 999_999, now: Date.now() - LEASE_STALE_MS * 3 });
+    await handle.close();
+    handle = undefined;
+    deregisterRoom(registryPath, entry.id);
 
     // A stale lease still means a writer was there: taking over is deliberate.
+    // The refusal names the LOG here, not the room — the room is no longer
+    // registered, and a message that named an id it cannot re-check would be
+    // pointing at something the operator cannot find.
     const refused = await run(["room", "append", log, "--from", "yuki", "--body", "x", "--registry", registryPath]);
     expect(refused.code).toBe(1);
-    expect(refused.stderr).toContain(entry.id);
+    expect(refused.stderr).toContain(log);
+    expect(refused.stderr).toContain("--take-over");
 
     const taken = await run([
       "room", "append", log, "--from", "yuki", "--body", "after the writer died", "--registry", registryPath, "--take-over",
@@ -105,7 +116,9 @@ describe("a room with a live dispatcher, across processes", () => {
     const trace = recorded.find((m) => typeof m.body === "string" && m.body.includes("--take-over"));
     expect(trace).toBeDefined();
     expect(trace?.kind).toBe("status");
-    // The room id, so a later reader can tell which room was taken over.
-    expect(String(trace?.body)).toContain(entry.id);
+    // Names what was displaced, so a later reader can tell that the room was
+    // written by hand and whose lease it was taken from.
+    expect(String(trace?.body)).toContain("999999");
+    expect(String(trace?.body)).toContain(log);
   }, 25000);
 });

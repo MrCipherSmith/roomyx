@@ -13,3 +13,4 @@
 - 2026-09-10T10:26:14.870Z - task-done: T6: Structural writing: --json envelope, --body-file -, --many all-or-nothing batch
 - 2026-09-10T10:29:21.088Z - task-done: T5: End-to-end verification: run the ownership table against a real bare serve and a real dispatcher-attached server
 - 2026-09-10T10:29:21.260Z - task-done: T7: SKILL.md loses --force; CHANGELOG minor bump to 0.8.0; confirm the log format is unchanged
+- 2026-09-10T10:32:08.016Z - task-attempt: T4: started (attempt 1) — 003-T4 review round 1: 4 major + 6 minor, all in the code this flow introduced

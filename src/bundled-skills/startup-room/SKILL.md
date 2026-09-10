@@ -149,9 +149,13 @@ lease, so the case that needed an override no longer arises. If something else
 really is writing (you will be told its pid), the only honest move is to stop it
 — do not look for a flag that overrides a live writer, because there is none.
 
-For a room whose dispatcher died while its server kept running, `--take-over`
-takes ownership deliberately and records that it did. Use it when you know you
-are the last writer, not to get past a refusal you do not understand.
+`--take-over` is for a room whose writer is **provably gone** — its server has
+stopped, or the lease it left behind has expired without being refreshed. It
+records the take-over in the log, naming whose lease it took. It does not
+displace a writer that is still there: a room that reports a dispatcher attached
+keeps refusing until that server is stopped, and the refusal will tell you so.
+Use it when you know you are the last writer, never to get past a refusal you do
+not understand.
 
 `--kind` is one of `pitch`, `question`, `challenge`, `answer`, `vote`, `status`,
 `research`; `--in-reply-to <seq>` records who was being answered. Both are

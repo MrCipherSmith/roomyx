@@ -60,11 +60,32 @@ export async function serve(logPath: string, options: ServeOptions): Promise<Ser
   if (options.onOwnerCommand === undefined || options.writerLeasePath === undefined) return handle;
 
   const leasePath = options.writerLeasePath;
-  const lease = acquireWriterLease(leasePath, { pid: process.pid });
+  let lease;
+  try {
+    lease = acquireWriterLease(leasePath, { pid: process.pid });
+  } catch (error) {
+    // The port is already bound; a lease that cannot be written must not leave a
+    // server answering with no way for its caller to close it.
+    await handle.close().catch(() => undefined);
+    throw error;
+  }
+  const heldLease = lease;
   // `unref()`, so an idle heartbeat cannot be the reason the process stays
   // alive — the same rule the transport's session sweeper follows.
+  let complained = false;
   const heartbeat = setInterval(() => {
-    refreshWriterLease(leasePath, lease.token);
+    // A refresh that fails means the lease is gone or is now someone else's —
+    // which is what a take-over does. Reporting it once matters, because
+    // otherwise this process keeps dispatching into a log it no longer owns and
+    // nothing anywhere says so.
+    if (!refreshWriterLease(leasePath, heldLease.token) && !complained) {
+      complained = true;
+      console.error(
+        `roomyx serve: this server no longer holds the writer lease for ${logPath}. ` +
+          `Another writer took it over; stop dispatching into this room.`,
+      );
+      clearInterval(heartbeat);
+    }
   }, LEASE_HEARTBEAT_MS);
   heartbeat.unref();
 
@@ -72,8 +93,10 @@ export async function serve(logPath: string, options: ServeOptions): Promise<Ser
     ...handle,
     close: async () => {
       clearInterval(heartbeat);
-      releaseWriterLease(leasePath, lease.token);
+      // Close first, release second: releasing while the server still answers
+      // leaves a window where a live room looks like it has no writer.
       await handle.close();
+      releaseWriterLease(leasePath, heldLease.token);
     },
   };
 }

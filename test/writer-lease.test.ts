@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { LeaseState } from "../src/writer-lease";
 import {
   LEASE_STALE_MS,
@@ -25,6 +25,10 @@ import {
  */
 
 /** Narrowing helpers, so a case can state what it expects without a cast. */
+function dirnameOf(p: string): string {
+  return dirname(p);
+}
+
 function reasonOf(state: LeaseState): string {
   return state.held ? "held" : state.reason;
 }
@@ -34,7 +38,7 @@ function pidOf(state: LeaseState): number | undefined {
 
 function temp(): { dir: string; path: string } {
   const dir = mkdtempSync(join(tmpdir(), "roomyx-lease-"));
-  return { dir, path: writerLeasePathFor(join(dir, "registry.json")) };
+  return { dir, path: writerLeasePathFor(join(dir, "registry.json"), join(dir, "room.jsonl")) };
 }
 
 describe("the writer lease", () => {
@@ -42,9 +46,34 @@ describe("the writer lease", () => {
     // A room log travels with the repository; a lease must not. Whoever holds
     // the pen is a property of this machine's running processes.
     const registry = join(tmpdir(), "proj", ".roomyx", "rooms", "registry.json");
-    const lease = writerLeasePathFor(registry);
+    const lease = writerLeasePathFor(registry, join(tmpdir(), "proj", "room.jsonl"));
     expect(lease.startsWith(join(tmpdir(), "proj", ".roomyx", "rooms"))).toBe(true);
     expect(lease).not.toContain(".jsonl");
+  });
+
+  test("two rooms in one project get two leases", () => {
+    // A project runs several rooms at once — `serve` defaults to an ephemeral
+    // port precisely so it can. One lease file per registry meant the first
+    // room's writer refused every write to the second room's log.
+    const registry = join(tmpdir(), "proj", ".roomyx", "rooms", "registry.json");
+    const first = writerLeasePathFor(registry, join(tmpdir(), "proj", "a.jsonl"));
+    const second = writerLeasePathFor(registry, join(tmpdir(), "proj", "b.jsonl"));
+    expect(first).not.toBe(second);
+    expect(dirnameOf(first)).toBe(dirnameOf(second));
+  });
+
+  test("a take-over replaces the token, so the previous holder cannot revive it", () => {
+    // The defect this pins: take-over wrote no lease at all, so a writer that
+    // was merely paused refreshed the lease it still held and two processes
+    // wrote the same log.
+    const { dir, path } = temp();
+    const paused = acquireWriterLease(path, { pid: 11, now: 1_000 });
+    const taker = acquireWriterLease(path, { pid: 22, now: 2_000, takeOverFrom: { pid: 11, at: 1_000 } });
+    expect(refreshWriterLease(path, paused.token, { now: 2_500 })).toBe(false);
+    const state = readWriterLease(path, { now: 2_500 });
+    expect(state.held && state.lease.pid).toBe(22);
+    expect(state.held && state.lease.token).toBe(taker.token);
+    rmSync(dir, { recursive: true, force: true });
   });
 
   test("a fresh lease reads as held, with its holder", () => {
@@ -76,6 +105,8 @@ describe("the writer lease", () => {
     const stale = readWriterLease(path, { now: start + LEASE_STALE_MS + 1 });
     expect(stale.held).toBe(false);
     expect(reasonOf(stale)).toBe("stale");
+    // And it still says who stopped writing, which is what a take-over records.
+    expect(!stale.held && stale.reason === "stale" && stale.last.pid).toBe(4321);
     rmSync(dir, { recursive: true, force: true });
   });
 
@@ -109,6 +140,8 @@ describe("the writer lease", () => {
     // repair; failing open is the same answer as absent, which is what the
     // operator would get after deleting it.
     const { dir, path } = temp();
+    // The lease lives in a `writers/` directory that only a take-over creates.
+    mkdirSync(join(dir, "writers"), { recursive: true });
     writeFileSync(path, "{ not json");
     const state = readWriterLease(path);
     expect(state.held).toBe(false);

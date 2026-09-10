@@ -56,7 +56,15 @@ from a documented workflow.
 
 - The room log's format is unchanged: the take-over trace uses the existing
   `status` kind, and the lease is a separate file that lives beside the registry
-  rather than beside the log, which travels with the repository.
+  rather than beside the log, which travels with the repository. One lease per
+  **room**, keyed by the log's path: a project runs several rooms at once, and a
+  single shared lease made the first room's writer refuse writes to the second's
+  log.
+- `--take-over` does not displace a live writer. A room that reports a dispatcher
+  attached refuses until that server is stopped, because "the writer's loop hung
+  while its server kept answering" is not distinguishable from "the writer is
+  working" from outside — and guessing in that direction is what the old `--force`
+  did. The refusal says which of the two reasons applies and what to do.
 - The server still never writes the log. This release gives it a lease, not a pen.
 
 ## [0.7.2] — 2026-09-10

@@ -168,13 +168,18 @@ describe("roomyx room append", () => {
 
       // Pid 1 is not this machine's writer; what matters is that the lease is
       // fresh, which is the only thing that can be checked without trusting it.
-      acquireWriterLease(writerLeasePathFor(registryPath), { pid: 1 });
+      acquireWriterLease(writerLeasePathFor(registryPath, log), { pid: 1 });
       const before = readFileSync(log, "utf8");
 
       const refused = await run(["room", "append", log, "--from", "a", "--body", "x", "--registry", registryPath]);
       expect(refused.code).toBe(1);
       expect(refused.stderr).toContain(roomId);
-      expect(refused.stderr).toContain("--take-over");
+      // Names the writer, so the operator can act on it...
+      expect(refused.stderr).toContain("pid 1");
+      // ...and deliberately does not offer a way past it: a live writer is not
+      // something `--take-over` may displace, and a refusal that names a flag
+      // which would also be refused is worse than one that names nothing.
+      expect(refused.stderr).not.toContain("--take-over");
 
       const taken = await run(["room", "append", log, "--from", "a", "--body", "x", "--registry", registryPath, "--take-over"]);
       expect(taken.code).toBe(1);
@@ -187,7 +192,7 @@ describe("roomyx room append", () => {
       const registryPath = join(dir, "registry.json");
       await run(["room", "new", log, "--goal", "g", "--roster", "a:A"]);
       await startRoom(log, registryPath);
-      acquireWriterLease(writerLeasePathFor(registryPath), { pid: 1 });
+      acquireWriterLease(writerLeasePathFor(registryPath, log), { pid: 1 });
       const before = readFileSync(log, "utf8");
 
       const results = await Promise.all(
@@ -207,7 +212,7 @@ describe("roomyx room append", () => {
       await startRoom(log, registryPath);
 
       // Written with a timestamp far enough in the past to be past the ceiling.
-      acquireWriterLease(writerLeasePathFor(registryPath), { pid: 1, now: Date.now() - LEASE_STALE_MS * 3 });
+      acquireWriterLease(writerLeasePathFor(registryPath, log), { pid: 1, now: Date.now() - LEASE_STALE_MS * 3 });
 
       const taken = await run(["room", "append", log, "--from", "a", "--body", "taken over", "--registry", registryPath, "--take-over"]);
       expect(taken.stderr).toBe("");
