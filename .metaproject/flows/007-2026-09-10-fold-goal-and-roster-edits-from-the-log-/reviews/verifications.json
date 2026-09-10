@@ -1,0 +1,25 @@
+{
+ "status": "DONE",
+ "verifier": "flow-orchestrator-mutation-pass",
+ "summary": "5 executed mutations against this head, plus one control that must NOT fail",
+ "verifications": [
+  {
+   "finding": "2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-12#R1-01",
+   "verdict": "refuted",
+   "method": "execution",
+   "evidence": "Run against the tree at 9308168fc321921906f7a383e0cbc395807f47d8: dropped `change` from the single envelope builder and ran test/log/fold.test.ts - two cases failed (the mismatched-change and ordinary-message refusals). Reverted; 11 pass / 0 fail."
+  },
+  {
+   "finding": "2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-12#R1-02",
+   "verdict": "refuted",
+   "method": "site-check",
+   "evidence": "Checked at 9308168fc321921906f7a383e0cbc395807f47d8: rg 'appendMessage\\(' src returns the definition only, and appendMessage now delegates to appendMessages, which is what cli.ts:183 calls. There is one implementation, so the second path the finding names no longer exists."
+  }
+ ],
+ "stats": {
+  "confirmed": 0,
+  "refuted": 2,
+  "unverifiable": 0,
+  "not_checked": 0
+ }
+}
