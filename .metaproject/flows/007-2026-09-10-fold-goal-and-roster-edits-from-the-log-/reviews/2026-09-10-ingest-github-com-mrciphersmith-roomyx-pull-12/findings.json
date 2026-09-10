@@ -1,0 +1,53 @@
+[
+  {
+    "id": "R1-01",
+    "reviewer": "review-author-007",
+    "severity": "major",
+    "problem": "The single-append path (`appendMessage` + `writeMessage`) assembled the message envelope itself and dropped the `change` field. An edit appended one message at a time was therefore written as a valid message that was not an edit: accepted by the schema, and never applied by the fold.",
+    "impact": "Silent state loss. A dispatcher posting a goal edit as a single message would get a successful write, a message visible in the transcript tagged `goal_edit`, and a room whose state never changed. The failure is invisible from both ends: the writer reports success and the reader reports the old contract, which looks exactly like an edit that was never sent.",
+    "suggested_fix": "One implementation. `appendMessage` delegates to `appendMessages`; `writeMessage` is deleted.",
+    "evidence": "After the fix, dropping `change` from the single builder fails two cases in test/log/fold.test.ts ('a change of the wrong type for its kind is refused by the writer', 'a change on an ordinary message is refused too'). Before the fix, the same mutation failed nothing in test/cli-room.test.ts — because the CLI goes through the batch path, so no test in the product's own path could see it.",
+    "confidence": "high",
+    "file": "src/log/write.ts",
+    "class_scope": {
+      "sites": [
+        "src/log/write.ts:116",
+        "src/log/write.ts:134"
+      ],
+      "enumeration_method": "rg for 'appendMessage(' in src returns the definition and no call site; rg for 'appendMessages(' returns the CLI's writeAll. So after the fix there is exactly one envelope builder (buildMessage) reached by one write implementation, and the enumeration is the whole set rather than a sample."
+    },
+    "global_id": "2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-12#R1-01",
+    "disposition": {
+      "state": "acted-on",
+      "evidence": "commit 9308168fc321921906f7a383e0cbc395807f47d8"
+    },
+    "verification": {
+      "verdict": "refuted",
+      "method": "execution",
+      "evidence": "Run against the tree at 9308168fc321921906f7a383e0cbc395807f47d8: dropped `change` from the single envelope builder and ran test/log/fold.test.ts - two cases failed (the mismatched-change and ordinary-message refusals). Reverted; 11 pass / 0 fail.",
+      "verifier": "flow-orchestrator-mutation-pass"
+    }
+  },
+  {
+    "id": "R1-02",
+    "reviewer": "review-author-007",
+    "severity": "minor",
+    "problem": "`appendMessage` had no caller in src at all: the CLI's write path goes through `appendMessages`. A second implementation existed, was exported, was tested, and was not used by the product.",
+    "impact": "It is the cause of R1-01 rather than a separate defect, and it is why the drift survived: a path no product code exercises is a path whose bugs no product test can catch. Two implementations of one contract is the shape `src/log/schema.ts` exists to prevent on the reader's side.",
+    "suggested_fix": "Delegate, as in R1-01 — recorded separately because the mutation evidence differs: R1-01 is proven by a behaviour change, R1-02 by the grep that showed nobody called it.",
+    "evidence": "rg 'appendMessage\\(' src returns only its own definition; rg 'appendMessages\\(' src returns src/cli.ts:183.",
+    "confidence": "high",
+    "file": "src/log/write.ts",
+    "global_id": "2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-12#R1-02",
+    "disposition": {
+      "state": "acted-on",
+      "evidence": "commit 9308168fc321921906f7a383e0cbc395807f47d8"
+    },
+    "verification": {
+      "verdict": "refuted",
+      "method": "site-check",
+      "evidence": "Checked at 9308168fc321921906f7a383e0cbc395807f47d8: rg 'appendMessage\\(' src returns the definition only, and appendMessage now delegates to appendMessages, which is what cli.ts:183 calls. There is one implementation, so the second path the finding names no longer exists.",
+      "verifier": "flow-orchestrator-mutation-pass"
+    }
+  }
+]

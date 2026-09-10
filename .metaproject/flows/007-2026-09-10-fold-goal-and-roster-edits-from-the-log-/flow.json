@@ -7,17 +7,54 @@
   "id": "007",
   "slug": "fold-goal-and-roster-edits-from-the-log-",
   "title": "Fold goal and roster edits from the log, so a room's state is what the room last said (D-19, backlog item 8)",
-  "status": "in-progress",
+  "status": "done",
   "createdAt": "2026-09-10T13:29:02.486Z",
-  "updatedAt": "2026-09-10T13:34:00.463Z",
+  "updatedAt": "2026-09-10T13:39:20.537Z",
   "source": {
     "type": "description",
     "ref": null
   },
   "acChecksum": "sha256:43fd6eab04ecc26741a04b2eb6c0cad1848a2370de0bae603accccf8c994c1da",
-  "acConfirmed": {},
+  "acConfirmed": {
+    "AC1": {
+      "at": "2026-09-10T13:39:08.612Z",
+      "note": "test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    "AC2": {
+      "at": "2026-09-10T13:39:08.731Z",
+      "note": "test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    "AC3": {
+      "at": "2026-09-10T13:39:08.836Z",
+      "note": "test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    "AC4": {
+      "at": "2026-09-10T13:39:08.931Z",
+      "note": "test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    "AC5": {
+      "at": "2026-09-10T13:39:09.035Z",
+      "note": "test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    "AC6": {
+      "at": "2026-09-10T13:39:09.141Z",
+      "note": "test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    "AC7": {
+      "at": "2026-09-10T13:39:09.280Z",
+      "note": "test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    "AC8": {
+      "at": "2026-09-10T13:39:09.512Z",
+      "note": "test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    "AC9": {
+      "at": "2026-09-10T13:39:09.619Z",
+      "note": "test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    }
+  },
   "pr": {
-    "url": null
+    "url": "https://github.com/MrCipherSmith/roomyx/pull/12"
   },
   "tasks": [
     {
@@ -88,7 +125,7 @@
       "id": "T5",
       "title": "End to end: append an edit through a real client and read the folded state through room.get_state",
       "kind": "test",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -96,7 +133,8 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T6",
@@ -162,6 +200,85 @@
       "at": "2026-09-10T13:34:00.463Z",
       "event": "task-done",
       "detail": "T6: README log-format section, CHANGELOG, minor version; record the archiveRoom divergence"
+    },
+    {
+      "at": "2026-09-10T13:38:47.583Z",
+      "event": "task-done",
+      "detail": "T5: End to end: append an edit through a real client and read the folded state through room.get_state"
+    },
+    {
+      "at": "2026-09-10T13:38:50.603Z",
+      "event": "implemented",
+      "detail": "draft PR: https://github.com/MrCipherSmith/roomyx/pull/12 (warning: PR is not a draft) (base: main)"
+    },
+    {
+      "at": "2026-09-10T13:38:50.726Z",
+      "event": "completing"
+    },
+    {
+      "at": "2026-09-10T13:38:59.306Z",
+      "event": "completion-failed",
+      "detail": "acceptance-criteria: unconfirmed: AC1, AC2, AC3, AC4, AC5, AC6, AC7, AC8, AC9"
+    },
+    {
+      "at": "2026-09-10T13:39:08.612Z",
+      "event": "ac-confirmed",
+      "detail": "AC1: test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T13:39:08.731Z",
+      "event": "ac-confirmed",
+      "detail": "AC2: test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T13:39:08.836Z",
+      "event": "ac-confirmed",
+      "detail": "AC3: test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T13:39:08.931Z",
+      "event": "ac-confirmed",
+      "detail": "AC4: test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T13:39:09.035Z",
+      "event": "ac-confirmed",
+      "detail": "AC5: test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T13:39:09.141Z",
+      "event": "ac-confirmed",
+      "detail": "AC6: test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T13:39:09.280Z",
+      "event": "ac-confirmed",
+      "detail": "AC7: test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T13:39:09.512Z",
+      "event": "ac-confirmed",
+      "detail": "AC8: test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T13:39:09.619Z",
+      "event": "ac-confirmed",
+      "detail": "AC9: test/log/fold.test.ts (11 cases), test/cli-room.test.ts (edit via --json), test/server/serve.test.ts (folded state over a real MCP client); 433 pass / 0 fail; five mutations plus one control recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T13:39:12.462Z",
+      "event": "implemented",
+      "detail": "draft PR: https://github.com/MrCipherSmith/roomyx/pull/12 (warning: PR is not a draft)"
+    },
+    {
+      "at": "2026-09-10T13:39:12.570Z",
+      "event": "completing"
+    },
+    {
+      "at": "2026-09-10T13:39:20.537Z",
+      "event": "done",
+      "detail": "all gates passed"
     }
-  ]
+  ],
+  "baseBranch": "main"
 }
