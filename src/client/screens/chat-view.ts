@@ -7,8 +7,9 @@ import { Footer } from "../components/footer";
 import { HelpOverlay } from "../components/help-overlay";
 import { createMessageRow } from "../components/message-row";
 import { Transcript } from "../transcript";
+import type { Action } from "../keymap";
 import type { Entry } from "../transcript";
-import type { ConnectionStatus } from "../mcp-client";
+import type { DisplayStatus } from "../components/status-bar";
 
 /**
  * Terminal width at or above which the roster gets its 24 columns. Below it,
@@ -39,7 +40,16 @@ export class ChatView {
   private rows: Renderable[] = [];
   private readonly rosterVisible: boolean;
 
-  constructor(ctx: RenderContext, options: { width: number; height: number; onSelectAgent?: (agent: RosterEntry) => void }) {
+  constructor(
+    ctx: RenderContext,
+    options: {
+      width: number;
+      height: number;
+      onSelectAgent?: (agent: RosterEntry) => void;
+      /** Keys the footer must not advertise on this surface, e.g. the owner command in a closed room. */
+      hideBindings?: readonly Action[];
+    },
+  ) {
     this.ctx = ctx;
     this.node = new BoxRenderable(ctx, { width: options.width, height: options.height, flexDirection: "column" });
     this.statusBar = new StatusBar(ctx);
@@ -80,14 +90,14 @@ export class ChatView {
     });
     body.add(this.scroll);
 
-    this.footer = new Footer(ctx, { width: options.width });
+    this.footer = new Footer(ctx, { width: options.width, hideBindings: options.hideBindings });
     this.node.add(this.footer.node);
 
     this.help = new HelpOverlay(ctx, { width: options.width, height: options.height });
     this.node.add(this.help.node);
   }
 
-  setConnectionStatus(status: ConnectionStatus): void {
+  setConnectionStatus(status: DisplayStatus): void {
     this.statusBar.setConnectionStatus(status);
   }
 

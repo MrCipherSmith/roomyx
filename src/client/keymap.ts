@@ -128,9 +128,14 @@ export function resolveAction(event: ParsedKey): Action | null {
  * The footer's key hints, in binding order, trimmed to fit `width` by dropping
  * the least useful ones first rather than dropping all of them at once.
  * Returns "" when not even one hint fits.
+ *
+ * `exclude` drops bindings that do not apply to the surface asking. A closed
+ * room has nobody to send an owner command to, and a footer that advertises one
+ * anyway is the same failure as the permanent `[connected]` chip this footer
+ * was rebuilt to remove: a printed word that is not true of what is on screen.
  */
-export function footerHints(width = Number.POSITIVE_INFINITY): string {
-  const entries = BINDINGS.filter((binding) => binding.footer).map((binding, order) => ({
+export function footerHints(width = Number.POSITIVE_INFINITY, exclude: readonly Action[] = []): string {
+  const entries = BINDINGS.filter((binding) => binding.footer && !exclude.includes(binding.action)).map((binding, order) => ({
     order,
     rank: binding.footerRank ?? 0,
     text: `${binding.keys} ${binding.hint}`,

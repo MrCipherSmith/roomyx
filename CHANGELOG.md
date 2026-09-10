@@ -13,6 +13,43 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.6.3] — 2026-09-10
+
+A patch: closed rooms are now remembered and can be reread. Purely additive —
+nothing removed, no default changed — so `^0.6.0` gets it automatically.
+
+### Added
+
+- **`roomyx rooms history`** — the rooms that have closed, newest first, with
+  the goal each had, how many people and messages, and where its log is.
+- **`roomyx-client --archive`** — the same list as a picker; Enter opens the
+  highlighted room read-only.
+- **`roomyx-client --open <logPath>`** — reread one closed room directly. No
+  server, no polling: the log is a finished file, read once. Scrolling,
+  per-participant filtering, search, export and help all work exactly as in a
+  live room. The owner command does not, and the footer no longer prints its
+  key when there is nobody to send it to.
+- **A closed room is recorded in two places, not one.** `roomyx serve` writes
+  its history entry on shutdown; a room killed by a signal no handler runs for
+  is recorded instead when `roomyx rooms list` next finds it gone. Without the
+  second, the rooms most worth rereading — the ones that crashed — would leave
+  no trace at all.
+
+### Note on what is stored
+
+`.roomyx/rooms/history.jsonl` is an **index, not an archive of copies**. It
+records what a room was and *where its log is*; the transcript stays where you
+put it and is never duplicated. A room log is append-only and is the single
+source of truth for what was said (D-01a) — a copy would be a second one, and
+an append to the original would leave the two disagreeing with nothing
+recording which is current. The cost is that a log you move or delete is gone;
+the list says so, with a `!` at the front of the row, which a shadow copy could
+never have told you. Reasoning in full: decision D-14.
+
+One behavioural consequence worth stating: `roomyx rooms list` now appends to
+that file when it prunes a dead room. The MCP surface still does not — it asks
+for no pruning, so "the network surface only reads" stays exactly true.
+
 ## [0.6.2] — 2026-09-10
 
 A patch: two reader fixes a fuzzer found, and three testing harnesses. Nothing
