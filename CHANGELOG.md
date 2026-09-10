@@ -13,7 +13,7 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
-## [Unreleased]
+## [0.11.1] — 2026-09-10
 
 ### Added
 
