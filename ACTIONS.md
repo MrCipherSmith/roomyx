@@ -9,10 +9,10 @@ here as work.
 
 | | |
 |---|---|
-| Released | `@mrciphersmith/roomyx@0.10.0` (tag `v0.10.0`, published with provenance) |
-| `main` | green: `bun run check` → 398 pass / 0 fail |
-| Flows | 001–005 `done`; PRs #5, #8, #9 were small changes without a flow |
-| Decisions recorded, not implemented | D-18 items 5, 8 |
+| Released | `@mrciphersmith/roomyx@0.10.3` (tag `v0.10.3`). `0.10.1`/`0.10.2` are the owner's persona work, shipped to `main` in parallel |
+| `main` | green: 419 tests, 0 fail (the count includes the persona library's own tests) |
+| Flows | 001–006 `done`; PRs #5, #8, #9 were small changes without a flow |
+| Decisions recorded, not implemented | D-18 item 8 (a decision, not a task) |
 
 ## Triage
 
@@ -51,7 +51,7 @@ landed and the named half did not.
 | **R7** a timeout prunes a live room | **done** | flow 004, release `0.8.1`: `Liveness` is `live`/`gone`/`unknown`, only `gone` prunes or archives, and `rooms list` reports an unanswered room instead of dropping it |
 | **R10** `get_transcript` has no `limit` | **done** | released `0.9.0` (PR #9): the response is `{ messages, has_more, next_seq }`, the default is bounded at 200, and the cursor advances only over messages actually returned |
 | **R12** the status bar drops the threshold | **done** | released `0.9.0` (PR #9): the threshold is on the line, and over-long lines end with `clip()`'s marker instead of being cut by the pane edge |
-| D-18 item 5 `room.get_delta_for` | **open** | not in `src/` |
+| D-18 item 5 `room.get_delta_for` | **done** | released `0.10.3` (flow 006, PR #11): the delta is computed in the server, reporting `since_seq` and `cursor_from` so an empty delta is distinguishable from a wrong cursor |
 | D-18 item 6 owner-command queue | **done** | released `0.10.0` (flow 005, PR #10): the queue is created in `serve()` so every session shares it, with `room.get_pending_owner_commands`, `room://owner-queue` and `room.ack_owner_command` |
 | D-18 item 8 state-update shape | **not schedulable** | needs a decision first |
 
@@ -75,13 +75,10 @@ strength of this line — measure first.
 
 ## Next
 
-1. **D-18 item 5 — `room.get_delta_for`.** The last implementable decision item:
-   it takes the per-turn cursor arithmetic out of the orchestrator's context.
-   Note the two things this flow learned that apply to it — the server factory is
-   per session, so anything shared belongs in `serve()`; and the import direction
-   is index → owner-queue, which a new tool module should follow rather than
-   reverse.
-2. **`resources/subscribe` on the owner queue**, which this flow deliberately
+Every implementable item from the backlog and from D-16/D-18 has now shipped.
+What is left is decisions and follow-ups, not tasks:
+
+1. **`resources/subscribe` on the owner queue**, which this flow deliberately
    left out: the server can push here (it receives the command itself, unlike the
    transcript), but a subscription only means something once a host acts on the
    notification, and no host in this project has been shown to. Out of scope for
@@ -89,7 +86,7 @@ strength of this line — measure first.
 
 ## Needs a decision before code
 
-3. **D-18 item 8 — a representation for `goal_edit` / `add_participant`.**
+2. **D-18 item 8 — a representation for `goal_edit` / `add_participant`.**
    `loadRoomLog` requires every line after the header to satisfy
    `messageLineSchema`, so a second `state` line makes the room unreadable
    forever, and the header cannot be rewritten. A permitted record type with
@@ -116,6 +113,16 @@ strength of this line — measure first.
 - **`appendMessages` is all-or-nothing only for the failures it can observe**; an
   I/O failure mid-append leaves the earlier lines, and the bound is stated on the
   function because the append-only contract rules out a temp-file rename.
+
+## main is moving faster than a flow completes
+
+Flows 005 and 006 both collided with work the repository owner pushed to `main`
+while the branch was open — `0.10.1` and `0.10.2` in flow 006 alone. Each
+collision cost a rebase plus a version renumber, and the rule applied was: *their
+releases are published, mine is not, so mine moves*. That is defensible, but it
+should be a **decision rather than a habit**. The alternatives: hold `main` while
+a flow is in flight, or accept the renumbering as routine and always branch with
+a spare patch number.
 
 ## Review dispatch is not producing anything
 
