@@ -13,6 +13,23 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.10.2] — 2026-09-10
+
+### Added
+
+- **The persona library is offered at both scopes in `roomyx init`**, under its
+  own heading — "For every project" (`~/.roomyx/personas`) and "In this project"
+  (`.roomyx/personas`) — the same machine-wide/project question the skill rows
+  already ask. `roomyx personas --global` is the command-line equivalent.
+- **The skill now states a lookup order**: `.roomyx/personas/` first, falling
+  back to `~/.roomyx/personas/`. A project copy overrides the machine-wide one,
+  which is the order every runtime already uses for skills.
+
+The project row is ticked by default and the machine-wide one is not: the
+project copy is the one the skill prefers and the one that travels with the
+repository, and eighty-seven files appearing under a home directory nobody asked
+about is the surprise the default-tick rule exists to prevent.
+
 ## [0.10.1] — 2026-09-10
 
 A patch. The skill pointed at a persona directory that only existed in the
