@@ -118,10 +118,21 @@ is *every human evaluation of the other four*, and every new user.
 1. The D-01 amendment is written into `docs/roomyx/decisions.md` **first**, in
    substantially these terms: *D-01 constrains the server, not the package; the
    invariant is one writer per live room. `room new` creates a log with no
-   dispatcher (writers 0→1, no race). `room append` refuses when
-   `listLiveRooms()` shows a live room serving that path; `--force` overrides.*
+   dispatcher (writers 0→1, no race). `room append` refuses when a live room is
+   serving that path **and something is writing into it**.*
 2. Then `roomyx room new <path> --goal --roster` and `roomyx room append`, with
-   the live-room refusal implemented, not just documented.
+   the refusal implemented, not just documented.
+
+   > **Amendment, 2026-09-10 — closed, and this item's wording was stale.** Both
+   > halves landed: D-01a was written, and `room new`/`room append` exist. The
+   > sentence above used to end "`--force` overrides", which describes a flag
+   > that **no longer exists** — 0.8.0 removed it (D-18 items 1-4) because a
+   > refusal whose documented happy path is the override guards nothing. The
+   > refusal now depends on evidence rather than on a guess: `room.get_state`
+   > reports `dispatcherAttached`, a server with a dispatcher holds a writer
+   > lease, and the only override is `--take-over`, which succeeds solely
+   > against a writer that is provably gone. Read the `--force` in any older
+   > copy of this paragraph as history, not as instruction.
 
 > The amendment writes itself from the split we converged on. If that paragraph
 > isn't in `decisions.md` when the work lands, the work isn't done. — Théo
@@ -629,6 +640,17 @@ process cannot be given one. R5's acceptance criterion in `prd.md` ("at least
 one interactive command really reaches the room") has no measurable form without
 an ack. This is the one part of the room the server *can* push: it receives the
 command itself, over HTTP.
+
+> **Status, 2026-09-10 — the tool is implemented and unreachable for the
+> consumer it was designed for.** `docs/roomyx/README.md` lists
+> `room.post_owner_command` as `implemented` alongside `spec ready` items, and
+> both words are true of it in different senses: the tool exists, is registered,
+> is tested (`test/server/owner-command.test.ts`), and answers correctly — and
+> the orchestrator that spawns `serve` as a child process can never attach the
+> handler it needs. "Implemented" without that distinction reads as "this works
+> for you", which is the misreading a status field exists to prevent. This item
+> is what closes the gap; until it lands, treat the tool as a seam for embedding
+> hosts rather than as a working owner channel.
 
 *Failing test* (extend `test/server/owner-command.test.ts`, plus a new
 `test/server/owner-queue.test.ts`):
