@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R1-01",
+    "reviewer": "review-author-005",
+    "severity": "minor",
+    "problem": "owner-queue.ts imported the command vocabulary from index.ts while index.ts imported the queue from owner-queue.ts, so the two modules were cyclic. A dead re-export of OWNER_COMMAND_KINDS from owner-queue.ts pulled the vocabulary back out in the other direction.",
+    "impact": "The cycle happened to work under this loader because the bindings are only read inside functions. That is the kind of thing that stops being true when a load order or a bundler changes, and the symptom would be an undefined binding at module init rather than a compile error.",
+    "suggested_fix": "Move the vocabulary to owner-queue.ts, where a command first exists, and have index.ts re-export it so every existing consumer is unchanged.",
+    "evidence": "src/server/owner-queue.ts has no import from ./index; index.ts imports the vocabulary and the queue from ./owner-queue, one direction only. test/client/owner-prompt.test.ts and both server suites still pass against the re-export.",
+    "confidence": "high",
+    "file": "src/server/owner-queue.ts",
+    "class_scope": {
+      "sites": [
+        "src/server/owner-queue.ts:2",
+        "src/server/index.ts:4",
+        "src/server/index.ts:5"
+      ],
+      "enumeration_method": "rg for 'from \"./owner-queue\"' and 'from \"./index\"' across src/server returns exactly these three import sites; no other module in the server directory imports across them, so the cycle was the only one and is now the only direction."
+    },
+    "global_id": "2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-10#R1-01",
+    "disposition": {
+      "state": "acted-on",
+      "evidence": "commit c542f47108fcc8387bdbcf1972139ff115acddeb"
+    },
+    "verification": {
+      "verdict": "refuted",
+      "method": "site-check",
+      "evidence": "Checked at c542f47108fcc8387bdbcf1972139ff115acddeb: src/server/owner-queue.ts contains no import from ./index (grep returns nothing), index.ts imports both the vocabulary and the queue from ./owner-queue, and the dead re-export is gone. The cycle the finding names no longer exists in either direction.",
+      "verifier": "flow-orchestrator-mutation-pass"
+    }
+  }
+]

@@ -9,10 +9,10 @@ here as work.
 
 | | |
 |---|---|
-| Released | `@mrciphersmith/roomyx@0.9.0` (tag `v0.9.0`, published with provenance) |
-| `main` | green: `bun run check` → 387 pass / 0 fail |
-| Flows | 001–004 `done`; PRs #5, #8, #9 were small changes without a flow |
-| Decisions recorded, not implemented | D-18 items 5, 6, 8 |
+| Released | `@mrciphersmith/roomyx@0.10.0` (tag `v0.10.0`, published with provenance) |
+| `main` | green: `bun run check` → 398 pass / 0 fail |
+| Flows | 001–005 `done`; PRs #5, #8, #9 were small changes without a flow |
+| Decisions recorded, not implemented | D-18 items 5, 8 |
 
 ## Triage
 
@@ -52,7 +52,7 @@ landed and the named half did not.
 | **R10** `get_transcript` has no `limit` | **done** | released `0.9.0` (PR #9): the response is `{ messages, has_more, next_seq }`, the default is bounded at 200, and the cursor advances only over messages actually returned |
 | **R12** the status bar drops the threshold | **done** | released `0.9.0` (PR #9): the threshold is on the line, and over-long lines end with `clip()`'s marker instead of being cut by the pane edge |
 | D-18 item 5 `room.get_delta_for` | **open** | not in `src/` |
-| D-18 item 6 owner-command queue | **open** | not in `src/` |
+| D-18 item 6 owner-command queue | **done** | released `0.10.0` (flow 005, PR #10): the queue is created in `serve()` so every session shares it, with `room.get_pending_owner_commands`, `room://owner-queue` and `room.ack_owner_command` |
 | D-18 item 8 state-update shape | **not schedulable** | needs a decision first |
 
 **The previous list undercounted.** It carried D-18 items 5, 6 and 8 and nothing
@@ -75,15 +75,17 @@ strength of this line — measure first.
 
 ## Next
 
-1. **D-18 item 6 — the owner-command queue** (`room.get_pending_owner_commands`,
-   `room://owner-queue`, `room.ack_owner_command`). Highest value of the three
-   decisions: `room.post_owner_command` still answers `accepted: false` for the
-   primary scenario, because a model-driven orchestrator spawns `serve` and
-   `onOwnerCommand` is a JS function that cannot be injected into it. `prd.md`
-   R5's criterion has no measurable form until an ack exists.
-2. **D-18 item 5 — `room.get_delta_for`.** Do it after item 6, not with it: same
-   tool file, and bundling two changes into one review stops the review from
-   being about either.
+1. **D-18 item 5 — `room.get_delta_for`.** The last implementable decision item:
+   it takes the per-turn cursor arithmetic out of the orchestrator's context.
+   Note the two things this flow learned that apply to it — the server factory is
+   per session, so anything shared belongs in `serve()`; and the import direction
+   is index → owner-queue, which a new tool module should follow rather than
+   reverse.
+2. **`resources/subscribe` on the owner queue**, which this flow deliberately
+   left out: the server can push here (it receives the command itself, unlike the
+   transcript), but a subscription only means something once a host acts on the
+   notification, and no host in this project has been shown to. Out of scope for
+   a reason, not forgotten.
 
 ## Needs a decision before code
 

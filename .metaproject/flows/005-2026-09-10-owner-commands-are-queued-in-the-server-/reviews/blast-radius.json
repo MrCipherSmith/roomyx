@@ -1,0 +1,393 @@
+{
+  "schemaVersion": 1,
+  "scope": "blast-radius",
+  "depth": 2,
+  "maxFiles": 40,
+  "changedFiles": [
+    ".metaproject/data/gdgraph/.provenance.json",
+    ".metaproject/data/gdgraph/artifacts/module-map.json",
+    ".metaproject/data/gdgraph/artifacts/summary.md",
+    ".metaproject/flows/005-2026-09-10-owner-commands-are-queued-in-the-server-/acceptance-criteria.md",
+    ".metaproject/flows/005-2026-09-10-owner-commands-are-queued-in-the-server-/context.md",
+    ".metaproject/flows/005-2026-09-10-owner-commands-are-queued-in-the-server-/description.md",
+    ".metaproject/flows/005-2026-09-10-owner-commands-are-queued-in-the-server-/flow.json",
+    ".metaproject/flows/005-2026-09-10-owner-commands-are-queued-in-the-server-/journal.md",
+    ".metaproject/flows/005-2026-09-10-owner-commands-are-queued-in-the-server-/plan.md",
+    ".metaproject/flows/005-2026-09-10-owner-commands-are-queued-in-the-server-/tasks.md",
+    "CHANGELOG.md",
+    "docs/roomyx/README.md",
+    "docs/roomyx/improvement-backlog.md",
+    "package.json",
+    "src/client/index.ts",
+    "src/client/mcp-client.ts",
+    "src/server/index.ts",
+    "src/server/owner-queue.ts",
+    "src/server/serve.ts",
+    "test/cli-room-ownership-e2e.test.ts",
+    "test/server/dispatcher-attached.test.ts",
+    "test/server/owner-command.test.ts",
+    "test/server/owner-queue.test.ts"
+  ],
+  "files": [
+    {
+      "file": "src/client/components/status-bar.ts",
+      "hop": 1,
+      "fanIn": 2,
+      "via": "src/client/mcp-client.ts",
+      "path": [
+        "src/client/components/status-bar.ts",
+        "src/client/mcp-client.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/client/liveness.ts",
+      "hop": 1,
+      "fanIn": 2,
+      "via": "src/client/mcp-client.ts",
+      "path": [
+        "src/client/liveness.ts",
+        "src/client/mcp-client.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/client/owner-prompt.ts",
+      "hop": 1,
+      "fanIn": 2,
+      "via": "src/server/index.ts",
+      "path": [
+        "src/client/owner-prompt.ts",
+        "src/server/index.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "scripts/soak.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/client/mcp-client.ts",
+      "path": [
+        "scripts/soak.ts",
+        "src/client/mcp-client.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "src/cli.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/client/index.ts",
+      "path": [
+        "src/cli.ts",
+        "src/client/index.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "test/client/mcp-client.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/client/mcp-client.ts",
+      "path": [
+        "test/client/mcp-client.test.ts",
+        "src/client/mcp-client.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/reconnect-rate.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/client/mcp-client.ts",
+      "path": [
+        "test/client/reconnect-rate.test.ts",
+        "src/client/mcp-client.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/render.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/client/mcp-client.ts",
+      "path": [
+        "test/client/render.test.ts",
+        "src/client/mcp-client.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/tool-error.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/client/mcp-client.ts",
+      "path": [
+        "test/client/tool-error.test.ts",
+        "src/client/mcp-client.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/installer/registry-liveness.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/server/serve.ts",
+      "path": [
+        "test/installer/registry-liveness.test.ts",
+        "src/server/serve.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/installer/registry.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/server/serve.ts",
+      "path": [
+        "test/installer/registry.test.ts",
+        "src/server/serve.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/installer/resolve-connection.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/server/serve.ts",
+      "path": [
+        "test/installer/resolve-connection.test.ts",
+        "src/server/serve.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/mcp-management/server.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/server/serve.ts",
+      "path": [
+        "test/mcp-management/server.test.ts",
+        "src/server/serve.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/server/rebinding-guard.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/server/serve.ts",
+      "path": [
+        "test/server/rebinding-guard.test.ts",
+        "src/server/serve.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/server/serve.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/server/serve.ts",
+      "path": [
+        "test/server/serve.test.ts",
+        "src/server/serve.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/server/session-lifetime.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/client/mcp-client.ts",
+      "path": [
+        "test/server/session-lifetime.test.ts",
+        "src/client/mcp-client.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/server/shutdown.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/server/serve.ts",
+      "path": [
+        "test/server/shutdown.test.ts",
+        "src/server/serve.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/server/transport-gates.test.ts",
+      "hop": 1,
+      "fanIn": 0,
+      "via": "src/server/serve.ts",
+      "path": [
+        "test/server/transport-gates.test.ts",
+        "src/server/serve.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "src/client/screens/chat-view.ts",
+      "hop": 2,
+      "fanIn": 12,
+      "via": "src/client/mcp-client.ts",
+      "path": [
+        "src/client/screens/chat-view.ts",
+        "src/client/components/status-bar.ts",
+        "src/client/mcp-client.ts"
+      ],
+      "source": "graph",
+      "isTest": false
+    },
+    {
+      "file": "test/client/liveness.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/client/mcp-client.ts",
+      "path": [
+        "test/client/liveness.test.ts",
+        "src/client/liveness.ts",
+        "src/client/mcp-client.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/owner-prompt.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/server/index.ts",
+      "path": [
+        "test/client/owner-prompt.test.ts",
+        "src/client/owner-prompt.ts",
+        "src/server/index.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    },
+    {
+      "file": "test/client/status-bar.test.ts",
+      "hop": 2,
+      "fanIn": 0,
+      "via": "src/client/mcp-client.ts",
+      "path": [
+        "test/client/status-bar.test.ts",
+        "src/client/components/status-bar.ts",
+        "src/client/mcp-client.ts"
+      ],
+      "source": "graph",
+      "isTest": true
+    }
+  ],
+  "dropped": [],
+  "unresolved": [
+    {
+      "file": ".metaproject/data/gdgraph/.provenance.json",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/data/gdgraph/artifacts/module-map.json",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/data/gdgraph/artifacts/summary.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/005-2026-09-10-owner-commands-are-queued-in-the-server-/acceptance-criteria.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/005-2026-09-10-owner-commands-are-queued-in-the-server-/context.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/005-2026-09-10-owner-commands-are-queued-in-the-server-/description.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/005-2026-09-10-owner-commands-are-queued-in-the-server-/flow.json",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/005-2026-09-10-owner-commands-are-queued-in-the-server-/journal.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/005-2026-09-10-owner-commands-are-queued-in-the-server-/plan.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": ".metaproject/flows/005-2026-09-10-owner-commands-are-queued-in-the-server-/tasks.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": "CHANGELOG.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": "docs/roomyx/README.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": "docs/roomyx/improvement-backlog.md",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    },
+    {
+      "file": "package.json",
+      "reason": "not-a-graph-node",
+      "detail": "the code graph has no node for this path, so it has no dependents to walk. This is NOT `nothing depends on it`: the graph indexes code, and Markdown, JSON and shell files are absent from it by construction."
+    }
+  ],
+  "counts": {
+    "changedFilesSeen": 23,
+    "changedFilesResolved": 9,
+    "changedFilesUnresolved": 14,
+    "candidates": 22,
+    "retained": 22,
+    "droppedByCap": 0,
+    "droppedByPreFilter": 0,
+    "relatedTestsAdded": 0,
+    "testsRetained": 16,
+    "hopHistogram": {
+      "1": 18,
+      "2": 4
+    }
+  },
+  "graph": {
+    "nodes": 105,
+    "edges": 197
+  }
+}

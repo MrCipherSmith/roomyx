@@ -7,17 +7,50 @@
   "id": "005",
   "slug": "owner-commands-are-queued-in-the-server-",
   "title": "Owner commands are queued in the server and acknowledged, so a veto can actually reach a room (D-18 item 6)",
-  "status": "in-progress",
+  "status": "done",
   "createdAt": "2026-09-10T12:47:05.420Z",
-  "updatedAt": "2026-09-10T12:47:49.446Z",
+  "updatedAt": "2026-09-10T12:57:23.149Z",
   "source": {
     "type": "description",
     "ref": null
   },
   "acChecksum": "sha256:3041f719f270732e1d74ea4ea4653ec98805c5c6c064cd2e7eed6f8d29650271",
-  "acConfirmed": {},
+  "acConfirmed": {
+    "AC1": {
+      "at": "2026-09-10T12:56:57.150Z",
+      "note": "test/server/owner-queue.test.ts (11 cases): cross-session post/read, queued-vs-refused, resource parity, ack refusal, handler settling, bound, log untouched; 398 pass / 0 fail; mutations recorded in the review package"
+    },
+    "AC2": {
+      "at": "2026-09-10T12:56:57.261Z",
+      "note": "test/server/owner-queue.test.ts (11 cases): cross-session post/read, queued-vs-refused, resource parity, ack refusal, handler settling, bound, log untouched; 398 pass / 0 fail; mutations recorded in the review package"
+    },
+    "AC3": {
+      "at": "2026-09-10T12:56:57.361Z",
+      "note": "test/server/owner-queue.test.ts (11 cases): cross-session post/read, queued-vs-refused, resource parity, ack refusal, handler settling, bound, log untouched; 398 pass / 0 fail; mutations recorded in the review package"
+    },
+    "AC4": {
+      "at": "2026-09-10T12:56:57.453Z",
+      "note": "test/server/owner-queue.test.ts (11 cases): cross-session post/read, queued-vs-refused, resource parity, ack refusal, handler settling, bound, log untouched; 398 pass / 0 fail; mutations recorded in the review package"
+    },
+    "AC5": {
+      "at": "2026-09-10T12:56:57.553Z",
+      "note": "test/server/owner-queue.test.ts (11 cases): cross-session post/read, queued-vs-refused, resource parity, ack refusal, handler settling, bound, log untouched; 398 pass / 0 fail; mutations recorded in the review package"
+    },
+    "AC6": {
+      "at": "2026-09-10T12:56:57.641Z",
+      "note": "test/server/owner-queue.test.ts (11 cases): cross-session post/read, queued-vs-refused, resource parity, ack refusal, handler settling, bound, log untouched; 398 pass / 0 fail; mutations recorded in the review package"
+    },
+    "AC7": {
+      "at": "2026-09-10T12:56:57.732Z",
+      "note": "test/server/owner-queue.test.ts (11 cases): cross-session post/read, queued-vs-refused, resource parity, ack refusal, handler settling, bound, log untouched; 398 pass / 0 fail; mutations recorded in the review package"
+    },
+    "AC8": {
+      "at": "2026-09-10T12:56:57.821Z",
+      "note": "test/server/owner-queue.test.ts (11 cases): cross-session post/read, queued-vs-refused, resource parity, ack refusal, handler settling, bound, log untouched; 398 pass / 0 fail; mutations recorded in the review package"
+    }
+  },
   "pr": {
-    "url": null
+    "url": "https://github.com/MrCipherSmith/roomyx/pull/10"
   },
   "tasks": [
     {
@@ -41,7 +74,7 @@
       "title": "Implement per plan",
       "kind": "implement",
       "origin": "scaffold",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -49,14 +82,15 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T3",
       "title": "Add/adjust tests and make them pass",
       "kind": "test",
       "origin": "scaffold",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -64,14 +98,15 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T4",
       "title": "Self-review and prepare draft PR",
       "kind": "review",
       "origin": "scaffold",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -79,13 +114,14 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T5",
       "title": "The TUI renders the owner-command status, with queued as a state rather than a failure",
       "kind": "implement",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -93,13 +129,14 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T6",
       "title": "End to end: two real MCP sessions against a live serve(), plus the resource read",
       "kind": "test",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -107,13 +144,14 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     },
     {
       "id": "T7",
       "title": "CHANGELOG and minor version per D-13; state the bound and the settling rules",
       "kind": "docs",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [],
       "attempts": {
         "count": 0,
@@ -121,7 +159,8 @@
       },
       "acRefs": [],
       "evidenceRefs": [],
-      "budget": {}
+      "budget": {},
+      "disposition": "completed"
     }
   ],
   "history": [
@@ -157,6 +196,104 @@
       "at": "2026-09-10T12:47:49.446Z",
       "event": "task-done",
       "detail": "T1: Collect remaining context"
+    },
+    {
+      "at": "2026-09-10T12:56:57.150Z",
+      "event": "ac-confirmed",
+      "detail": "AC1: test/server/owner-queue.test.ts (11 cases): cross-session post/read, queued-vs-refused, resource parity, ack refusal, handler settling, bound, log untouched; 398 pass / 0 fail; mutations recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T12:56:57.261Z",
+      "event": "ac-confirmed",
+      "detail": "AC2: test/server/owner-queue.test.ts (11 cases): cross-session post/read, queued-vs-refused, resource parity, ack refusal, handler settling, bound, log untouched; 398 pass / 0 fail; mutations recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T12:56:57.361Z",
+      "event": "ac-confirmed",
+      "detail": "AC3: test/server/owner-queue.test.ts (11 cases): cross-session post/read, queued-vs-refused, resource parity, ack refusal, handler settling, bound, log untouched; 398 pass / 0 fail; mutations recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T12:56:57.453Z",
+      "event": "ac-confirmed",
+      "detail": "AC4: test/server/owner-queue.test.ts (11 cases): cross-session post/read, queued-vs-refused, resource parity, ack refusal, handler settling, bound, log untouched; 398 pass / 0 fail; mutations recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T12:56:57.553Z",
+      "event": "ac-confirmed",
+      "detail": "AC5: test/server/owner-queue.test.ts (11 cases): cross-session post/read, queued-vs-refused, resource parity, ack refusal, handler settling, bound, log untouched; 398 pass / 0 fail; mutations recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T12:56:57.641Z",
+      "event": "ac-confirmed",
+      "detail": "AC6: test/server/owner-queue.test.ts (11 cases): cross-session post/read, queued-vs-refused, resource parity, ack refusal, handler settling, bound, log untouched; 398 pass / 0 fail; mutations recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T12:56:57.732Z",
+      "event": "ac-confirmed",
+      "detail": "AC7: test/server/owner-queue.test.ts (11 cases): cross-session post/read, queued-vs-refused, resource parity, ack refusal, handler settling, bound, log untouched; 398 pass / 0 fail; mutations recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T12:56:57.821Z",
+      "event": "ac-confirmed",
+      "detail": "AC8: test/server/owner-queue.test.ts (11 cases): cross-session post/read, queued-vs-refused, resource parity, ack refusal, handler settling, bound, log untouched; 398 pass / 0 fail; mutations recorded in the review package"
+    },
+    {
+      "at": "2026-09-10T12:56:57.911Z",
+      "event": "task-done",
+      "detail": "T2: Implement per plan"
+    },
+    {
+      "at": "2026-09-10T12:56:58.018Z",
+      "event": "task-done",
+      "detail": "T3: Add/adjust tests and make them pass"
+    },
+    {
+      "at": "2026-09-10T12:56:58.117Z",
+      "event": "task-done",
+      "detail": "T4: Self-review and prepare draft PR"
+    },
+    {
+      "at": "2026-09-10T12:56:58.215Z",
+      "event": "task-done",
+      "detail": "T5: The TUI renders the owner-command status, with queued as a state rather than a failure"
+    },
+    {
+      "at": "2026-09-10T12:56:58.314Z",
+      "event": "task-done",
+      "detail": "T6: End to end: two real MCP sessions against a live serve(), plus the resource read"
+    },
+    {
+      "at": "2026-09-10T12:56:58.411Z",
+      "event": "task-done",
+      "detail": "T7: CHANGELOG and minor version per D-13; state the bound and the settling rules"
+    },
+    {
+      "at": "2026-09-10T12:57:01.773Z",
+      "event": "implemented",
+      "detail": "draft PR: https://github.com/MrCipherSmith/roomyx/pull/10 (warning: PR is not a draft)"
+    },
+    {
+      "at": "2026-09-10T12:57:01.876Z",
+      "event": "completing"
+    },
+    {
+      "at": "2026-09-10T12:57:07.306Z",
+      "event": "completion-failed",
+      "detail": "review: 1 of 5 conditions failed — external-comments (unobserved): the external-comment collection did not run: nothing records whether anyone commented on MrCipherSmith/roomyx#10 (`.metaproject/reviews/pr-comments/MrCipherSmith__roomyx__10.json` does not exist). Zero collected comments and no collection at all are different facts, and only one of them is clean. Run `keryx review comments collect --repo MrCipherSmith/roomyx --pr 10 --sha <pr-head>`, or inject `FlowServiceDeps.externalCommentsGate` with a collector of your own."
+    },
+    {
+      "at": "2026-09-10T12:57:17.598Z",
+      "event": "implemented",
+      "detail": "draft PR: https://github.com/MrCipherSmith/roomyx/pull/10 (warning: PR is not a draft)"
+    },
+    {
+      "at": "2026-09-10T12:57:17.708Z",
+      "event": "completing"
+    },
+    {
+      "at": "2026-09-10T12:57:23.149Z",
+      "event": "done",
+      "detail": "all gates passed"
     }
   ]
 }
