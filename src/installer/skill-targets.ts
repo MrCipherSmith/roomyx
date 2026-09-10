@@ -24,14 +24,22 @@ export interface SkillRuntime {
   /** How to say it to a person. */
   readonly label: string;
   readonly scope: "user" | "project";
-  /** Where the SKILL.md goes. */
-  readonly path: (cwd: string) => string;
+  /**
+   * Where the SKILL.md goes.
+   *
+   * `home` is a parameter rather than a call to `homedir()` inside, so a test
+   * can build a plan against a temporary home. It was read from the process
+   * before, which meant `buildPlan({ home })` honoured the persona rows and
+   * silently ignored the skill ones — a test asserting "nothing lands outside
+   * this directory" was passing against the real `~`.
+   */
+  readonly path: (cwd: string, home?: string) => string;
   /**
    * The directory whose existence means this runtime is in use here. Used only
    * to pre-tick sensible boxes in `roomyx init` — never to refuse a target,
    * because a runtime installed after roomyx would then be unreachable.
    */
-  readonly marker: (cwd: string) => string;
+  readonly marker: (cwd: string, home?: string) => string;
 }
 
 const SKILL_FILE = ["skills", "startup-room", "SKILL.md"] as const;
@@ -41,8 +49,8 @@ function userRuntime(name: string, label: string, dir: string): SkillRuntime {
     name,
     label,
     scope: "user",
-    path: () => join(homedir(), dir, ...SKILL_FILE),
-    marker: () => join(homedir(), dir),
+    path: (_cwd, home) => join(home ?? homedir(), dir, ...SKILL_FILE),
+    marker: (_cwd, home) => join(home ?? homedir(), dir),
   };
 }
 
