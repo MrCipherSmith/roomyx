@@ -1,0 +1,31 @@
+{
+ "status": "DONE",
+ "verifier": "flow-orchestrator-mutation-pass",
+ "summary": "3 findings, all re-checked after the fix: 2 by executed mutation, 1 by site-check",
+ "verifications": [
+  {
+   "finding": "2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-4-r04#R1-01",
+   "verdict": "refuted",
+   "method": "execution",
+   "evidence": "Run against the tree at 30bfacbb203c43b34f8eba6b7083a2caa5500775 (main, after PR #4 merged), with the defect the finding names reintroduced (messageTag emitting '-> undefined' when the parent is unresolved). Ran bun test test/client/message-row.test.ts: the case 'either field alone renders, and neither leaves a stray tag behind' failed, 11 pass / 1 fail. Reverted: 12 pass / 0 fail. The assertion is now load-bearing, so the finding no longer describes this code."
+  },
+  {
+   "finding": "2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-4-r04#R1-02",
+   "verdict": "refuted",
+   "method": "execution",
+   "evidence": "Run against the tree at 30bfacbb203c43b34f8eba6b7083a2caa5500775 (main, after PR #4 merged), with the leak the finding names reintroduced (a tag-only TextRenderable added to the scroll box rather than the row box). Ran bun test test/client/renderable-lifetime.test.ts: 'filtering back and forth does not accumulate tag rows either' failed with 758 renderables against a bound of 218, while the pre-existing case passed under the same mutant. Reverted: 4 pass / 0 fail. The coverage gap is closed."
+  },
+  {
+   "finding": "2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-4-r04#R1-03",
+   "verdict": "refuted",
+   "method": "site-check",
+   "evidence": "Checked at 30bfacbb203c43b34f8eba6b7083a2caa5500775 (main, after PR #4 merged): grep -n 'QUOTE_CELLS' src/client/transcript.ts returns the declaration and its use inside quote(), with no external consumer; the rationale block is now on messageTag. The two symbols the finding named no longer have the stated shape."
+  }
+ ],
+ "stats": {
+  "confirmed": 0,
+  "refuted": 3,
+  "unverifiable": 0,
+  "not_checked": 0
+ }
+}

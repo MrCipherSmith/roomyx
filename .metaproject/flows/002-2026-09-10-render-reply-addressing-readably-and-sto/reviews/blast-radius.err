@@ -1,0 +1,2 @@
+recompute: yes — no previous blast radius on this flow: the first round always computes one
+The code graph is empty or absent, so no blast radius can be computed. Run `keryx gdgraph build` first. An empty radius would read as `nothing depends on the change`, which is a different fact.

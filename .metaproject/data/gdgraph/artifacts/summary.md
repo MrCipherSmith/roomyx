@@ -2,11 +2,11 @@
 
 ## Stats
 
-- Source files indexed: 79
+- Source files indexed: 97
 - Imported asset files indexed: 0
-- Total nodes: 79
-- Edges: 135
-- Import edges: 135
+- Total nodes: 97
+- Edges: 176
+- Import edges: 176
 - Asset edges: 0
 - Unresolved imports: 0
 - Import resolution: 100%
@@ -16,14 +16,14 @@
 
 | Module | Source Files |
 |---|---:|
-| test | 41 |
-| client | 15 |
+| test | 49 |
+| client | 20 |
+| installer | 8 |
 | server | 7 |
-| installer | 5 |
 | log | 4 |
+| scripts | 3 |
 | cli | 2 |
 | eslint.config.js | 1 |
-| scripts | 1 |
 | cli.ts | 1 |
 | lockfile.ts | 1 |
 | mcp-management | 1 |
