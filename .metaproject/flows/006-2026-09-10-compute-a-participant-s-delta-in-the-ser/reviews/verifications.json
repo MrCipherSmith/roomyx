@@ -4,10 +4,10 @@
  "summary": "5 checks: 4 executed mutations against this head, 1 site-check for the shared rule",
  "verifications": [
   {
-   "finding": "2026-09-10-ingest-github-com-mrciphersmith-roomyx-pull-11#R1-01",
+   "finding": "2026-09-10-ingest-pull-11-r02#R1-01",
    "verdict": "refuted",
    "method": "site-check",
-   "evidence": "Checked at 9ee7a2b43317578b128753ba31dd9a018b1190c2: 'Math.max(...own.map' appears once in src/log/store.ts, inside lastOwnSeq, and both getAgentDetail and getAgentDelta call it. The duplication the finding names is gone, and no third copy exists."
+   "evidence": "Checked at 0aff0aa25a9e197eea6e26f806ee44c030e3a83c: 'Math.max(...own.map' appears once in src/log/store.ts, inside lastOwnSeq, and both getAgentDetail and getAgentDelta call it. The duplication the finding names is gone, and no third copy exists."
   }
  ],
  "stats": {

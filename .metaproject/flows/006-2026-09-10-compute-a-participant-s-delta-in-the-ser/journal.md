@@ -22,3 +22,29 @@
 - 2026-09-10T13:08:38.565Z - implemented: draft PR: https://github.com/MrCipherSmith/roomyx/pull/11 (warning: PR is not a draft) (base: main)
 - 2026-09-10T13:08:38.738Z - completing
 - 2026-09-10T13:08:48.352Z - completion-failed: pull-request: PR checks not green
+- 2026-09-10T13:21:34.056Z - implemented: draft PR: https://github.com/MrCipherSmith/roomyx/pull/11 (warning: PR is not a draft)
+- 2026-09-10T13:21:34.191Z - completing
+- 2026-09-10T13:21:42.051Z - done: all gates passed
+
+## Post-merge note — the branch collided with main twice
+
+While this branch was open, the repository owner shipped **two** releases to
+`main`: "Ship the persona library" (0.10.1) and "Offer the persona library at
+both scopes" (0.10.2). This branch had used **both** numbers, because it took the
+next free patch each time it was renumbered and `main` moved again in between.
+
+The rule applied both times, and it is the only defensible one: **their releases
+are published and mine was not, so mine moved.** `package.json` was taken from
+`main` with the version bumped to 0.10.3, and their CHANGELOG text was kept
+verbatim with this branch's entry inserted above. Nothing of theirs was
+rewritten, renumbered or dropped — verified by grep for both entries.
+
+The four executed mutations were re-run against the merged head (`0aff0aa`) and
+still fail their named tests, so the evidence in the review package names the
+tree that actually merged rather than the one the round was first run on.
+
+**Worth deciding before the next flow:** `main` is moving faster than a flow
+takes to complete, and every collision costs a rebase plus a version renumber.
+The alternatives are to hold `main` while a flow is in flight, or to accept the
+renumbering as routine — but it should be a decision rather than something that
+happens each time.
