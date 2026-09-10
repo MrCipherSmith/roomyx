@@ -27,7 +27,19 @@ function parseLine(text: string, describe: () => string): unknown {
 export function loadRoomLog(path: string): { state: RoomState; messages: MessageEnvelope[] } {
   // Editors add a byte-order mark; it is not part of the JSON and it made the
   // first line unparseable, which made the whole room unreadable.
-  const raw = readFileSync(path, "utf8").replace(/^\uFEFF/, "");
+  let raw: string;
+  try {
+    raw = readFileSync(path, "utf8").replace(/^\uFEFF/, "");
+  } catch (error) {
+    // A sentence, not a stack. Every other failure in this function names the
+    // file and says what is wrong with it; "no such file" was the one that
+    // escaped as a raw ENOENT with a stack trace, and it is the most ordinary
+    // mistake there is \u2014 a typo in a path, or a log that has been moved.
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      throw new Error(`No room log at ${path}. Create one with \`roomyx room new ${path} --goal "\u2026"\`.`);
+    }
+    throw new Error(`Cannot read room log at ${path}: ${error instanceof Error ? error.message : String(error)}`);
+  }
   const lines = raw.split("\n").filter((line) => line.trim().length > 0);
 
   if (lines.length === 0) {

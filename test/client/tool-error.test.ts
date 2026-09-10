@@ -37,21 +37,45 @@ afterEach(async () => {
   dirs.length = 0;
 });
 
-function poisonedLog(): string {
+function freshLog(): string {
   const dir = mkdtempSync(join(tmpdir(), "roomyx-tool-error-"));
   dirs.push(dir);
   const path = join(dir, "room.jsonl");
   createRoomLog(path, { goalStatement: "tool errors are not disconnects", roster: [{ id: "a", name: "Ann" }] });
+  return path;
+}
+
+/**
+ * Damages a log that is already being served.
+ *
+ * It used to be poisoned before `serve`, which no longer starts on a log it
+ * cannot read — and that guard is right: a server that binds a port for an
+ * unreadable log answers every tool call with an error, which the liveness
+ * probe reads as "not this room", so `rooms list` reported no live rooms about
+ * a server that was running.
+ *
+ * Poisoning after the server is up is also the truer setup. What these tests
+ * are about is a log damaged *while a room is live* — a torn write or a hand
+ * edit — and that is exactly the case the startup guard cannot catch.
+ */
+function poison(path: string): void {
   // Written past the writer's own guard, because that is the state a log
   // reaches from a torn write or a hand edit — the guard stops roomyx creating
   // it, not the world.
   appendFileSync(path, `${JSON.stringify({ type: "message", seq: 1, from: "", body: "x" })}\n`);
-  return path;
+}
+
+/** A log that is valid now and poisoned as soon as `serve` has read it. */
+async function servePoisoned(): Promise<{ handle: ServeHandle; path: string }> {
+  const path = freshLog();
+  const started = await serve(path, { port: 0 });
+  poison(path);
+  return { handle: started, path };
 }
 
 describe("a server that answers with an error", () => {
   test("does not read as a disconnect, and its text reaches the caller", async () => {
-    handle = await serve(poisonedLog(), { port: 0 });
+    handle = (await servePoisoned()).handle;
 
     const statuses: string[] = [];
     const toolErrors: string[] = [];
@@ -83,9 +107,12 @@ describe("a server that answers with an error", () => {
     dirs.push(dir);
     const path = join(dir, "room.jsonl");
     createRoomLog(path, { goalStatement: "recovery", roster: [{ id: "a", name: "Ann" }] });
-    appendFileSync(path, `${JSON.stringify({ type: "message", seq: 1, from: "", body: "broken" })}\n`);
 
+    // Damaged after the server has read it: `serve` refuses to start on a log
+    // it cannot parse, and this test is about a log that breaks under a running
+    // room — see `poison` above.
     handle = await serve(path, { port: 0 });
+    appendFileSync(path, `${JSON.stringify({ type: "message", seq: 1, from: "", body: "broken" })}\n`);
     const toolErrors: string[] = [];
     const messages: string[] = [];
     client = new RoomClient(
@@ -111,7 +138,7 @@ describe("a server that answers with an error", () => {
 
   test("a real transport loss still reads as a disconnect", async () => {
     // The other half of the distinction: this must not have been traded away.
-    handle = await serve(poisonedLog(), { port: 0 });
+    handle = (await servePoisoned()).handle;
     const statuses: string[] = [];
     client = new RoomClient(
       { url: handle.url, stateIntervalMs: 20, transcriptIntervalMs: 20 },
@@ -193,7 +220,7 @@ describe("a tool error that does not go away", () => {
     // produced ~80 identical transcript entries a minute, each allocating a
     // renderable that was never freed — the same finite pool whose exhaustion
     // this round fixed elsewhere, re-entered through a different door.
-    handle = await serve(poisonedLog(), { port: 0 });
+    handle = (await servePoisoned()).handle;
     const toolErrors: string[] = [];
     client = new RoomClient(
       { url: handle.url, stateIntervalMs: 100, transcriptIntervalMs: 100 },

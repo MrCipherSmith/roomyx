@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
@@ -118,5 +120,42 @@ describe("serve", () => {
     } finally {
       await handle.close();
     }
+  });
+});
+
+describe("a log serve cannot read", () => {
+  test("is refused before a port is bound, naming the file", async () => {
+    // Found while writing prompts for an operator: the bundled skill told a
+    // dispatcher to keep the transcript in markdown, and `roomyx serve` on a
+    // markdown file *succeeded*. It bound a port, printed a room ID and an
+    // attach command — and then every tool call threw. Because the liveness
+    // probe treats a throwing `room.get_state` as "not this room", `roomyx
+    // rooms list` answered "No live rooms" about a server that was running,
+    // and the client refused to attach to the id it had just printed.
+    //
+    // A room that is invisible and says nothing about why is worse than one
+    // that never started.
+    const dir = mkdtempSync(join(tmpdir(), "roomyx-serve-bad-"));
+    const path = join(dir, "room.md");
+    writeFileSync(path, "# Room\n\n**Ann:** hello\n");
+
+    await expect(serve(path, { port: 0 })).rejects.toThrow(path);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test("a missing log is a sentence, not a stack trace", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "roomyx-serve-missing-"));
+    const path = join(dir, "nope.jsonl");
+
+    let message = "";
+    await serve(path, { port: 0 }).catch((error: unknown) => {
+      message = error instanceof Error ? error.message : String(error);
+    });
+    expect(message).toContain(path);
+    // It says what to do, because a typo'd path is the most ordinary way to
+    // reach this and the fix is one command.
+    expect(message).toContain("roomyx room new");
+    expect(message).not.toContain("ENOENT");
+    rmSync(dir, { recursive: true, force: true });
   });
 });

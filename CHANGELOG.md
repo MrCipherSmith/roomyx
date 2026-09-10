@@ -13,6 +13,38 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.7.1] — 2026-09-10
+
+A patch. Found while writing setup prompts for an operator: following the
+bundled skill produced a room that could not be attached to, and nothing said
+why.
+
+### Fixed
+
+- **`roomyx serve` refuses a log it cannot read, instead of becoming an
+  invisible room.** It used to bind a port, print a room ID and an attach
+  command, and only then fail on every tool call. Because the liveness probe
+  reads a throwing `room.get_state` as "not this room", `roomyx rooms list`
+  answered **"No live rooms"** about a server that was running, and the client
+  refused to attach to the id it had just been handed. The log is now read once
+  before anything is bound, so the failure is a sentence naming the file and the
+  line.
+- **A missing log is a sentence, not a stack trace.** `roomyx serve nope.jsonl`
+  printed a raw `ENOENT` with a stack. It now says what is missing and the one
+  command that creates it — a typo'd path being the most ordinary way to get
+  there.
+- **The bundled `startup-room` skill told dispatchers to keep the transcript in
+  markdown, which roomyx cannot read.** The section that added roomyx was
+  written without reconciling the format, so an agent following the skill
+  produced a `.md` log and a room that would not serve. It now creates the log
+  with `roomyx room new` (JSONL) and appends with `roomyx room append --force`,
+  and says why `--force` is right there: the dispatcher *is* the single writer
+  the guard exists to protect, and roomyx cannot tell that from outside. The
+  markdown convention remains, for when roomyx is not available.
+- The skill also now tells the dispatcher to mention `roomyx rooms history` and
+  `roomyx-client --archive` when a room ends, so the owner knows a closed room
+  can still be reread.
+
 ## [0.7.0] — 2026-09-10
 
 A minor, because two things an existing caller relied on changed. The feature is

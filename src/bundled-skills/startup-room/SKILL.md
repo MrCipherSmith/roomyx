@@ -103,7 +103,7 @@ When the owner says "save this idea" (or a candidate clearly survives enough rou
 
 1. Identify the persona profile files to use (e.g. `arena/roles/**/*.md` or a subset). Each profile should already be a neutral biography/expertise sheet — no pre-baked opinions or conclusions (see the project's persona-writing convention if one exists).
 2. Write the **goal contract** (see above): goal statement, success criteria (default to the 50-criteria rubric for a startup-idea room), and the convergence requirement.
-3. Create the log file with a header: the goal contract in full (not just a one-line goal — include the criteria/threshold so anyone reading the log later can check whether it was actually met), list of participants (name + one-line role), and the ground rule that only the moderator writes to it.
+3. Create the log. **If roomyx is available, create it with `roomyx room new` (JSONL) — see below.** Otherwise create a markdown file with a header: the goal contract in full (not just a one-line goal — include the criteria/threshold so anyone reading the log later can check whether it was actually met), list of participants (name + one-line role), and the ground rule that only the moderator writes to it.
 4. Decide the opening framing. If the task is "find something from scratch," say so explicitly and do NOT hand participants a pre-built brief that narrows their options — that biases the room before it starts. The criteria are the bar the eventual candidate must clear, not a hint about what kind of idea to look for.
 5. If roomyx is available for this project — a `.roomyx/` directory exists, or `roomyx` resolves on `PATH` — start a server for the log so the owner can watch the room live. See **Watching the room live (roomyx)** below. If it isn't available, skip this step and run the session exactly as you would otherwise; nothing here depends on it.
 
@@ -114,19 +114,53 @@ turns it into something they can watch while it runs, without changing how the
 room works: it reads the log and serves it, and it never writes to it. The
 dispatcher stays the log's single writer.
 
-Start the server as part of setup, before the kickoff spawns:
+**The log must be roomyx's own format, not the markdown transcript.** roomyx
+reads JSONL: one `state` header line, then one JSON line per message. A markdown
+file is not readable by it, so create the log with `roomyx room new` and append
+through `roomyx room append` — those two commands are the whole of it, and the
+dispatcher is still the single writer. Use the markdown convention described
+above only when roomyx is *not* available.
+
+Create the room and start the server as part of setup, before the kickoff
+spawns:
 
 ```bash
-roomyx serve <logPath> --port 0
+roomyx room new .roomyx/rooms/logs/<topic>.jsonl \
+  --goal "<the goal statement>" \
+  --criteria "<the threshold, in one line>" \
+  --roster "ann:Ann,ben:Ben,cara:Cara"
+
+roomyx serve .roomyx/rooms/logs/<topic>.jsonl --port 0
 ```
+
+Then append each participant's turn verbatim as it arrives:
+
+```bash
+roomyx room append .roomyx/rooms/logs/<topic>.jsonl --force \
+  --from ann --kind pitch --body "<their actual words>"
+```
+
+**`--force` is required here, and it is correct here.** Without it, `append`
+refuses whenever a live room is serving that log — a guard against a *second*
+writer racing the dispatcher. You are the dispatcher: the single writer the
+guard exists to protect. roomyx cannot tell the two apart from outside, so it
+asks, and this is the case where the answer is yes.
+
+`--kind` is one of `pitch`, `question`, `challenge`, `answer`, `vote`, `status`,
+`research`; `--in-reply-to <seq>` records who was being answered. Both are
+optional and both make the transcript far easier to read later.
 
 `--port 0` takes an ephemeral port, so several rooms can run at once without
 colliding. It prints the bound URL and a short room ID:
 
 ```
-roomyx serving /abs/path/room.md at http://127.0.0.1:41235/mcp
+roomyx serving /abs/path/room.jsonl at http://127.0.0.1:41235/mcp
 room ID: r-a1b2c3 — attach with `roomyx-client --room r-a1b2c3`
 ```
+
+If `serve` refuses instead, read what it says: it now reads the log before
+binding anything, so "must start with a valid state line" means the file is not
+a roomyx log — most likely a markdown transcript. Create it with `room new`.
 
 **Relay that room ID to the owner in the kickoff confirmation, with the attach
 command.** That is the whole point of starting it — the owner opens the room in
@@ -140,6 +174,10 @@ owner never attaches, the session is unaffected.
 Stop the server with `SIGINT`/`SIGTERM` when the room ends — it removes its own
 registry entry on the way out. A server killed outright leaves a stale entry,
 which is harmless: the next `rooms list` prunes it after a liveness check.
+
+A closed room is not lost. It is recorded in `roomyx rooms history`, and the
+owner can reread it at any time with `roomyx-client --archive`, so tell them the
+room is in the history when you finish.
 
 ## Kickoff (spawn once per persona)
 
