@@ -15,6 +15,7 @@ import {
 import { archiveRoom, defaultHistoryPath, readHistory } from "./installer/history";
 import { syncSkill } from "./installer/skill-sync";
 import { installPersonas, personaCount } from "./installer/personas";
+import { callRoomTool } from "./installer/room-tool";
 import { appendMessages, createRoomLog, LEGAL_KINDS, parseRoster } from "./log/write";
 import type { AppendMessageOptions } from "./log/write";
 import { acquireWriterLease, readWriterLease, writerLeasePathFor } from "./writer-lease";
@@ -237,6 +238,26 @@ interface Command {
   notes?: string;
   flags: FlagSpecs;
   run: (args: ParsedArgs) => Promise<void>;
+}
+
+
+/**
+ * The live room serving this log, or a refusal that says what to do.
+ *
+ * Shared by the three commands that talk to a room's own MCP server. They need
+ * a port, and the registry is the only place a room's port is written down —
+ * which is exactly why these tools had no caller before: there is no way to
+ * reach a room without going through here first.
+ */
+async function servingRoomFor(absoluteLog: string, registryPath: string) {
+  const serving = findRoomServing(absoluteLog, await listRoomsWithLiveness(registryPath, { prune: false }));
+  if (serving === undefined) {
+    throw new ArgError(
+      `No live room is serving ${absoluteLog}. These commands read from the room's own server, ` +
+        `so the room has to be running: start it with \`roomyx serve ${absoluteLog} --port 0\`.`,
+    );
+  }
+  return serving;
 }
 
 const COMMANDS: Record<string, Command> = {
@@ -473,6 +494,64 @@ const COMMANDS: Record<string, Command> = {
       }
 
       for (const message of written) console.log(`Appended seq ${message.seq} from ${message.from}.`);
+    },
+  },
+
+  "room delta": {
+    usage: "roomyx room delta <logPath> --for <agentId> [flags]",
+    summary: "what a participant has not seen yet",
+    notes:
+      "Reads the room's own server, so the room must be running. This is the\n  arithmetic a dispatcher used to redo in its own context every turn — the\n  server computes it, and reports which cursor it used so an empty delta is\n  distinguishable from a wrong one.",
+    flags: {
+      for: { type: "string", describe: "Required. Participant id" },
+      since: { type: "number", describe: "Cursor to use instead of that participant's last message" },
+      registry: REGISTRY_FLAG,
+    },
+    run: async ({ positionals, flags }) => {
+      const path = positionals[0];
+      if (!path) throw new ArgError("Missing <logPath>.");
+      const agentId = flags.for;
+      if (typeof agentId !== "string" || agentId === "") throw new ArgError("Missing --for <agentId>.");
+      const absolute = resolve(path);
+      const registryPath = resolve(typeof flags.registry === "string" ? flags.registry : defaultRegistryPath());
+      const room = await servingRoomFor(absolute, registryPath);
+      const args: Record<string, unknown> = { agent_id: agentId };
+      if (typeof flags.since === "number") args.since_seq = flags.since;
+      console.log(JSON.stringify(await callRoomTool(room, "room.get_delta_for", args), null, 2));
+    },
+  },
+
+  "room commands": {
+    usage: "roomyx room commands <logPath> [flags]",
+    summary: "owner commands waiting for the dispatcher",
+    notes:
+      "The owner posts these from the TUI and nothing pushes them — a dispatcher\n  has to look. Poll between turns, then settle each one with `room ack`.",
+    flags: { registry: REGISTRY_FLAG },
+    run: async ({ positionals, flags }) => {
+      const path = positionals[0];
+      if (!path) throw new ArgError("Missing <logPath>.");
+      const absolute = resolve(path);
+      const registryPath = resolve(typeof flags.registry === "string" ? flags.registry : defaultRegistryPath());
+      const room = await servingRoomFor(absolute, registryPath);
+      console.log(JSON.stringify(await callRoomTool(room, "room.get_pending_owner_commands", {}), null, 2));
+    },
+  },
+
+  "room ack": {
+    usage: "roomyx room ack <logPath> <commandId> [flags]",
+    summary: "say an owner command has been dealt with",
+    notes:
+      "Without this, `pending` grows forever and stops meaning \"not yet handled\".",
+    flags: { registry: REGISTRY_FLAG },
+    run: async ({ positionals, flags }) => {
+      const path = positionals[0];
+      const id = positionals[1];
+      if (!path) throw new ArgError("Missing <logPath>.");
+      if (!id) throw new ArgError("Missing <commandId>. `roomyx room commands <logPath>` lists them.");
+      const absolute = resolve(path);
+      const registryPath = resolve(typeof flags.registry === "string" ? flags.registry : defaultRegistryPath());
+      const room = await servingRoomFor(absolute, registryPath);
+      console.log(JSON.stringify(await callRoomTool(room, "room.ack_owner_command", { id }), null, 2));
     },
   },
 
