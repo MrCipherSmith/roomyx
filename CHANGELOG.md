@@ -13,6 +13,44 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.11.3] — 2026-09-11
+
+A patch, and a deliberately partial one: it makes a known gap visible instead of
+pretending it is closed.
+
+### Added
+
+- **`roomyx room append` says when a live room is serving the log.** One line on
+  stderr, naming the room. It does not refuse.
+
+  0.11.2 recorded that the D-18 writer guard cannot engage for the agent
+  workflow: a dispatcher runs `roomyx serve` and writes with `roomyx room
+  append`, a fresh process each time, so it never holds a lease and the room
+  never reports a dispatcher. What went unsaid is that `append` had already
+  worked out that a room was serving the log — and, when no lease was held,
+  threw that away without a word. So every append into a room an agent was
+  running looked, from the command line, exactly like an append into an
+  unattended file.
+
+  A note rather than a refusal, because nothing at that point can tell a
+  dispatcher from a stranger; refusing would block the legitimate writer, which
+  was tried in 0.11.2 and reverted. The log is safe either way — `seq`
+  allocation is under a lock and three racing writers are tested. What the note
+  protects is the conversation: two dispatchers produce a transcript where every
+  message is intact and the discussion is nonsense.
+
+  It goes to stderr because stdout carries `Appended seq N from X` and is
+  parsed. Both facts — that the note appears, and that it stays off stdout — are
+  pinned by a test and mutation-checked.
+
+### Still open
+
+The underlying decision is unchanged: there are two dispatcher models and only
+the embedder one is expressible. Closing it means a dispatcher identity that
+survives across processes — a token minted at `serve` and carried by every
+`append`, or a lease refreshed by the write itself rather than by a heartbeat.
+Either is a protocol change and wants its own decision record.
+
 ## [0.11.2] — 2026-09-11
 
 A patch. The bundled skill had drifted behind the server it drives, and the
