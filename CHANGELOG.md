@@ -13,6 +13,39 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.11.4] — 2026-09-11
+
+A patch about not doing things.
+
+### Changed
+
+- **A sync that would change nothing does nothing.** `syncSkill` had no
+  "already up to date" branch, so every `--yes` rewrote the file with the same
+  bytes and left another backup beside it. Run after each release, that is a
+  directory of identical copies and a modification time that lies about when the
+  skill last changed. It now reports `already in sync`, touches neither the file
+  nor a backup, and still adopts the hash — so a copy roomyx did not write but
+  that matches what it would have written stops being treated as unrecorded
+  content.
+- **One backup, at a fixed name.** `SKILL.md.bak` replaces
+  `SKILL.md.bak-<timestamp>`. Nobody reads the fourth-oldest copy of a skill
+  file; a backup exists to undo the change that was just made, and combined with
+  the branch above it now always holds the last version that actually differed.
+- `SyncResult` gains `upToDate`, so a caller can tell "nothing to do" from a
+  refusal. `roomyx init`, `roomyx setup` and `roomyx skills sync` all say which
+  one happened.
+
+### Fixed
+
+- **`roomyx init` no longer re-derives a rule `syncSkill` owns.** It re-read
+  both files and compared them itself to decide whether the staged copy was
+  already the bundled skill. The two promptly disagreed: the early return above
+  stopped building the warnings `init` was reading to infer that same fact, and
+  the adoption path went silent — a moved project would have kept a stale staged
+  copy forever. It now asks for the verdict instead of computing a second
+  opinion. Caught by an existing test, which is the only reason this is a
+  paragraph and not a defect.
+
 ## [0.11.3] — 2026-09-11
 
 A patch, and a deliberately partial one: it makes a known gap visible instead of

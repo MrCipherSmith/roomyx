@@ -263,11 +263,23 @@ describe("roomyx skills sync", () => {
     expect(readFileSync(target, "utf8")).toContain("startup-room");
   });
 
-  test("a second --yes run against a target it wrote itself backs up the previous content", async () => {
+  test("a backup is made when the target has changed, and not when it has not", async () => {
+    // This used to assert a backup on a second identical `--yes` run. That was
+    // asserting the churn: the file was rewritten with the same bytes and
+    // another timestamped copy appeared beside it, every time. A backup exists
+    // to undo the change that was just made, so it belongs to a change.
     const { configPath, target } = setupProject();
     await runSync(["--target", target, "--config", configPath, "--yes"]);
-    const { stdout } = await runSync(["--target", target, "--config", configPath, "--yes"]);
-    expect(stdout).toContain("backup:");
+
+    const unchanged = await runSync(["--target", target, "--config", configPath, "--yes"]);
+    expect(unchanged.stdout).toContain("already in sync");
+    expect(unchanged.stdout).not.toContain("backup:");
+
+    writeFileSync(target, "someone edited this");
+    const changed = await runSync(["--target", target, "--config", configPath, "--yes"]);
+    expect(changed.stdout).toContain("backup:");
+    // One backup, at a fixed name — the version that was displaced.
+    expect(readFileSync(`${target}.bak`, "utf8")).toBe("someone edited this");
   });
 
   test("refuses to overwrite content roomyx never wrote, even with --yes absent from the picture", async () => {

@@ -76,34 +76,32 @@ export function init(options: InitOptions): InitResult {
 
   // Asked before writing, so the decision is made from `syncSkill`'s own
   // verdict rather than from a second copy of its rules here.
+  //
+  // It *was* a second copy: this function re-read both files and compared them
+  // itself to work out whether the staged copy was already the bundled skill.
+  // `syncSkill` now answers that directly with `upToDate`, and asking it is the
+  // only way the two cannot disagree — which they did, the moment `syncSkill`
+  // learned to return early on identical content and stopped building the
+  // warnings this code was reading to infer the same fact.
   const dryRun = syncSkill({ ...syncOptions, dryRun: true });
-  const bundledContent = readFileSync(options.bundledSkillPath, "utf8");
-  const stagedContent = existsSync(stagedSkill) ? readFileSync(stagedSkill, "utf8") : null;
-  const identical = stagedContent === bundledContent;
 
-  if (dryRun.warnings.length > 0 && !identical) {
+  if (dryRun.upToDate) {
+    // Byte-identical, so there is nothing a refusal could protect. The call
+    // records the hash and writes no file: the sync keys its records by
+    // absolute path, so a moved project otherwise keeps this copy stale forever
+    // and says so on every run.
+    syncSkill({ ...syncOptions, yes: true });
+    return { created: !registryAlreadyHasRooms, roomyxDir };
+  }
+
+  if (dryRun.warnings.length > 0) {
     // Ours to refresh only while it is still ours. A hand-edited or unrecorded
     // staged copy is left exactly as it is, and the caller is told why — the
     // silence was the defect, not the staleness.
     return { created: !registryAlreadyHasRooms, roomyxDir, skillWarnings: dryRun.warnings };
   }
-  if (dryRun.warnings.length > 0 && identical) {
-    // The refusal protects content, and byte-identical content cannot be lost —
-    // so there is nothing to refuse. Writing here is what records the hash, and
-    // the hash is what the next real upgrade needs: the sync keys its records by
-    // absolute path, so a moved project otherwise keeps this copy stale forever
-    // and says so on every run. One adoption, one backup, and refreshes work
-    // again.
-    syncSkill({ ...syncOptions, yes: true });
-    return { created: !registryAlreadyHasRooms, roomyxDir };
-  }
 
-  if (!identical) {
-    // Only when there is a difference: a write with identical content still
-    // takes a timestamped backup, so a no-op `init` would fill the directory
-    // with copies of the same file and make a real backup impossible to find.
-    syncSkill({ ...syncOptions, yes: true });
-  }
+  syncSkill({ ...syncOptions, yes: true });
 
   return { created: !registryAlreadyHasRooms, roomyxDir };
 }
