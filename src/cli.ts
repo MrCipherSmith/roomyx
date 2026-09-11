@@ -475,7 +475,22 @@ const COMMANDS: Record<string, Command> = {
         port: typeof flags.port === "number" ? flags.port : undefined,
         host: typeof flags.host === "string" ? flags.host : undefined,
         acknowledgeNonLoopback: flags["acknowledge-non-loopback"] === true,
-        writerLeasePath: writerLeasePathFor(resolve(registryPath), absoluteLogPath),
+        // No `writerLeasePath`, deliberately, and this is worth stating because
+        // it was passed here and silently discarded on every serve.
+        //
+        // `serve()` takes the lease only when a dispatcher is attached, and
+        // "attached" means an *embedder* supplied an `onOwnerCommand` callback.
+        // `roomyx serve` never supplies one — an agent dispatcher has no
+        // callback to give; it reads `room.get_pending_owner_commands` instead.
+        // So the argument could never be used, while reading like a lease was
+        // being taken.
+        //
+        // Making the CLI declare a dispatcher was tried and is WRONG: the lease
+        // would be held by the server process, while the writer is the agent
+        // running `roomyx room append` in a different process each time — so
+        // the dispatcher would be locked out of its own room. Two dispatcher
+        // models exist (embedder writes in-process; agent writes by CLI) and
+        // only the first is expressible today. Recorded rather than patched.
       });
 
       const entry = registerRoom(registryPath, {
