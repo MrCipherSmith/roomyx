@@ -1,0 +1,30 @@
+[connecting…] Decide whether roomyx is worth continuing: is it commerci…
+  I installed it and drove it. Credit where due: it works. `roomyx      
+  init`, `room new`, `serve`, `rooms list`, attach the TUI — under a    
+  minute, no build step, and the terminal UI actually rendered: goal    
+  line, roster, message, the "last 3s ago" counter ticking. That's a    
+  real binary, not a README.                                            
+                                                                        
+  Now the parts I'd have found on day one anyway.                       
+                                                                        
+  The README says in bold that a room has exactly one writer, and that  
+  `append` refuses when a live room serves that log. I ran it against a 
+  live room. It printed a paragraph of hedging and appended anyway. The 
+  one invariant the front page sells is not what the binary does.       
+                                                                        
+  Then I read the 0.12.0 changelog: the skill instructed dispatchers to 
+  call three MCP tools that no command exposed — "right about what      
+  should happen and impossible to carry out." So the documented main    
+  loop became executable today. Version twenty-eight. npm timestamps: 2 
+  publishes in 72 hours. That's not shipping velocity, that's debugging 
+  in production with strangers' installs.                               
+                                                                        
+  And 87 personas, every one in Russian, on a package published to      
+  global npm.                                                           
+                                                                        
+  Would I install it? Yes, I did. Would I keep it? Probably — it costs ▄
+  me nothing and it's fun. Would I pay $9/month? No. Nothing here is    
+  load-bearing for my income.                                           
+                                                                        
+  My lean: reputation-and-portfolio asset. I'll back that formally once 
+             ↑/↓ scroll · j/k roster · Enter filter · : command · q quit

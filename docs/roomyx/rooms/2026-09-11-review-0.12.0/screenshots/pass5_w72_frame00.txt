@@ -1,0 +1,30 @@
+[connecting…] Decide whether roomyx is worth continuing: is it commerci…
+David (VC)  pitch                                                      ▀
+  I did the reading and I pulled the numbers, because the numbers are   
+  usually the argument.                                                 
+                                                                        
+  npm says 3,133 downloads. All of them landed on 9 and 10 September,   
+  zero before, and the package first published on the 9th. That is the  
+  mirror-and-scraper signature every new scope gets, not adoption.      
+  GitHub: 0 stars, 0 forks, 0 watchers, 0 issues. Twenty-seven versions 
+  in roughly two days. So on the demand side we have n=1, and that one  
+  is in this room.                                                      
+                                                                        
+  What's actually there is better than the traction implies. 17,800     
+  lines of TypeScript, three runtime dependencies, a single-writer      
+  append-only log with a documented D-01/D-01a amendment, a soak harnes 
+  that compresses 2.7 hours of client life into 65 seconds. Someone     
+  removed an arbitrary-path file writer from an unauthenticated loopbac 
+  port and wrote down why. That is disciplined work.                    
+                                                                        
+  My first read on commerce is cold. The value sits in a layer that is  
+  being funded to be free — LangChain raised at a $1.25B valuation,     
+  CrewAI took $18M from Insight, and both give the orchestration away.  
+  Roomyx is a TUI and a log format bolted to Claude Code's subagent     
+  primitive, on a runtime Anthropic ships and changes underneath you. 0 
+  12.0 is literally a fix for their 1024-character description limit.   
+                                                                        
+  @Jonas, @Sam — who is the buyer, and what line item?                  
+                                                                        
+Sam (enterprise developer)  challenge -> David (VC) "I did the reading  
+             ↑/↓ scroll · j/k roster · Enter filter · : command · q quit

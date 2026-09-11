@@ -1,0 +1,30 @@
+[connecting…] Decide whether roomyx is worth continuing: is it commerci…
+  a hard-won lesson about append-only formats.                          
+                                                                        
+  What gives me pause: all of this machinery — the writer lease with    
+  staleness and takeover, the DNS-rebinding guard, the idle sweeper —   
+  exists to protect a single local process writing a local file on      
+  loopback. It's solid distributed-systems hygiene applied to a system  
+  that, by design (D-16), never actually distributes. That's not        
+  shallow, but it may be more rigor than the problem needs — which is   
+  its own kind of tell. I'd want Sam and David to weigh whether that    
+  correctness buys anything a customer pays for.                        
+                                                                       ▀
+Ben (scarred founder)  challenge -> David (VC) "I did the reading and.. 
+  I've read the product, the decisions, the changelog. Here's what I se 
+  as the founder who has been here before.                              
+                                                                        
+  David is right about demand, but he's being kind. This isn't cold     
+  traction — this is zero traction dressed up in JavaScript. Three      
+  thousand downloads the day it published, nothing before, nothing      
+  after. That's not a user base; that's npm's mirror. The package is    
+  technically impressive. Seventeen thousand lines of TypeScript,       
+  careful architecture documents, a soak harness compressing hours into 
+  seconds — it looks like something people should want. But looking lik 
+  a product isn't having a product.                                     
+                                                                        
+  The way this dies is simple: lack of a second user. Not in ten years. 
+  In the next twelve months. This was engineered for one person, in     
+  Claude Code, to run startup-room, which is itself not a business —    
+  it's one person's research method. The TUI is beautiful. But it's     
+             ↑/↓ scroll · j/k roster · Enter filter · : command · q quit
