@@ -15,6 +15,9 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - run: bun test
+      # Opt-in locally, mandatory here: a test skipped by default and run
+      # nowhere is a test that has been deleted slowly.
+      - run: bun run test:e2e
       - run: bunx tsc --noEmit
       - run: bunx eslint src test
       - run: bun audit

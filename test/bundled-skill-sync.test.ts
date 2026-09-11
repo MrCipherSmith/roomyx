@@ -80,3 +80,49 @@ describe("the bundled skill and the room server", () => {
     expect(description).not.toContain("shared markdown file");
   });
 });
+
+describe("the skill's frontmatter against the published limits", () => {
+  // https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
+  // `name` ≤ 64 chars, lowercase/numbers/hyphens, no reserved words.
+  // `description` ≤ 1024 chars, non-empty.
+  const frontmatter = SKILL.slice(SKILL.indexOf("---") + 3, SKILL.indexOf("\n---", 4));
+  const field = (key: string): string =>
+    new RegExp(`^${key}:\\s*(.*)$`, "m").exec(frontmatter)?.[1] ?? "";
+
+  test("description is within the 1024-character limit", () => {
+    // It was 1162. Claude Code loaded it anyway, so nothing failed locally —
+    // but the API's skill validation rejects over-long descriptions, which made
+    // the skill quietly unportable. Asserted so it cannot drift back.
+    const description = field("description");
+    expect(description.length).toBeGreaterThan(0);
+    expect(description.length).toBeLessThanOrEqual(1024);
+  });
+
+  test("description says what it does and when to use it, in third person", () => {
+    const description = field("description");
+    expect(description).toMatch(/\bUse when\b/);
+    // "I can help you…" / "You can use this to…" are the two the guidance names
+    // explicitly: the description is injected into a system prompt, and a
+    // shifting point of view hurts discovery.
+    expect(description).not.toMatch(/\b(I can|you can use this)\b/i);
+  });
+
+  test("description keeps the words someone would actually ask with", () => {
+    const description = field("description").toLowerCase();
+    for (const trigger of ["persona", "room", "debate", "brainstorm", "interview", "converge"]) {
+      expect(description).toContain(trigger);
+    }
+  });
+
+  test("name obeys the format rules, including the reserved words", () => {
+    const name = field("name");
+    expect(name).toMatch(/^[a-z0-9-]+$/);
+    expect(name.length).toBeLessThanOrEqual(64);
+    expect(name).not.toMatch(/anthropic|claude/);
+  });
+
+  test("the body stays under 500 lines", () => {
+    const body = SKILL.slice(SKILL.indexOf("\n---", 4) + 4);
+    expect(body.split("\n").length).toBeLessThan(500);
+  });
+});

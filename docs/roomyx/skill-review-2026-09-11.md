@@ -101,10 +101,14 @@ command the skill names exists in the CLI — because a skill naming a command
 this package does not ship is the same defect wearing different clothes; it is
 mutation-checked by renaming one. Measured cost to a dispatcher: 221 ms per
 call, of which 225 ms is `bun` starting, so the command itself is free. Cost to
-the suite: it went from ~25 s to ~88 s, which is what end-to-end tests of a
-server cost.
+the suite, measured per file afterwards rather than estimated: with these tests
+the suite runs ~88 s and without them ~57 s, so they cost about 30 s — not the
+60 s a first reading of the totals suggested. The rest of the growth from the
+~25 s of a week ago is other work, not this. They are now behind `ROOMYX_E2E=1`
+and `bun run test:e2e`, with a CI step of their own: a test skipped by default
+and run nowhere is a test that has been deleted slowly.
 
-### 2. Rewrite `description` under the limit
+### 2. Rewrite `description` under the limit — **done**
 
 Two sentences: what it does, and when to use it. Third person. Keep the trigger
 words that make it discoverable — personas, room, debate, brainstorm, interview,
@@ -112,6 +116,13 @@ convergence.
 
 **Done when:** length is asserted in the skill-sync test, so it cannot drift back
 over 1024.
+
+**Done 2026-09-11.** 1162 → 772 characters, and five assertions now hold the
+frontmatter to the published rules rather than to this one edit: the length
+limit, third person with an explicit "Use when", the trigger words someone would
+actually ask with, the `name` format including the reserved words, and the
+500-line body ceiling. Mutation-checked by padding the description back over the
+limit.
 
 ### 3. Split the conditional blocks out
 
