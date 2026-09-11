@@ -1,6 +1,6 @@
 ---
 name: startup-room
-description: Runs a persistent multi-persona discussion/brainstorm room cheaply — each persona is spawned once as a named subagent and kept alive across turns via SendMessage (so it remembers its own history instead of re-reading the whole transcript every time), every message is broadcast to every participant (not just @-addressed ones), participants self-moderate against tunneling too deep into one narrow thread, and the full dialogue is logged verbatim to a shared markdown file the participants never write to directly. The room is goal-driven, not round-driven: it runs until an explicit, measurable goal is met (by default, for startup-idea rooms: find an idea, score it against a 50-criteria rubric, and reach participant convergence) or the owner stops it — not until some fixed number of turns has elapsed. Use whenever the user wants several persona/character subagents (founders, experts, interview personas, judges) to discuss, debate, brainstorm, or interview each other over multiple rounds toward a concrete goal, especially when they've asked for this to be done without burning tokens by re-pasting the whole conversation into a fresh agent each round.
+description: Runs a persistent multi-persona discussion/brainstorm room cheaply — each persona is spawned once as a named subagent and kept alive across turns via SendMessage (so it remembers its own history instead of re-reading the whole transcript every time), every message is broadcast to every participant (not just @-addressed ones), participants self-moderate against tunneling too deep into one narrow thread, and the full dialogue is logged verbatim to a shared append-only log the participants never write to directly. The room is goal-driven, not round-driven: it runs until an explicit, measurable goal is met (by default, for startup-idea rooms: find an idea, score it against a 50-criteria rubric, and reach participant convergence) or the owner stops it — not until some fixed number of turns has elapsed. Use whenever the user wants several persona/character subagents (founders, experts, interview personas, judges) to discuss, debate, brainstorm, or interview each other over multiple rounds toward a concrete goal, especially when they've asked for this to be done without burning tokens by re-pasting the whole conversation into a fresh agent each round.
 ---
 
 # Startup Room
@@ -24,6 +24,16 @@ The room is **goal-driven, not round-driven**: there is no fixed number of round
 ## Roles in this pattern
 
 - **The dispatcher** — you (the orchestrating Claude instance). Your job is transport, not judgment: relay deltas, append to the log, spawn new participants when told to. You never let participants write to the shared log file themselves; you are the only writer. This is a deliberate safety choice: it guarantees nothing gets deleted or corrupted by a subagent, and it lets you enforce formatting and catch a participant going off the rails before it's committed to the record. See **Dispatcher discipline** below — this role is narrower than it sounds, and it is easy to accidentally overstep it.
+  **The dispatcher can be a background subagent rather than the main
+  conversation, and usually should be.** A room run by the main agent occupies
+  the chat for as long as it lasts; run as a subagent it occupies nothing, and
+  the owner watches the room in the TUI while the conversation stays theirs.
+  This was verified rather than assumed: a subagent has the `Agent` tool loaded
+  and can reach `SendMessage`, so it can cast participants and drive them
+  exactly as the main agent would, and a nested spawn was confirmed to work.
+  The main agent then does only three things — spawn the dispatcher, relay the
+  attach command, and pass on any instruction the owner types in chat.
+
 - **The participants** — one persistent named subagent per persona. They decide everything substantive: what to research, whether an idea is good, when to pivot, who should speak next, when to converge. This is the actual point of the room — if you (the dispatcher) are making these calls instead of them, the room has stopped being a room.
 - **The session owner** — the human running the session. They can inject an instruction at any point (a veto, a new constraint, a topic to explore, a request to add participants, a reminder like "we're a small startup"). See **The owner-injection channel** below for how this differs from a participant's suggestion.
 - **The log file** — a single markdown file (e.g. `<project>/brainstorm/<topic>-room.md`) that is the append-only source of truth for the whole session.
@@ -50,7 +60,7 @@ The session owner is not a participant, and their messages are not "just another
 - **Requests to add participants** are handled via the mid-session spawn pattern below.
 - **The owner can edit the goal contract itself** (tighten/loosen the threshold, add a "must also" criterion, change the goal entirely) — this is a goal-injection, distinct from a veto on content. Relay it to the room as an authoritative update to what "done" means, and re-run the scoring/convergence check under the new terms if a candidate was already mid-evaluation.
 - **Status requests ("what's happening in the room?") get a real status, not a decision.** Report what's been found, who's arguing what, what's still open — do not use the opportunity to steer. If the owner explicitly asks "which should we pursue," that's their call to make (possibly by asking the room, via you), not yours to answer.
-- **Owner instructions may also arrive over roomyx.** If you started a room server and attached a dispatcher handler to it, a veto / constraint / add-participant / goal-edit posted through `room.post_owner_command` is an owner injection exactly like one typed in chat — same standing authority, same handling as above. It reaches you as a command to act on; roomyx itself never writes to the log.
+- **Owner instructions also arrive over roomyx, and you have to look.** The owner presses `o` in the TUI and posts a veto / constraint / add-participant / goal-edit; it goes into the room's queue and `room.post_owner_command` answers `queued`. Nothing pushes it to you. **Poll `room.get_pending_owner_commands` between turns** — every turn is cheap and right — and call `room.ack_owner_command` with the id once you have acted, so `pending` keeps meaning "not yet dealt with" instead of growing forever. A queued command carries exactly the standing authority of one typed in chat. roomyx itself never writes to the log; you do.
 - **Do not ask the owner "what should we do next" as your default move.** Once the room's goal is set, keep it running and report status; only surface a genuine fork to the owner if it's a decision only they can make (scope, budget, willingness to accept a risk) — not a decision participants should be making themselves.
 
 ## Mid-session participant addition
@@ -100,6 +110,21 @@ This is the default, ready-to-use goal type for this skill. When the owner asks 
 When the owner says "save this idea" (or a candidate clearly survives enough rounds to be worth keeping regardless of whether the room keeps exploring), write it to a dedicated file *outside* the raw transcript — e.g. `<project>/ideas/<idea-name>.md` — with: the core pitch, the "why now" trigger, the strongest supporting evidence with sources, the competitive landscape found, open questions still unresolved, and which participants found what. Do this instead of letting the idea's evidence live only buried in a long transcript. Then explicitly tell the room to keep going — archiving isn't the same as concluding, and a room that just landed a good finding is prone to a "victory lap" where everyone relaxes instead of continuing to search (one participant in practice named this risk explicitly and it's worth watching for).
 
 ## Setup
+
+**Do the whole of this in one go, and do not stop to ask.** Casting the room is
+not a decision the owner needs to confirm a second time — "start a room about X"
+already said it. A setup that creates the log, then waits to be told to populate
+it, then waits again to be told to start, turns one instruction into three and
+leaves a room that exists but is empty. Pick the participants yourself from the
+goal, spawn them, and hand back the attach command.
+
+Ask only if the goal itself is missing or contradictory — a room with nothing to
+converge on is the one thing worth a question.
+
+**What to hand back, as the whole of your reply:** the room ID and
+`roomyx-client --room <id>`, plus one line naming who is in the room. Not the
+opening contributions — those are in the room, which is what the attach command
+is for.
 
 1. Identify the persona profile files to use. **roomyx ships a library — install it with `roomyx personas`.** Look in `.roomyx/personas/` first and fall back to `~/.roomyx/personas/`; a project copy overrides the machine-wide one, the same order every runtime uses for skills. Either directory holds: fifty numbered interview personas (ordinary people in ordinary jobs, one per file), plus `founders/`, `tech/` and `panel/` for founder, engineering and judging roles, plus `questionnaire-50.md`, a fifty-question interview script for use with any of them. Pick a subset that fits the room's goal — a room does not need fifty voices, it needs the right three to six. If the project keeps its own profiles instead, use those; each profile should be a neutral biography/expertise sheet with no pre-baked opinions or conclusions.
 2. Write the **goal contract** (see above): goal statement, success criteria (default to the 50-criteria rubric for a startup-idea room), and the convergence requirement.
@@ -209,10 +234,16 @@ Capture the `agentId` (or assigned name) returned by each spawn — this is what
 For each subsequent turn:
 
 1. Decide whose turn it is. Options: round-robin, or reactive (whoever was just @-mentioned or most directly challenged goes next), or "whoever has something to add" if you asked participants to signal that. Mix these — a real room isn't strictly round-robin.
-2. Compose the delta: only the messages posted since that participant's last turn (typically: everything since you last messaged them). Do not re-paste anything they already said or already received — they remember it.
+2. Get the delta from the room, do not compose it: `room.get_delta_for` with the participant's id returns exactly the messages they have not seen, and reports `since_seq` and `cursor_from` so an empty delta is distinguishable from a wrong cursor. This arithmetic used to be re-derived in the dispatcher's own context on every turn; it was moved into the server precisely so the dispatcher stops carrying it. Without roomyx, compose it by hand: everything since that participant last spoke, minus their own words — they remember those.
 3. Send it via `SendMessage` to their `agentId`/name, with a short prompt: "Here's what's happened since your last turn: [delta]. Your turn — react, build, refute, research, or pass."
 4. Append their reply verbatim to the log file, prefixed with their name.
-5. Report to the session owner after essentially every substantive exchange, not just every few turns — in practice, "frequent" means after each participant's reply that adds something new, not on a fixed cadence. Use real quotes from the transcript, not paraphrases, so the owner can judge the room's reasoning quality directly. If the owner has explicitly asked for frequent updates, treat that as the floor, not a suggestion to pace yourself against.
+5. **Do not narrate the room into the chat.** Appending the turn to the log *is* the report: the owner is watching the room in `roomyx-client`, where they get the transcript live, with scrolling, search and per-participant filtering — everything a chat retelling would flatten. Duplicating it into the chat is not extra service, it is the same text twice, and it buries whatever else the owner was using that conversation for.
+
+   This instruction used to say the opposite — report after essentially every substantive exchange, with quotes. That was right when a chat message was the only way the owner could see anything. It is wrong now, and re-reading the room into the chat is the single most common complaint about how this skill runs.
+
+   Without roomyx there is no live view, so fall back to the old behaviour: summarise into the chat, with real quotes rather than paraphrase.
+
+   What still goes to the chat, in one line each and nowhere near every turn: the room reached its goal, the room is stuck and needs a decision only the owner can make, or a participant died and could not be replaced. Status on request is always fine — if the owner asks what is happening, answer fully.
 
 **Mechanical note:** `SendMessage` to a previously-spawned agent runs it in the background and returns immediately; the agent's reply arrives later as a separate task-notification event, not as this tool call's return value. Don't block waiting for it — end your turn, and act on the reply when the notification arrives. Multiple participants can be messaged in parallel this way; their replies will arrive as separate notifications, in whatever order they finish.
 
