@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 
 export interface SyncOptions {
   bundledSkillPath: string;
@@ -140,4 +140,78 @@ export function syncSkill(options: SyncOptions): SyncResult {
   });
 
   return { wouldWrite: true, written: true, backedUpTo, warnings, upToDate: false };
+}
+
+
+export interface BundleSyncResult extends SyncResult {
+  /** One entry per sibling file, keyed by its path relative to SKILL.md. */
+  readonly files: Record<string, SyncResult>;
+}
+
+/** Every file under `dir`, as paths relative to it. */
+function filesUnder(dir: string, base: string = dir): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir)) {
+    const path = join(dir, entry);
+    if (statSync(path).isDirectory()) out.push(...filesUnder(path, base));
+    else out.push(relative(base, path));
+  }
+  return out;
+}
+
+/**
+ * Syncs SKILL.md **and everything beside it**.
+ *
+ * A skill stopped being one file the moment its conditional sections moved into
+ * `reference/`: the guidance's progressive disclosure only works if the files
+ * being pointed at actually arrive. Installing SKILL.md alone would leave every
+ * link in it dangling — the same class of defect as the `arena/roles/**`
+ * reference that sent agents to a path that did not exist.
+ *
+ * Built as a loop over `syncSkill` rather than by teaching `syncSkill` about
+ * directories. Every rule that matters — the hand-edit refusal, the single
+ * backup, the identical-content skip, the hash record — is already in there and
+ * is per-file by nature; a second implementation of those rules is the thing
+ * this project keeps finding in its own code and removing.
+ */
+export function syncSkillBundle(options: SyncOptions): BundleSyncResult {
+  const bundleDir = dirname(options.bundledSkillPath);
+  const targetDir = dirname(options.targetPath);
+  const mainName = relative(bundleDir, options.bundledSkillPath);
+
+  const main = syncSkill(options);
+  const files: Record<string, SyncResult> = {};
+
+  // Siblings only when this really is a skill directory.
+  //
+  // A bundle is "SKILL.md plus what sits beside it", and taking that literally
+  // means a loose `.md` file in a shared directory would drag its neighbours
+  // along — which is exactly what happened the first time this ran against a
+  // test fixture living in `test/fixtures/`. The directory is only a bundle if
+  // the file at its centre is named SKILL.md.
+  if (mainName !== "SKILL.md") {
+    return { ...main, files };
+  }
+
+  for (const file of filesUnder(bundleDir)) {
+    if (file === mainName) continue;
+    files[file] = syncSkill({
+      ...options,
+      bundledSkillPath: join(bundleDir, file),
+      targetPath: join(targetDir, file),
+    });
+  }
+
+  const every = [main, ...Object.values(files)];
+  return {
+    ...main,
+    // Aggregated so a caller can ask one question and get the truth about the
+    // whole skill: anything written means the install changed, and a warning
+    // about a sibling is as much a reason to stop as one about SKILL.md.
+    written: every.some((r) => r.written),
+    wouldWrite: every.some((r) => r.wouldWrite),
+    upToDate: every.every((r) => r.upToDate),
+    warnings: every.flatMap((r) => r.warnings),
+    files,
+  };
 }

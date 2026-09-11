@@ -3,7 +3,7 @@ import { z } from "zod";
 import { serveMcpOverHttp } from "../server/http-transport";
 import type { McpHttpTransportHandle } from "../server/http-transport";
 import { listLiveRooms } from "../installer/registry";
-import { syncSkill } from "../installer/skill-sync";
+import { syncSkillBundle } from "../installer/skill-sync";
 import { NAMED_TARGETS, resolveTargets } from "../installer/skill-targets";
 
 export interface ManagementOptions {
@@ -78,7 +78,7 @@ export function createManagementMcpServer(options: ManagementOptions): McpServer
       const results = targets.map(({ name, path }) => ({
         target: name,
         path,
-        ...syncSkill({
+        ...syncSkillBundle({
           bundledSkillPath: options.bundledSkillPath,
           targetPath: path,
           configPath: options.configPath,

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { join } from "node:path";
-import { syncSkill } from "./skill-sync";
+import { syncSkillBundle } from "./skill-sync";
 import { installPersonas } from "./personas";
 import type { PlanItem } from "./init-plan";
 
@@ -51,7 +51,7 @@ export function applyPlan(items: readonly PlanItem[], context: ApplyContext): Ap
 function applyOne(item: PlanItem, context: ApplyContext): string {
   switch (item.kind) {
     case "skill": {
-      const result = syncSkill({
+      const result = syncSkillBundle({
         bundledSkillPath: context.bundledSkillPath,
         targetPath: item.path,
         configPath: context.configPath,

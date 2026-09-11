@@ -13,7 +13,7 @@ import {
   listRoomsWithLiveness,
 } from "./installer/registry";
 import { archiveRoom, defaultHistoryPath, readHistory } from "./installer/history";
-import { syncSkill } from "./installer/skill-sync";
+import { syncSkillBundle } from "./installer/skill-sync";
 import { installPersonas, personaCount } from "./installer/personas";
 import { callRoomTool } from "./installer/room-tool";
 import { appendMessages, createRoomLog, LEGAL_KINDS, parseRoster } from "./log/write";
@@ -873,7 +873,7 @@ const COMMANDS: Record<string, Command> = {
       }
 
       for (const { name, path } of resolveTargets(target)) {
-        const result = syncSkill({
+        const result = syncSkillBundle({
           bundledSkillPath: bundledSkillPath(),
           targetPath: path,
           configPath,
