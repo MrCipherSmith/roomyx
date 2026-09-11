@@ -17,6 +17,24 @@ const CLI = join(import.meta.dir, "..", "src", "cli.ts");
  * what should happen and impossible to carry out.
  */
 
+
+/**
+ * **Opt-in, and CI runs them.**
+ *
+ * These start a real `roomyx serve` per test and spawn the CLI several times
+ * over; they took the suite from ~25 s to ~88 s on their own. That cost is
+ * honest — it is what testing a server end to end costs — but it is paid on
+ * every unrelated edit, and a slow suite is one people stop running.
+ *
+ * So they are gated behind `ROOMYX_E2E=1` and wired into CI as their own step,
+ * which is the part that matters: a test skipped by default and run nowhere is
+ * a test that has been deleted slowly. `bun test` reports them as skipped
+ * rather than passing them silently.
+ *
+ *   bun run test:e2e
+ */
+const E2E = process.env.ROOMYX_E2E === "1";
+
 let dir: string;
 let proc: ReturnType<typeof Bun.spawn> | undefined;
 
@@ -64,7 +82,7 @@ async function liveRoom(): Promise<{ log: string; registry: string; port: number
   return { log, registry, port };
 }
 
-describe("roomyx room delta", () => {
+describe.skipIf(!E2E)("roomyx room delta", () => {
   test("returns what a participant has not seen, and says which cursor it used", async () => {
     const { log, registry } = await liveRoom();
     const { code, out } = run(["room", "delta", log, "--for", "ben", "--registry", registry]);
@@ -110,7 +128,7 @@ describe("roomyx room delta", () => {
   }, 30000);
 });
 
-describe("roomyx room commands / ack", () => {
+describe.skipIf(!E2E)("roomyx room commands / ack", () => {
   test("an owner command posted from the TUI surface is listed, then settled", async () => {
     const { log, registry, port } = await liveRoom();
 
@@ -150,7 +168,7 @@ describe("roomyx room commands / ack", () => {
   }, 90000);
 });
 
-describe("when no room is serving the log", () => {
+describe.skipIf(!E2E)("when no room is serving the log", () => {
   test("the refusal says why and how to start one", async () => {
     dir = mkdtempSync(join(tmpdir(), "roomyx-room-tools-dead-"));
     const log = join(dir, "room.jsonl");

@@ -35,6 +35,7 @@
   ],
   "scripts": {
     "test": "bun test",
+    "test:e2e": "ROOMYX_E2E=1 bun test test/cli-room-tools.test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src test",
     "check": "bun run lint && bun run typecheck && bun test",
