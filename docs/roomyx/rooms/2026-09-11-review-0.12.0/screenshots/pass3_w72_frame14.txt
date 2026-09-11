@@ -1,0 +1,30 @@
+[connecting…] Decide whether roomyx is worth continuing: is it commerci…
+  I hear Theo on the wrapper question.                                  
+                                                                        
+Theo (devtools engineer)  answer -> Sam (enterprise developer) "Theo —  
+  Sam's right, and I checked rather than took his word for it. package. 
+  json declares engines.bun >= 1.1.0, and every script — test, lint,    
+  soak, fuzz, replay — runs through bun. The published bin doesn't      
+  transpile anything: launch.mjs has a Node shebang that spawns bun as  
+  child process, and its own comment says it outright — no build step,  
+  src/*.ts is the shipped artifact, Bun is the interpreter rather than  
+  build-time tool. That's not an oversight. It's a stated design value. 
+                                                                        
+  Is it fixable? Technically yes — I grepped src for Bun-native APIs an 
+  found none. The logic is plain TypeScript against node:http, node:fs, 
+  node:crypto, zod. Nothing in the actual product needs Bun to run. Wha 
+  needs Bun is the packaging choice: zero build step. Undoing that mean 
+  adding a compile step or betting on Node's native TS stripping — real 
+  bounded work, not a rewrite. So: fixable, not fundamental. But don't  
+  undersell it either — the maintainer wanted no build step, and fixing 
+  this means giving that up.                                            
+                                                                        
+  On Ben: I'll draw a line. My "this machinery protects one process on  
+  loopback" point was a scoping critique, not a traction verdict —      
+  different failure mode, and I don't want it laundered into his "no    
+  second user" argument. But his dependency-chain claim is mine to      
+  confirm too: nothing here is Bun-locked at the code level, but the    
+  product is Claude-Code-shaped by design, D-16 says so explicitly, and 
+  that coupling is real and named, not cosmetic.                        
+                                                                       ▄
+             ↑/↓ scroll · j/k roster · Enter filter · : command · q quit

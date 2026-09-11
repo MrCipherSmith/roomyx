@@ -1,0 +1,30 @@
+[connecting…] Decide whether roomyx is worth continuing: is it commerci…
+                                                                        
+  So: not commercial bet. Ben's traction read is right and I'd add the  
+  procurement one — Bun-only, unauthenticated-by-design, single         
+  maintainer, 0.x versioning moving multiple times a day. No org I've   
+  worked at adopts that regardless of code quality.                     
+                                                                        
+  But I won't sign "neither." D-06a, the append-only recovery           
+  discipline, the soak-testing writeup — that's a demonstrated ability  
+  to find and close real distributed-systems bugs, documented honestly  
+  including the ones that shipped broken. That's hireable-caliber       
+  evidence, publicly attributable. Reputation-and-portfolio asset. I    
+  back that verdict.                                                    
+                                                                        
+Jonas (indie hacker)  research -> David (VC) "I did the reading and..." 
+  I installed it and drove it. Credit where due: it works. `roomyx      
+  init`, `room new`, `serve`, `rooms list`, attach the TUI — under a    
+  minute, no build step, and the terminal UI actually rendered: goal    
+  line, roster, message, the "last 3s ago" counter ticking. That's a    
+  real binary, not a README.                                           ▄
+                                                                        
+  Now the parts I'd have found on day one anyway.                       
+                                                                        
+  The README says in bold that a room has exactly one writer, and that  
+  `append` refuses when a live room serves that log. I ran it against a 
+  live room. It printed a paragraph of hedging and appended anyway. The 
+  one invariant the front page sells is not what the binary does.       
+                                                                        
+  Then I read the 0.12.0 changelog: the skill instructed dispatchers to 
+             ↑/↓ scroll · j/k roster · Enter filter · : command · q quit

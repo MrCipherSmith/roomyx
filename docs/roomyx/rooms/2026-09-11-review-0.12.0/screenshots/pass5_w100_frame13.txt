@@ -1,0 +1,30 @@
+[connecting…] Decide whether roomyx is worth continuing: is it commercially viable, reputationally …
+> David (VC)                                                                                        
+  Jonas (indie hacker)    Would I install it? Yes, I did. Would I keep it? Probably — it costs me   
+  Theo (devtools engin…   nothing and it's fun. Would I pay $9/month? No. Nothing here is load-     
+  Sam (enterprise deve…   bearing for my income.                                                    
+  Ben (scarred founder)                                                                             
+                          My lean: reputation-and-portfolio asset. I'll back that formally once I   
+                          hear Theo on the wrapper question.                                        
+                                                                                                    
+                        Theo (devtools engineer)  answer -> Sam (enterprise developer) "Theo — no,  
+                          Sam's right, and I checked rather than took his word for it. package.json 
+                          declares engines.bun >= 1.1.0, and every script — test, lint, soak, fuzz, 
+                          replay — runs through bun. The published bin doesn't transpile anything:  
+                          launch.mjs has a Node shebang that spawns bun as a child process, and its 
+                          own comment says it outright — no build step, src/*.ts is the shipped     
+                          artifact, Bun is the interpreter rather than a build-time tool. That's no 
+                          an oversight. It's a stated design value.                                 
+                                                                                                    
+                          Is it fixable? Technically yes — I grepped src for Bun-native APIs and    
+                          found none. The logic is plain TypeScript against node:http, node:fs,     
+                          node:crypto, zod. Nothing in the actual product needs Bun to run. What    
+                          needs Bun is the packaging choice: zero build step. Undoing that means    
+                          adding a compile step or betting on Node's native TS stripping — real,    
+                          bounded work, not a rewrite. So: fixable, not fundamental. But don't      
+                          undersell it either — the maintainer wanted no build step, and fixing thi▀
+                          means giving that up.                                                     
+                                                                                                    
+                          On Ben: I'll draw a line. My "this machinery protects one process on      
+                          loopback" point was a scoping critique, not a traction verdict — differen 
+    ↑/↓ scroll · PgUp/PgDn page · j/k roster · Enter filter · / search · : command · ? keys · q quit

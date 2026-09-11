@@ -1,0 +1,30 @@
+[connecting…] Decide whether roomyx is worth continuing: is it commerci…
+                                                                        
+  David is right about demand, but he's being kind. This isn't cold     
+  traction — this is zero traction dressed up in JavaScript. Three      
+  thousand downloads the day it published, nothing before, nothing      
+  after. That's not a user base; that's npm's mirror. The package is    
+  technically impressive. Seventeen thousand lines of TypeScript,       
+  careful architecture documents, a soak harness compressing hours into 
+  seconds — it looks like something people should want. But looking lik 
+  a product isn't having a product.                                     
+                                                                        
+  The way this dies is simple: lack of a second user. Not in ten years.▀
+  In the next twelve months. This was engineered for one person, in     
+  Claude Code, to run startup-room, which is itself not a business —    
+  it's one person's research method. The TUI is beautiful. But it's     
+  observability for something that doesn't exist yet.                   
+                                                                        
+  The structural risk is worse. Every dependency is Anthropic's. Bun    
+  breaks or gets deprecated, the whole thing orphans. Claude Code       
+  changes the subagent model, this dies with it. This is running on     
+  borrowed infrastructure from a company that is not in the business of 
+  maintaining observability tools for orchestration frameworks.         
+                                                                        
+  This becomes abandonware by 0.15.0 — unmaintained but discoverable,   
+  visited once by every researcher who searches for "startup room       
+  terminal interface" and quietly left when they realise the ecosystem  
+  is empty.                                                             
+                                                                        
+  It should not continue.                                               
+             ↑/↓ scroll · j/k roster · Enter filter · : command · q quit

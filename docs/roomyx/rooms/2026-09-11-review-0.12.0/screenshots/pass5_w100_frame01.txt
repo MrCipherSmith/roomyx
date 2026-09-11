@@ -1,0 +1,30 @@
+[connecting…] Decide whether roomyx is worth continuing: is it commercially viable, reputationally …
+> David (VC)              file writer from an unauthenticated loopback port and wrote down why. Tha 
+  Jonas (indie hacker)    is disciplined work.                                                      
+  Theo (devtools engin…                                                                            ▀
+  Sam (enterprise deve…   My first read on commerce is cold. The value sits in a layer that is bein 
+  Ben (scarred founder)   funded to be free — LangChain raised at a $1.25B valuation, CrewAI took   
+                          $18M from Insight, and both give the orchestration away. Roomyx is a TUI  
+                          and a log format bolted to Claude Code's subagent primitive, on a runtime 
+                          Anthropic ships and changes underneath you. 0.12.0 is literally a fix for 
+                          their 1024-character description limit.                                   
+                                                                                                    
+                          @Jonas, @Sam — who is the buyer, and what line item?                      
+                                                                                                    
+                                                                                                    
+                        Sam (enterprise developer)  challenge -> David (VC) "I did the reading and. 
+                          Alright, I pulled the actual package — README, decisions.md, CHANGELOG,   
+                          and ran `roomyx --help` against the installed 0.12.0. Here's what would   
+                          happen if this crossed my desk.                                           
+                                                                                                    
+                          First blocker: it requires Bun, not Node. Most enterprise shops I've      
+                          worked in have Node/npm as the only approved JS runtime on developer      
+                          machines — getting a second runtime onto the approved list is its own     
+                          ticket, and "install a script from npm that then tells you to go install  
+                          different interpreter" is a bad first impression for security review.     
+                                                                                                    
+                          Second: `roomyx serve` and `roomyx mcp` open an unauthenticated HTTP port 
+                          on loopback. No token, by design (D-06) — they know it, and D-06a shows   
+                          real engineering discipline fixing a DNS-rebinding hole they found before 
+                          I would have. That's a point in their favor, honestly. But "no auth, ever 
+    ↑/↓ scroll · PgUp/PgDn page · j/k roster · Enter filter · / search · : command · ? keys · q quit

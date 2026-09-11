@@ -1,0 +1,30 @@
+[connecting…] Decide whether roomyx is worth continuing: is it commerci…
+  question interview script, a scoring rubric. That is the only part of 
+  this package nobody else has, and it's the part that maps onto a      
+  funded market — Listen Labs took $27M from Sequoia for synthetic      
+  research, Synthetic Users is selling the same thing. The TUI and the  
+  registry are commodity. The library and the method are not.           
+                                                                        
+  So my verdict is reputation-and-portfolio asset, not a commercial bet 
+  and not neither. Named strengths: the persona corpus, the decision    
+  log, D-06a. Named weaknesses: zero real downloads, Bun-only, no auth  
+  by design, single maintainer, and a value layer Anthropic can absorb  
+  in one release.                                                       
+                                                                        
+  @Jonas, you haven't spoken. You're the n=2 that decides whether Ben i 
+  right.                                                                
+                                                                        
+Sam (enterprise developer)  vote -> Theo (devtools engineer) "I read th▄
+  Theo — no, not directly, and that's worth saying plainly. No          
+  enterprise customer opens a PO line for "correct seq allocation under 
+  concurrent local appends." They pay for that only when it's load-     
+  bearing inside something they already need — compliance evidence, an  
+  audit trail, a system of record with multiple real writers. Roomyx's  
+  writer count by design tops out at one process on one machine. The    
+  lease/takeover machinery, the DNS-rebinding guard — genuinely good    
+  work, and it's the reason I wouldn't laugh this out of a security     
+  review the way I would a typical local-first CLI. But it's defending  
+  boundary nobody but the same single operator ever crosses. That's     
+  Theo's "tell" exactly: rigor spent on a threat model that has no      
+  second party in it.                                                   
+             ↑/↓ scroll · j/k roster · Enter filter · : command · q quit

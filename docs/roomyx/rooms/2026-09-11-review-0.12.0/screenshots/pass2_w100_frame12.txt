@@ -1,0 +1,30 @@
+[connecting…] Decide whether roomyx is worth continuing: is it commercially viable, reputationally …
+> David (VC)              The README says in bold that a room has exactly one writer, and that      
+  Jonas (indie hacker)    `append` refuses when a live room serves that log. I ran it against a liv 
+  Theo (devtools engin…   room. It printed a paragraph of hedging and appended anyway. The one      
+  Sam (enterprise deve…   invariant the front page sells is not what the binary does.               
+  Ben (scarred founder)                                                                             
+                          Then I read the 0.12.0 changelog: the skill instructed dispatchers to cal 
+                          three MCP tools that no command exposed — "right about what should happen 
+                          and impossible to carry out." So the documented main loop became          
+                          executable today. Version twenty-eight. npm timestamps: 28 publishes in 7 
+                          hours. That's not shipping velocity, that's debugging in production with  
+                          strangers' installs.                                                      
+                                                                                                    
+                          And 87 personas, every one in Russian, on a package published to global   
+                          npm.                                                                      
+                                                                                                    
+                          Would I install it? Yes, I did. Would I keep it? Probably — it costs me   
+                          nothing and it's fun. Would I pay $9/month? No. Nothing here is load-     
+                          bearing for my income.                                                    
+                                                                                                    
+                          My lean: reputation-and-portfolio asset. I'll back that formally once I   
+                          hear Theo on the wrapper question.                                        
+                                                                                                    
+                        Theo (devtools engineer)  answer -> Sam (enterprise developer) "Theo — no,  
+                          Sam's right, and I checked rather than took his word for it. package.json 
+                          declares engines.bun >= 1.1.0, and every script — test, lint, soak, fuzz,▄
+                          replay — runs through bun. The published bin doesn't transpile anything:  
+                          launch.mjs has a Node shebang that spawns bun as a child process, and its 
+                          own comment says it outright — no build step, src/*.ts is the shipped     
+    ↑/↓ scroll · PgUp/PgDn page · j/k roster · Enter filter · / search · : command · ? keys · q quit

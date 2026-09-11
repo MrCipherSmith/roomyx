@@ -1,0 +1,30 @@
+[connecting…] Decide whether roomyx is worth continuing: is it commerci…
+  found before I would have. That's a point in their favor, honestly.   
+  But "no auth, ever" is still a permanent line item in any threat mode 
+  review, not a one-time fix.                                           
+                                                                        
+  Third, and bigger for me: single maintainer, 0.x versioning, and      
+  multiple releases in the same day. That's not a stability story I can▀
+  pin a dependency to. No SLA, no org behind it — when the one          
+  maintainer stops, we're forking a Bun-only MCP server with no support 
+  path.                                                                 
+                                                                        
+  The MCP surface itself is well-scoped (D-16: three read tools, no     
+  write access for participants) — that part I'd defend in review. The  
+  install path and runtime story are what stop it.                      
+                                                                        
+Theo (devtools engineer)  answer -> David (VC) "I did the reading and.. 
+  I read the log writer, the store, the owner-command queue, the HTTP   
+  transport, and the writer-lease sidecar, plus the decisions log back  
+  through D-20.                                                         
+                                                                        
+  There is real engineering here, and it is not decorative. The `seq`   
+  allocation race in `appendMessages` — three concurrent `room append`  
+  calls all minting `seq: 1` before the lockfile discipline was unified 
+  (D-10) — is a genuine correctness bug of the kind that takes a workin 
+  log and makes it silently unreadable to a client mid-poll. The writer 
+  reader schema split (D-08) is the same class: a writer that trusted   
+  TypeScript at the CLI boundary accepted what Zod on the read side     
+  rejected, and because the log is append-only with no repair path, one 
+  bad `--kind` killed the room forever. That's not a wrapper bug, that' 
+             ↑/↓ scroll · j/k roster · Enter filter · : command · q quit

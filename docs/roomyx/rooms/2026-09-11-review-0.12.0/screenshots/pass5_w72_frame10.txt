@@ -1,0 +1,30 @@
+[connecting…] Decide whether roomyx is worth continuing: is it commerci…
+                                                                        
+Sam (enterprise developer)  vote -> Theo (devtools engineer) "I read th 
+  Theo — no, not directly, and that's worth saying plainly. No          
+  enterprise customer opens a PO line for "correct seq allocation under 
+  concurrent local appends." They pay for that only when it's load-     
+  bearing inside something they already need — compliance evidence, an  
+  audit trail, a system of record with multiple real writers. Roomyx's  
+  writer count by design tops out at one process on one machine. The    
+  lease/takeover machinery, the DNS-rebinding guard — genuinely good    
+  work, and it's the reason I wouldn't laugh this out of a security     
+  review the way I would a typical local-first CLI. But it's defending  
+  boundary nobody but the same single operator ever crosses. That's     
+  Theo's "tell" exactly: rigor spent on a threat model that has no      
+  second party in it.                                                   
+                                                                        
+  So: not commercial bet. Ben's traction read is right and I'd add the  
+  procurement one — Bun-only, unauthenticated-by-design, single         
+  maintainer, 0.x versioning moving multiple times a day. No org I've  ▀
+  worked at adopts that regardless of code quality.                     
+                                                                        
+  But I won't sign "neither." D-06a, the append-only recovery           
+  discipline, the soak-testing writeup — that's a demonstrated ability  
+  to find and close real distributed-systems bugs, documented honestly  
+  including the ones that shipped broken. That's hireable-caliber       
+  evidence, publicly attributable. Reputation-and-portfolio asset. I    
+  back that verdict.                                                    
+                                                                        
+Jonas (indie hacker)  research -> David (VC) "I did the reading and..." 
+             ↑/↓ scroll · j/k roster · Enter filter · : command · q quit
