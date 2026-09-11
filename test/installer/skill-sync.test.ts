@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { syncSkill } from "../../src/installer/skill-sync";
@@ -29,15 +29,25 @@ describe("syncSkill", () => {
     expect(readFileSync(target, "utf8")).toBe(readFileSync(BUNDLED, "utf8"));
   });
 
-  test("re-sync when the target matches the last-synced hash: overwrites cleanly, no warning (AC4)", () => {
+  test("re-sync when nothing changed: writes nothing, backs up nothing, says so (AC4)", () => {
+    // This used to assert `written: true` — a second `--yes` rewrote the file
+    // and left another timestamped backup even when not one character differed.
+    // Run after each release, that is a directory of identical copies and a
+    // modification time that lies about when the skill last changed.
     dir = mkdtempSync(join(tmpdir(), "roomyx-sync-test-"));
     const configPath = freshConfig(dir);
     const target = join(dir, "SKILL.md");
     syncSkill({ bundledSkillPath: BUNDLED, targetPath: target, configPath, yes: true });
+    const stamp = statSync(target).mtimeMs;
 
     const result = syncSkill({ bundledSkillPath: BUNDLED, targetPath: target, configPath, yes: true });
-    expect(result.written).toBe(true);
+    expect(result.upToDate).toBe(true);
+    expect(result.written).toBe(false);
+    expect(result.backedUpTo).toBeNull();
     expect(result.warnings).toEqual([]);
+    // Not rewritten with the same bytes: the file was not touched at all.
+    expect(statSync(target).mtimeMs).toBe(stamp);
+    expect(readdirSync(dir).filter((f) => f.includes(".bak"))).toHaveLength(0);
   });
 
   test("target has independent hand-edits since last sync: refuses to write without --yes, warns (AC4)", () => {
@@ -65,9 +75,10 @@ describe("syncSkill", () => {
     expect(result.backedUpTo).not.toBeNull();
     expect(readFileSync(result.backedUpTo as string, "utf8")).toBe("hand-edited content, not what we last synced");
     expect(readFileSync(target, "utf8")).toBe(readFileSync(BUNDLED, "utf8"));
-    // Backup file actually exists alongside the target, timestamped.
-    const files = readdirSync(dir);
-    expect(files.some((f) => f.startsWith("SKILL.md.bak-"))).toBe(true);
+    // ONE backup, at a fixed name. It used to be `.bak-<timestamp>`, which kept
+    // every version forever; what a backup is for is undoing the change that
+    // was just made, and nobody reads the fourth-oldest copy.
+    expect(readdirSync(dir).filter((f) => f.includes(".bak"))).toEqual(["SKILL.md.bak"]);
   });
 
   test("first-ever sync to a target with pre-existing, never-bundled content: refuses without --yes (regression)", () => {

@@ -61,6 +61,7 @@ function applyOne(item: PlanItem, context: ApplyContext): string {
         // they saw the exact path before agreeing to it.
         yes: true,
       });
+      if (result.upToDate) return "already in sync";
       if (!result.written) return result.warnings[0] ?? "not written";
       return result.backedUpTo ? `written (backup: ${result.backedUpTo})` : "written";
     }

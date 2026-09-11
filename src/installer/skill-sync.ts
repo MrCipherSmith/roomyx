@@ -17,6 +17,13 @@ export interface SyncResult {
   written: boolean;
   backedUpTo: string | null;
   warnings: string[];
+  /**
+   * The target already holds exactly the bundled content, so there was nothing
+   * to do. Distinct from `written: false`, which also covers a refusal — a
+   * caller that cannot tell them apart prints "not written" at someone whose
+   * file is perfectly up to date.
+   */
+  upToDate: boolean;
 }
 
 function hashOf(content: string): string {
@@ -50,6 +57,28 @@ export function syncSkill(options: SyncOptions): SyncResult {
 
   const targetExists = existsSync(options.targetPath);
   const targetContent = targetExists ? readFileSync(options.targetPath, "utf8") : null;
+
+  // Byte-identical: do nothing, and say so.
+  //
+  // There was no such branch, so every `--yes` rewrote the file and left another
+  // `.bak-<timestamp>` beside it even when not one character differed. Run on a
+  // schedule, or after each release, that is a directory of identical backups
+  // and a modification time that lies about when the skill last changed.
+  //
+  // The hash is still adopted, so a file roomyx did not write but that matches
+  // what it would have written stops being "unrecorded content" — the next real
+  // update then proceeds without a warning about hand edits that do not exist.
+  // Adopted only under `yes`, because the CLI promises that without it nothing
+  // is written, and the config is a file.
+  if (targetContent === bundledContent) {
+    if (options.dryRun !== true && options.yes === true && lastSyncedHash !== hashOf(bundledContent)) {
+      writeConfig(options.configPath, {
+        ...config,
+        lastSyncedHashes: { ...config.lastSyncedHashes, [options.targetPath]: hashOf(bundledContent) },
+      });
+    }
+    return { wouldWrite: false, written: false, backedUpTo: null, warnings: [], upToDate: true };
+  }
   // Two distinct "don't touch this blindly" cases, both requiring --yes:
   // (a) we synced before and the target has since been hand-edited, or
   // (b) the target already existed with content we have no record of ever
@@ -83,12 +112,19 @@ export function syncSkill(options: SyncOptions): SyncResult {
   // subsumed: nothing reaches here without `yes: true`. The warnings above are
   // still built, so a refusal still says which target had unrecorded content.
   if (options.dryRun === true || options.yes !== true) {
-    return { wouldWrite: true, written: false, backedUpTo: null, warnings };
+    return { wouldWrite: true, written: false, backedUpTo: null, warnings, upToDate: false };
   }
 
+  // ONE backup, at a fixed name, replaced each time.
+  //
+  // It used to be `.bak-<timestamp>`, which kept every version forever. Nobody
+  // reads the fourth-oldest copy of a skill file; what a backup is for is
+  // undoing the change that was just made. Combined with the identical-content
+  // branch above, this file now always holds the last version that actually
+  // differed — a no-op sync does not touch it.
   let backedUpTo: string | null = null;
   if (targetExists) {
-    backedUpTo = `${options.targetPath}.bak-${new Date().toISOString().replace(/[:.]/g, "-")}`;
+    backedUpTo = `${options.targetPath}.bak`;
     copyFileSync(options.targetPath, backedUpTo);
   }
 
@@ -103,5 +139,5 @@ export function syncSkill(options: SyncOptions): SyncResult {
     lastSyncedHashes: { ...config.lastSyncedHashes, [options.targetPath]: hashOf(bundledContent) },
   });
 
-  return { wouldWrite: true, written: true, backedUpTo, warnings };
+  return { wouldWrite: true, written: true, backedUpTo, warnings, upToDate: false };
 }

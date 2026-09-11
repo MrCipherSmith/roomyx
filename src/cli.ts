@@ -803,7 +803,9 @@ const COMMANDS: Record<string, Command> = {
         });
         console.log(name === path ? path : `${name}: ${path}`);
         for (const warning of result.warnings) console.log(`  warning: ${warning}`);
-        if (result.written) {
+        if (result.upToDate) {
+          console.log("  already in sync — nothing written, no backup made");
+        } else if (result.written) {
           console.log(result.backedUpTo ? `  written (backup: ${result.backedUpTo})` : "  written");
         } else {
           // "not written" was the message whenever `dryRun` was false, which
