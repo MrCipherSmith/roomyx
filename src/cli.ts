@@ -411,6 +411,32 @@ const COMMANDS: Record<string, Command> = {
         );
       }
 
+      // A live room, and no evidence of a writer — say so rather than drop it.
+      //
+      // `serving` was already computed for the refusal above and, when nothing
+      // holds a lease, was silently discarded. That silence is wrong in exactly
+      // the case that matters: an agent dispatcher runs `roomyx serve` and
+      // writes with `roomyx room append`, a fresh process each time, so it
+      // never holds a lease and the room never reports a dispatcher. Every
+      // append into a room an agent is running therefore looks, from here, like
+      // an append into an unattended log.
+      //
+      // A note, not a refusal: there is nothing here that can tell a dispatcher
+      // from a stranger, so refusing would block the legitimate writer — which
+      // was tried and reverted. The log itself is safe either way; `seq`
+      // allocation is under a lock and that is tested. What is at risk is the
+      // conversation reading as one when it was two, and a line on stderr is
+      // what lets a second writer notice before adding to it.
+      //
+      // stderr, because stdout carries `Appended seq N from X` and is parsed.
+      if (serving !== undefined && !writerPresent && !writerWasThere) {
+        console.error(
+          `Note: room ${serving.id} is serving ${absolute}. Nothing holds the writer lease, so this append is ` +
+            `allowed — but roomyx cannot see whether an agent is dispatching that room. If one is, you are writing ` +
+            `into a conversation it is also writing into.`,
+        );
+      }
+
       // Parsed only after the refusal: an operator whose command is going to be
       // rejected should not be made to pipe a batch in first, and a reader that
       // blocks on stdin while holding a decision helps nobody.

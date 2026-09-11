@@ -141,9 +141,18 @@ describe("roomyx room append", () => {
 
       const before = readFileSync(log, "utf8");
       const appended = await run(["room", "append", log, "--from", "a", "--body", "written by hand", "--registry", registryPath]);
-      expect(appended.stderr).toBe("");
       expect(appended.code).toBe(0);
       expect(readFileSync(log, "utf8")).not.toBe(before);
+
+      // This used to assert `stderr === ""`, which was a proxy for "it did not
+      // refuse" — and the proxy became wrong the moment `append` started noting
+      // that a room is serving the log. The note is expected here; a refusal is
+      // not, and that is what this test is actually about. Asserting the
+      // absence of the refusal says so directly and cannot be broken by adding
+      // another line of context.
+      expect(appended.stderr).not.toContain("A writer is live");
+      expect(appended.stderr).not.toContain("--take-over");
+      expect(appended.stderr).toContain("is serving");
     }, 20000);
 
     test("--force is gone", async () => {

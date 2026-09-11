@@ -117,6 +117,50 @@ describe("cli serve lifecycle (AC2: real running instance, not just registry.ts 
     expect(out).toContain("no longer at this path");
   }, 15000);
 
+  test("appending into a served log says so, on stderr, without refusing", async () => {
+    // The D-18 writer guard cannot engage for the agent workflow: a dispatcher
+    // runs `roomyx serve` and writes with `roomyx room append`, a fresh process
+    // each time, so it never holds a lease and the room never reports a
+    // dispatcher. `serving` was computed for the refusal and then silently
+    // dropped — so every append into a room an agent is running looked, from
+    // the CLI, like an append into an unattended log.
+    //
+    // A note rather than a refusal, because nothing here can tell a dispatcher
+    // from a stranger and refusing would block the legitimate writer. The log
+    // is safe either way: `seq` allocation is under a lock, and that is tested
+    // separately. What the note protects is the conversation.
+    dir = mkdtempSync(join(tmpdir(), "roomyx-cli-served-note-"));
+    const registryPath = join(dir, "registry.json");
+    const logPath = join(dir, "room.jsonl");
+    copyFileSync(FIXTURE, logPath);
+
+    const quiet = Bun.spawnSync(["bun", CLI, "room", "append", logPath, "--from", "yuki", "--body", "before"]);
+    expect(quiet.exitCode).toBe(0);
+    // Nothing is serving it yet, so there is nothing to warn about.
+    expect(quiet.stderr.toString()).not.toContain("is serving");
+
+    proc = Bun.spawn(["bun", CLI, "serve", logPath, "--port", "0", "--registry", registryPath], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const registered = await waitForRegistration(registryPath, 5000);
+    expect(registered).toBeDefined();
+
+    const noisy = Bun.spawnSync([
+      "bun", CLI, "room", "append", logPath,
+      "--from", "yuki", "--body", "during", "--registry", registryPath,
+    ]);
+
+    // Allowed, and it actually wrote.
+    expect(noisy.exitCode).toBe(0);
+    expect(noisy.stdout.toString()).toContain("Appended seq");
+
+    // The note is on stderr, because stdout carries "Appended seq N from X" and
+    // is parsed. A warning printed there would corrupt that.
+    expect(noisy.stderr.toString()).toContain("is serving");
+    expect(noisy.stdout.toString()).not.toContain("is serving");
+  }, 20000);
+
   test("records an absolute logPath even when given a relative one — the registry outlives this cwd", async () => {
     dir = mkdtempSync(join(tmpdir(), "roomyx-cli-abs-"));
     const registryPath = join(dir, "registry.json");
