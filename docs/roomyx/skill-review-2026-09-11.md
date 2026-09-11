@@ -124,7 +124,7 @@ actually ask with, the `name` format including the reserved words, and the
 500-line body ceiling. Mutation-checked by padding the description back over the
 limit.
 
-### 3. Split the conditional blocks out
+### 3. Split the conditional blocks out — **done**
 
 `rubric-50.md` and `roomyx.md` beside `SKILL.md`, linked one level deep from it.
 
@@ -132,12 +132,29 @@ limit.
 single link from `SKILL.md`, and the bundled-skill installer copies the whole
 directory rather than one file.
 
-### 4. Write the nesting limit into the skill
+**Done 2026-09-11.** `reference/goal-startup-idea.md` and `reference/roomyx.md`;
+the body went from ~7 894 to ~6 191 tokens, 22% off every load. `syncSkillBundle`
+installs SKILL.md and everything beside it, built as a loop over the existing
+single-file `syncSkill` rather than by teaching it about directories — every rule
+that matters is already in there and is per-file by nature.
+
+The first version treated any directory as a bundle, and a test fixture living
+in `test/fixtures/` promptly dragged its neighbours into a staging directory.
+Siblings are now synced only when the file at the centre is named `SKILL.md`.
+Three tests hold the shape: every link resolves, no reference file points at
+another, and each opens with a contents list.
+
+### 4. Write the nesting limit into the skill — **done**
 
 One paragraph in the dispatcher section: three layers, we use two, and what the
 third would cost.
 
-### 5. Evaluations
+**Done 2026-09-11.** In the dispatcher role, with the spare layer named as
+something to spend carefully: giving participants their own helpers is the
+obvious next idea and it lands on the boundary, where a spawn fails rather than
+queues. Pinned by a test.
+
+### 5. Evaluations — **done**
 
 Three scenarios with expected behaviour, as data beside the skill: a room cast
 without a second question; an owner command posted mid-room and acted on; a
@@ -145,6 +162,16 @@ closed room reread from history.
 
 **Done when:** they exist as a file a person can run by hand, with the expected
 behaviour written down. Automating them is out of scope here.
+
+**Done 2026-09-11.** `docs/roomyx/skill-evaluations.md`. Each of the three
+targets a failure that actually happened rather than an imagined one: a room
+told twice to fill itself, an owner command queued where nobody looked, a closed
+room nobody could find. Each lists the failing behaviour worth catching as well
+as the passing one, and there is a table to record runs in — a verdict without
+the observed behaviour is not usable later.
+
+They are in `docs/` rather than in the bundle: they are for whoever changes the
+skill, and shipping them would put a file in every install that nothing reads.
 
 ## Ordering rationale
 

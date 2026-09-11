@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { syncSkill } from "./skill-sync";
+import { syncSkillBundle } from "./skill-sync";
 
 export interface InitOptions {
   cwd: string;
@@ -83,14 +83,14 @@ export function init(options: InitOptions): InitResult {
   // only way the two cannot disagree — which they did, the moment `syncSkill`
   // learned to return early on identical content and stopped building the
   // warnings this code was reading to infer the same fact.
-  const dryRun = syncSkill({ ...syncOptions, dryRun: true });
+  const dryRun = syncSkillBundle({ ...syncOptions, dryRun: true });
 
   if (dryRun.upToDate) {
     // Byte-identical, so there is nothing a refusal could protect. The call
     // records the hash and writes no file: the sync keys its records by
     // absolute path, so a moved project otherwise keeps this copy stale forever
     // and says so on every run.
-    syncSkill({ ...syncOptions, yes: true });
+    syncSkillBundle({ ...syncOptions, yes: true });
     return { created: !registryAlreadyHasRooms, roomyxDir };
   }
 
@@ -101,7 +101,7 @@ export function init(options: InitOptions): InitResult {
     return { created: !registryAlreadyHasRooms, roomyxDir, skillWarnings: dryRun.warnings };
   }
 
-  syncSkill({ ...syncOptions, yes: true });
+  syncSkillBundle({ ...syncOptions, yes: true });
 
   return { created: !registryAlreadyHasRooms, roomyxDir };
 }

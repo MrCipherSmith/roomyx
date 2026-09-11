@@ -34,6 +34,14 @@ The room is **goal-driven, not round-driven**: there is no fixed number of round
   The main agent then does only three things — spawn the dispatcher, relay the
   attach command, and pass on any instruction the owner types in chat.
 
+  **There is a floor under this, and it is three.** Subagents may spawn
+  subagents up to three layers below the main conversation; at the limit the
+  spawning tool is withheld. Main → dispatcher → participants is two, so the
+  room fits with one layer to spare. Spend that layer carefully: giving
+  participants their own helpers is the obvious next idea and it puts you on the
+  boundary, where a spawn fails rather than queues. If a participant needs to
+  farm work out, have it ask the room instead — that is what the room is.
+
 - **The participants** — one persistent named subagent per persona. They decide everything substantive: what to research, whether an idea is good, when to pivot, who should speak next, when to converge. This is the actual point of the room — if you (the dispatcher) are making these calls instead of them, the room has stopped being a room.
 - **The session owner** — the human running the session. They can inject an instruction at any point (a veto, a new constraint, a topic to explore, a request to add participants, a reminder like "we're a small startup"). See **The owner-injection channel** below for how this differs from a participant's suggestion.
 - **The log file** — a single markdown file (e.g. `<project>/brainstorm/<topic>-room.md`) that is the append-only source of truth for the whole session.
@@ -83,34 +91,13 @@ This works well for deliberately broadening a room's perspective (e.g. a US-cent
 
 ## Goal type: find & defend a startup idea (default criteria)
 
-This is the default, ready-to-use goal type for this skill. When the owner asks to "find a startup idea," "find and defend an idea," or similar, use this criteria set unless they specify otherwise or the project has its own rubric file (check for one, e.g. `<project>/ideas/scoring-rubric.md`, and prefer it if present and more current — the list below is the portable default this skill carries so it works standalone in any project).
+The default goal type, with its 50-criteria rubric and threshold, lives in
+[reference/goal-startup-idea.md](reference/goal-startup-idea.md). Read it when
+the room is looking for a startup idea; skip it otherwise — it is a scoring
+rubric, not general guidance.
 
-**Goal statement:** find a startup idea, and defend it until it (a) scores ≥60-70% on the 50-criteria rubric below, and (b) every active participant explicitly backs it as the room's pick.
+Prefer the project's own rubric if it has one (e.g. `<project>/ideas/scoring-rubric.md`).
 
-**The 50-criteria rubric** — score each 0-10, sum out of 500, report as a percentage. Threshold: **60-70% (300-350/500)** to be "seriously considered." Below that is a real fail, however good the idea sounds in conversation.
-
-**A. Боль и спрос (pain & demand) — 1-8**
-1. Боль подтверждена цифрами, не догадкой · 2. Частота возникновения боли · 3. Острота боли (цена НЕ-решения) · 4. Размер затронутой аудитории · 5. Боль растёт со временем (тренд) · 6. Осознаваемость боли самим страдающим · 7. Стоимость текущего обходного пути · 8. Источник данных о боли независим от продавца идеи
-
-**B. Рынок и конкуренция — 9-16**
-9. Конкуренция реально пуста после жёсткого поиска · 10. Качество существующих решений · 11. Защитимость (не скопируют за спринт) · 12. Риск, что крупный игрок зайдёт намеренно · 13. Фрагментация рынка · 14. Траектория конкурентов (растут/буксуют) · 15. Издержки переключения клиента · 16. Временное окно возможности имеет чёткую дату, не расплывчатое "скоро"
-
-**C. Экономика — 17-24**
-17. Готовность платить подтверждена, не гипотетична · 18. Реалистичный ценовой потолок на клиента · 19. Размер адресного рынка именно для этой ниши · 20. Юнит-экономика (CAC/LTV хотя бы оценочно) · 21. Повторяемость дохода (подписка vs разовая) · 22. Ясность модели ценообразования · 23. Устойчивость маржи к росту стоимости входов · 24. Скорость цикла продажа→первый доход
-
-**D. Реализуемость — 25-32**
-25. Соло-подъёмность MVP (недели vs годы) · 26. Технический риск/предсказуемость · 27. Зависимость от партнёрств/данных третьих лиц · 28. Скорость получения рыночной обратной связи · 29. Требуемая доменная экспертиза · 30. Зависимость продаж от личных связей/доверия · 31. Доступность данных для AI-компонента (если применимо) · 32. Реалистичная оценка времени до первой сделки
-
-**E. Риски — 33-40**
-33. Регуляторный/юридический риск минимален · 34. Независимость от чужой платформы/API · 35. Риск изменения политики платформы/вендора · 36. Ответственность/репутационный риск при ошибке · 37. Чувствительность к макроэкономике/сезонности · 38. Личный юридический риск для фаундеров · 39. Геополитическая/юрисдикционная хрупкость · 40. Риск единой точки отказа
-
-**F. Дистрибуция и рост — 41-46**
-41. Можешь ли ты реально продать именно в этот сегмент · 42. Тёплый путь к первому платящему клиенту · 43. Виральный/реферальный потенциал · 44. Founder-market fit · 45. Повторяемость GTM на новые сегменты/страны · 46. Готовое сообщество/экосистема, на которую можно опереться
-
-**G. Долгосрочная устойчивость — 47-50**
-47. Защитимость за пределами первого узкого клина · 48. Опциональность расширения в смежные звенья цепочки · 49. Ценовая власть со временем · 50. Реалистичный путь к экзиту, или устойчивость как bootstrap-бизнеса
-
-**How to run the scoring gate:** see **Scoring & convergence protocol** below — do not treat "the room seems to like this idea" as equivalent to a passed gate.
 
 ## Archiving a finding mid-session
 
@@ -142,85 +129,13 @@ is for.
 ## Watching the room live (roomyx)
 
 A room's transcript is a file the owner can only read after the fact. roomyx
-turns it into something they can watch while it runs, without changing how the
-room works: it reads the log and serves it, and it never writes to it. The
-dispatcher stays the log's single writer.
+turns it into something they can watch while it runs, and it never writes to the
+log — the dispatcher stays the single writer.
 
-**The log must be roomyx's own format, not the markdown transcript.** roomyx
-reads JSONL: one `state` header line, then one JSON line per message. A markdown
-file is not readable by it, so create the log with `roomyx room new` and append
-through `roomyx room append` — those two commands are the whole of it, and the
-dispatcher is still the single writer. Use the markdown convention described
-above only when roomyx is *not* available.
+**The commands, the log format, the delta and the owner queue are all in
+[reference/roomyx.md](reference/roomyx.md).** Read it during setup, before the
+kickoff spawns.
 
-Create the room and start the server as part of setup, before the kickoff
-spawns:
-
-```bash
-roomyx room new .roomyx/rooms/logs/<topic>.jsonl \
-  --goal "<the goal statement>" \
-  --criteria "<the threshold, in one line>" \
-  --roster "ann:Ann,ben:Ben,cara:Cara"
-
-roomyx serve .roomyx/rooms/logs/<topic>.jsonl --port 0
-```
-
-Then append each participant's turn verbatim as it arrives:
-
-```bash
-roomyx room append .roomyx/rooms/logs/<topic>.jsonl \
-  --from ann --kind pitch --body "<their actual words>"
-```
-
-**No override flag, and that is the point.** `append` refuses only when the
-room is live *and* something is writing into it — a live room with no dispatcher
-has no writer to race, so this succeeds as written. The guard used to require
-`--force` here because roomyx could not tell the two apart from outside; the
-server now reports whether a dispatcher is attached, and the writer holds a
-lease, so the case that needed an override no longer arises. If something else
-really is writing (you will be told its pid), the only honest move is to stop it
-— do not look for a flag that overrides a live writer, because there is none.
-
-`--take-over` is for a room whose writer is **provably gone** — its server has
-stopped, or the lease it left behind has expired without being refreshed. It
-records the take-over in the log, naming whose lease it took. It does not
-displace a writer that is still there: a room that reports a dispatcher attached
-keeps refusing until that server is stopped, and the refusal will tell you so.
-Use it when you know you are the last writer, never to get past a refusal you do
-not understand.
-
-`--kind` is one of `pitch`, `question`, `challenge`, `answer`, `vote`, `status`,
-`research`; `--in-reply-to <seq>` records who was being answered. Both are
-optional and both make the transcript far easier to read later.
-
-`--port 0` takes an ephemeral port, so several rooms can run at once without
-colliding. It prints the bound URL and a short room ID:
-
-```
-roomyx serving /abs/path/room.jsonl at http://127.0.0.1:41235/mcp
-room ID: r-a1b2c3 — attach with `roomyx-client --room r-a1b2c3`
-```
-
-If `serve` refuses instead, read what it says: it now reads the log before
-binding anything, so "must start with a valid state line" means the file is not
-a roomyx log — most likely a markdown transcript. Create it with `room new`.
-
-**Relay that room ID to the owner in the kickoff confirmation, with the attach
-command.** That is the whole point of starting it — the owner opens the room in
-a second terminal and watches the discussion as it happens instead of waiting
-for your status reports. `roomyx rooms list` shows what is actually running;
-each entry is confirmed with a real call, not just read out of the registry.
-
-Attaching, detaching, or closing that terminal does nothing to the room. If the
-owner never attaches, the session is unaffected.
-
-Stop the server with `SIGINT`/`SIGTERM` when the room ends — it removes its own
-registry entry on the way out. A server killed outright leaves a stale entry,
-which is harmless: the next `rooms list` prunes it after a liveness check.
-
-A closed room is not lost. It is recorded in `roomyx rooms history`, and the
-owner can reread it at any time with `roomyx-client --archive`, so tell them the
-room is in the history when you finish.
 
 ## Kickoff (spawn once per persona)
 

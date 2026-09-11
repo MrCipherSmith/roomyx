@@ -13,6 +13,56 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.12.0] — 2026-09-11
+
+A minor, because the bundled skill stopped being one file. Everything else here
+is corrective.
+
+### Changed — breaking
+
+- **The `startup-room` skill is now a directory**, not a single `SKILL.md`. Two
+  conditional sections moved into `reference/`, and `syncSkill` gained a
+  bundle-aware sibling that installs SKILL.md *and* what sits beside it. Anyone
+  who copies `src/bundled-skills/startup-room/SKILL.md` by hand now gets a file
+  whose links point at nothing — use `roomyx setup`, `roomyx init`, or
+  `roomyx skills sync`, all of which install the whole directory.
+
+### Added
+
+- **`roomyx room delta | commands | ack`.** The room's own MCP tools had no
+  caller outside the TUI, while the skill told a dispatcher to use three of
+  them: no CLI command exposed them, `.mcp.json` registers the management server
+  instead, and a room's server binds an ephemeral port recorded only in the
+  registry. The instruction was right about what should happen and impossible to
+  carry out. Measured at 221 ms per call against 225 ms for `bun` to start, so a
+  dispatcher pays nothing for them.
+- **Progressive disclosure.** `reference/goal-startup-idea.md` (the goal type and
+  its 50-criteria rubric) and `reference/roomyx.md` (the commands, the log
+  format, the delta, the owner queue). The skill body went from ~7 894 to ~6 191
+  tokens — 22% off every load, for content most rooms never need.
+- **The nesting limit is written down.** Subagents spawn three layers deep;
+  main → dispatcher → participants is two. The spare layer is named as something
+  to spend carefully.
+- **Evaluations**, in `docs/roomyx/skill-evaluations.md`. Three scenarios, each
+  targeting a failure that actually happened, with the failing behaviour worth
+  catching as well as the passing one.
+
+### Fixed
+
+- **`description` was 1162 characters against a documented maximum of 1024.**
+  Claude Code loaded it anyway, so nothing failed locally — but the API's skill
+  validation rejects an over-long description, which made the skill quietly
+  unportable. Now 772, third person, with "what it does" and "when to use it"
+  separated. Five assertions hold the frontmatter to the published rules rather
+  than to this one edit.
+
+### Note
+
+The end-to-end room-tool tests are behind `ROOMYX_E2E=1` and `bun run test:e2e`,
+with their own CI step. They cost about 30 s; the gate matters more than the
+saving, because a test skipped by default and run nowhere is a test that has
+been deleted slowly.
+
 ## [0.11.4] — 2026-09-11
 
 A patch about not doing things.

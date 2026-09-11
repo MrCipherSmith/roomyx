@@ -1,8 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
-const SKILL = readFileSync(join(import.meta.dir, "..", "src", "bundled-skills", "startup-room", "SKILL.md"), "utf8");
+const SKILL_DIR = join(import.meta.dir, "..", "src", "bundled-skills", "startup-room");
+const SKILL = readFileSync(join(SKILL_DIR, "SKILL.md"), "utf8");
+/** SKILL.md plus everything it points at — what actually gets installed. */
+const BUNDLE = readdirSync(SKILL_DIR, { recursive: true, encoding: "utf8" })
+  .filter((f) => f.endsWith(".md"))
+  .map((f) => readFileSync(join(SKILL_DIR, f), "utf8"))
+  .join("\n");
 const SERVER = readFileSync(join(import.meta.dir, "..", "src", "server", "index.ts"), "utf8");
 
 /**
@@ -43,7 +49,7 @@ describe("the bundled skill and the room server", () => {
     // the registry. Naming the tool was an instruction that could not be
     // carried out; naming the command is one that can.
     for (const command of ["roomyx room delta", "roomyx room commands", "roomyx room ack"]) {
-      expect(SKILL).toContain(command);
+      expect(BUNDLE).toContain(command);
     }
   });
 
@@ -71,6 +77,14 @@ describe("the bundled skill and the room server", () => {
 
   test("the skill tells the dispatcher to set the room up without asking again", () => {
     expect(SKILL).toMatch(/in one go, and do not stop to ask/);
+  });
+
+  test("the skill states the nesting limit it depends on", () => {
+    // Main → dispatcher → participants is two of the three layers a subagent
+    // may spawn through. The next person to give participants their own helpers
+    // lands on the boundary, where the spawn fails rather than queues — and
+    // nothing in the skill said so until it did.
+    expect(SKILL).toMatch(/three layers below the main conversation/);
   });
 
   test("the skill still describes the log it actually writes", () => {
@@ -124,5 +138,37 @@ describe("the skill's frontmatter against the published limits", () => {
   test("the body stays under 500 lines", () => {
     const body = SKILL.slice(SKILL.indexOf("\n---", 4) + 4);
     expect(body.split("\n").length).toBeLessThan(500);
+  });
+});
+
+describe("progressive disclosure", () => {
+  test("every file SKILL.md points at exists", () => {
+    // A pointer to a file that is not there is the `arena/roles/**` defect
+    // again: an instruction an agent cannot follow, and one that fails silently
+    // because the agent simply finds nothing and carries on.
+    const links = [...SKILL.matchAll(/\]\((?!https?:)([^)]+\.md)\)/g)].map((m) => m[1] as string);
+    expect(links.length).toBeGreaterThan(0);
+    for (const link of links) {
+      expect(existsSync(join(SKILL_DIR, link))).toBe(true);
+      // Forward slashes, and one level deep: Claude may only partially read a
+      // file reached through another reference.
+      expect(link).not.toContain("\\");
+      expect(link.split("/").length).toBeLessThanOrEqual(2);
+    }
+  });
+
+  test("reference files do not point at further reference files", () => {
+    for (const file of readdirSync(join(SKILL_DIR, "reference"))) {
+      const text = readFileSync(join(SKILL_DIR, "reference", file), "utf8");
+      expect([...text.matchAll(/\]\((?!https?:)([^)]+\.md)\)/g)]).toHaveLength(0);
+    }
+  });
+
+  test("each reference file opens with a contents list", () => {
+    // For anything over 100 lines the guidance asks for one, so a partial read
+    // still shows the full scope of what is in the file.
+    for (const file of readdirSync(join(SKILL_DIR, "reference"))) {
+      expect(readFileSync(join(SKILL_DIR, "reference", file), "utf8")).toContain("## Contents");
+    }
   });
 });
