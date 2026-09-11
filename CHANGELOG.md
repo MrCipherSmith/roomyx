@@ -13,6 +13,59 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.11.2] — 2026-09-11
+
+A patch. The bundled skill had drifted behind the server it drives, and the
+symptom was visible from the outside: a room that gets created, then waits for a
+second command to be populated, then retells itself into the chat.
+
+### Fixed
+
+- **The skill no longer narrates the room into the conversation.** Step 5 of the
+  turn loop ordered a report after essentially every substantive exchange, with
+  quotes. That was right when a chat message was the only way to see a room.
+  roomyx exists now: the owner watches the transcript live, with scrolling,
+  search and per-participant filtering, so the retelling is the same text twice
+  on top of whatever else that conversation was for. Appending the turn to the
+  log *is* the report. Three things still reach the chat, one line each — goal
+  met, stuck and needs an owner decision, participant lost — plus a full answer
+  whenever the owner asks for status.
+- **Setup is one uninterrupted sequence.** It used to create the log and then
+  wait to be told to populate it, turning one instruction into three and leaving
+  a room that exists but is empty. It now casts the room and hands back the room
+  ID and the attach command as its whole reply.
+- **The skill names the tools this project built for it.** It mentioned
+  `room.post_owner_command` once and `room.get_delta_for`,
+  `room.get_pending_owner_commands` and `room.ack_owner_command` not at all, so
+  the delta was re-derived by hand on every turn and an owner command posted
+  from the TUI went into a queue nobody was told to read. Nothing failed — a
+  stale skill still produces a working room, just a worse one, which is why it
+  went unnoticed.
+- **`roomyx serve` no longer passes an argument that was always discarded.**
+  `writerLeasePath` was computed on every start, and `serve()` takes the lease
+  only when an `onOwnerCommand` callback is present — which the CLI never
+  supplies. It read like a lease was being taken and none ever was.
+
+### Added
+
+- **The dispatcher may be a background subagent**, so a room stops occupying the
+  chat for as long as it runs. Verified rather than assumed: a subagent has the
+  `Agent` tool loaded, can reach `SendMessage`, and a nested spawn was confirmed
+  to work.
+- **A test pins the skill against the server**: the four dispatcher-facing tools
+  must be named, and the hand-composed delta and the per-exchange chat report
+  must stay gone.
+
+### Known, recorded rather than fixed
+
+There are two dispatcher models and only one is expressible. An embedder
+dispatches in-process and can hold the writer lease; an *agent* dispatches by
+running `roomyx serve` and writing with `roomyx room append`, a different
+process each time. Making the CLI declare a dispatcher was tried and reverted:
+the lease would sit with the server while the writer is elsewhere, so the
+dispatcher would be refused from its own room. Until that is decided, the D-18
+writer guard does not engage for the agent workflow.
+
 ## [0.11.1] — 2026-09-10
 
 ### Added
