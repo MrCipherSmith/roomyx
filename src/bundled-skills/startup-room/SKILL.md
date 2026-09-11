@@ -60,7 +60,14 @@ The session owner is not a participant, and their messages are not "just another
 - **Requests to add participants** are handled via the mid-session spawn pattern below.
 - **The owner can edit the goal contract itself** (tighten/loosen the threshold, add a "must also" criterion, change the goal entirely) — this is a goal-injection, distinct from a veto on content. Relay it to the room as an authoritative update to what "done" means, and re-run the scoring/convergence check under the new terms if a candidate was already mid-evaluation.
 - **Status requests ("what's happening in the room?") get a real status, not a decision.** Report what's been found, who's arguing what, what's still open — do not use the opportunity to steer. If the owner explicitly asks "which should we pursue," that's their call to make (possibly by asking the room, via you), not yours to answer.
-- **Owner instructions also arrive over roomyx, and you have to look.** The owner presses `o` in the TUI and posts a veto / constraint / add-participant / goal-edit; it goes into the room's queue and `room.post_owner_command` answers `queued`. Nothing pushes it to you. **Poll `room.get_pending_owner_commands` between turns** — every turn is cheap and right — and call `room.ack_owner_command` with the id once you have acted, so `pending` keeps meaning "not yet dealt with" instead of growing forever. A queued command carries exactly the standing authority of one typed in chat. roomyx itself never writes to the log; you do.
+- **Owner instructions also arrive over roomyx, and you have to look.** The owner presses `o` in the TUI and posts a veto / constraint / add-participant / goal-edit. It goes into the room's queue, and **nothing pushes it to you.** Look between turns — it costs one command and a few hundred milliseconds:
+
+  ```bash
+  roomyx room commands <log>          # what is waiting
+  roomyx room ack <log> <command-id>  # once you have acted on one
+  ```
+
+  Acknowledge every command you act on, or `pending` grows forever and stops meaning "not yet dealt with". A queued command carries exactly the standing authority of one typed in chat. roomyx itself never writes to the log; you do.
 - **Do not ask the owner "what should we do next" as your default move.** Once the room's goal is set, keep it running and report status; only surface a genuine fork to the owner if it's a decision only they can make (scope, budget, willingness to accept a risk) — not a decision participants should be making themselves.
 
 ## Mid-session participant addition
@@ -234,7 +241,13 @@ Capture the `agentId` (or assigned name) returned by each spawn — this is what
 For each subsequent turn:
 
 1. Decide whose turn it is. Options: round-robin, or reactive (whoever was just @-mentioned or most directly challenged goes next), or "whoever has something to add" if you asked participants to signal that. Mix these — a real room isn't strictly round-robin.
-2. Get the delta from the room, do not compose it: `room.get_delta_for` with the participant's id returns exactly the messages they have not seen, and reports `since_seq` and `cursor_from` so an empty delta is distinguishable from a wrong cursor. This arithmetic used to be re-derived in the dispatcher's own context on every turn; it was moved into the server precisely so the dispatcher stops carrying it. Without roomyx, compose it by hand: everything since that participant last spoke, minus their own words — they remember those.
+2. Get the delta from the room, do not compose it:
+
+   ```bash
+   roomyx room delta <log> --for <participant-id>
+   ```
+
+   It returns exactly the messages that participant has not seen, never including their own, and reports `since_seq` and `cursor_from` so an empty delta is distinguishable from a wrong cursor. This arithmetic used to be re-derived in the dispatcher's own context on every turn; the server computes it now. Without roomyx, compose it by hand: everything since that participant last spoke, minus their own words — they remember those.
 3. Send it via `SendMessage` to their `agentId`/name, with a short prompt: "Here's what's happened since your last turn: [delta]. Your turn — react, build, refute, research, or pass."
 4. Append their reply verbatim to the log file, prefixed with their name.
 5. **Do not narrate the room into the chat.** Appending the turn to the log *is* the report: the owner is watching the room in `roomyx-client`, where they get the transcript live, with scrolling, search and per-participant filtering — everything a chat retelling would flatten. Duplicating it into the chat is not extra service, it is the same text twice, and it buries whatever else the owner was using that conversation for.

@@ -82,7 +82,7 @@ twice.
 
 ## Plan, in dependency order
 
-### 1. Make the tools reachable — `roomyx room delta | commands | ack`
+### 1. Make the tools reachable — `roomyx room delta | commands | ack` — **done**
 
 Three CLI commands over the room's MCP surface, resolved through the registry
 the same way `room append` already finds a live room.
@@ -94,6 +94,15 @@ the same way `room append` already finds a live room.
 
 **Done when:** each is exercised end to end against a live `roomyx serve` in a
 test, and the skill's instructions name the commands rather than the tools.
+
+**Done 2026-09-11.** Five end-to-end tests against a live server, and the skill
+now prints the commands. A second test asserts the other direction — that every
+command the skill names exists in the CLI — because a skill naming a command
+this package does not ship is the same defect wearing different clothes; it is
+mutation-checked by renaming one. Measured cost to a dispatcher: 221 ms per
+call, of which 225 ms is `bun` starting, so the command itself is free. Cost to
+the suite: it went from ~25 s to ~88 s, which is what end-to-end tests of a
+server cost.
 
 ### 2. Rewrite `description` under the limit
 

@@ -36,17 +36,24 @@ describe("the bundled skill and the room server", () => {
     expect(tools).toContain("room.get_delta_for");
   });
 
-  test("every tool a dispatcher needs is named in the skill", () => {
-    // Not every tool: `room.get_state` and `room.get_transcript` are the
-    // client's, and a dispatcher has no reason to poll them. These four are the
-    // ones a dispatcher must call, and each was missing at least once.
-    for (const tool of [
-      "room.get_delta_for",
-      "room.post_owner_command",
-      "room.get_pending_owner_commands",
-      "room.ack_owner_command",
-    ]) {
-      expect(SKILL).toContain(tool);
+  test("the skill names the commands a dispatcher can actually run", () => {
+    // It used to name the MCP tools directly, and nothing could reach them: no
+    // CLI command exposed them, `.mcp.json` registers the management server
+    // instead, and a room's own server binds an ephemeral port recorded only in
+    // the registry. Naming the tool was an instruction that could not be
+    // carried out; naming the command is one that can.
+    for (const command of ["roomyx room delta", "roomyx room commands", "roomyx room ack"]) {
+      expect(SKILL).toContain(command);
+    }
+  });
+
+  test("each of those commands exists in the CLI", () => {
+    // The half that catches the drift in the other direction: a skill naming a
+    // command this package does not ship is the same defect wearing different
+    // clothes.
+    const cli = readFileSync(join(import.meta.dir, "..", "src", "cli.ts"), "utf8");
+    for (const command of ["room delta", "room commands", "room ack"]) {
+      expect(cli).toContain(`"${command}": {`);
     }
   });
 
