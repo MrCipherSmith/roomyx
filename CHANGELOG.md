@@ -13,6 +13,55 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.12.1] — 2026-09-12
+
+A patch: the library reads in English now. No code changed.
+
+### Fixed
+
+- **The persona library and the 50-criteria rubric were in Russian.** All 87
+  persona files and the rubric shipped to a global registry while the skill that
+  points at them is in English — so an English reader followed English
+  instructions into a library they could not read. The rubric was translated
+  first on purpose: it is what a room renders its verdict with, so translating
+  the personas alone would have left the deciding half unreadable.
+
+  Names keep their Cyrillic in parentheses on the title line, Latin first:
+  `Ngozi Adeagbo (Нгози Адеагбо)`. Rooms already run and archived stay findable
+  under the names they were cast with.
+
+- **`questionnaire-50.md` still pointed at `arena/roles/`**, the path the library
+  lived at before roomyx was extracted — the same dangling reference the skill
+  itself was cleaned of a release ago, surviving in a file nobody had re-read.
+
+- **A dangling "see below" in the rubric.** Splitting the skill into
+  `reference/` moved *Scoring & convergence protocol* into `SKILL.md`, and the
+  rubric kept pointing "below" at a section that was no longer in the same file.
+
+### Added
+
+- Four tests over the bundle: the library is the size the skill claims (fifty
+  numbered personas, the three role sets, the questionnaire); no Russian
+  survives outside a persona's own name; the questionnaire still has fifty
+  questions; and nothing points at the library's old home. Mutation-checked by
+  reintroducing a Russian line and by deleting a question.
+
+### On the translation itself
+
+Verified against the originals rather than against the translators' reports,
+mechanically and per file — numbers, quoted idioms, sentence counts, section
+structure, and every Latin-script term the Russian original carried.
+
+Two things that looked like defects were not. Files came back at 54-59% of their
+previous byte count, which reads as content loss until measured in characters:
+97-104%, and 108-120% by word — Cyrillic is two bytes per character in UTF-8 and
+Latin is one. And five files appeared to have lost a number; in all five the
+number had been correctly spelled out as an English word.
+
+One real loss, in one file of forty-five: the German electrician's
+`Handwerksbetrieb` had become "electrical contracting business" — what the word
+means, not what it is. Restored.
+
 ## [0.12.0] — 2026-09-11
 
 A minor, because the bundled skill stopped being one file. Everything else here
