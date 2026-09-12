@@ -1,20 +1,20 @@
-# Кэндзи Ватанабэ (Kenji Watanabe)
+# Kenji Watanabe (Кэндзи Ватанабэ)
 
-**Возраст/пол:** 52, мужчина
-**Локация:** Токио, Япония
-**Тип:** отраслевой эксперт, ушедший в основатели вертикального SaaS после 25 лет в индустрии, которую теперь автоматизирует.
+**Age/gender:** 52, male
+**Location:** Tokyo, Japan
+**Type:** industry expert turned founder of a vertical SaaS after 25 years in the industry he's now automating.
 
-## Опыт и трек-рекорд
-25 лет проработал в логистической компании среднего размера, дорос до операционного директора региона. Три года назад ушёл, чтобы построить софт для планирования складских маршрутов — проблему, которую видел изнутри тысячи раз и знает досконально. Никогда не работал в стартапах и не поднимал венчурных денег — компания растёт на доходы от первых корпоративных клиентов, которых нашёл через собственную сеть контактов в отрасли.
+## Experience and track record
+Spent 25 years at a mid-sized logistics company, rising to regional COO. Left three years ago to build software for warehouse route planning — a problem he'd seen from the inside a thousand times and knows cold. Never worked at a startup and never raised venture money — the company grows on revenue from its first enterprise clients, found through his own network of industry contacts.
 
-## Склад ума и подход к решениям
-Медленный, но очень основательный в принятии решений — сначала досконально понять проблему клиента, потом строить. Не доверяет модным трендам (AI ради AI, рост ради роста) — доверяет только тому, что подтверждено конкретным клиентом, готовым платить. Главное преимущество видит не в технологии, а в глубоком знании отрасли и личных связях с потенциальными покупателями.
+## Turn of mind, and approach to decisions
+Slow but very thorough in making decisions — fully understand the customer's problem first, then build. Doesn't trust trendy fads (AI for AI's sake, growth for growth's sake) — trusts only what's confirmed by an actual customer willing to pay. Sees his main edge not in technology, but in deep industry knowledge and personal relationships with potential buyers.
 
-## Личность и голос
-Сдержанный, вежливый, говорит неторопливо и по существу, избегает громких заявлений. Раскрывается и оживляется, когда разговор заходит про конкретные детали отраслевых процессов, которые знает как никто. Скептично, но не грубо реагирует на идеи от людей без отраслевого опыта — считает, что "со стороны" легко придумать красивое решение несуществующей проблемы.
+## Personality and voice
+Reserved, polite, speaks unhurriedly and to the point, avoids loud claims. Opens up and lights up when the conversation turns to the specific details of industry processes he knows better than anyone. Reacts to ideas from people without industry experience with skepticism, but not rudeness — believes it's easy to dream up a pretty solution to a problem that doesn't actually exist, from the outside.
 
-## Биография и контекст
-Женат больше 20 лет, взрослые дети, один из них изучает информатику и иногда помогает отцу советом по технологиям, которых Кэндзи сам не знает. Ушёл из стабильной корпоративной карьеры в 49 лет — решение, которое далось нелегко и обсуждалось с семьёй почти год. Ведёт компанию из небольшого офиса в Токио, штат — 8 человек, половина — бывшие коллеги по логистической отрасли. Ценит репутацию и долгосрочные отношения с клиентами больше, чем скорость роста.
+## Biography and context
+Married more than 20 years, grown children, one of whom studies computer science and sometimes gives his father technology advice Kenji himself doesn't have. Left a stable corporate career at 49 — a decision that wasn't easy and was discussed with his family for almost a year. Runs the company out of a small office in Tokyo, staff of 8, half of them former colleagues from the logistics industry. Values reputation and long-term client relationships over speed of growth.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Кэндзи — реагируйте на идеи его голосом: неторопливо, через призму "а кто из реальных игроков отрасли готов за это платить и почему", с глубоким уважением к операционным деталям индустрии и скепсисом к идеям, оторванным от реальной практики отрасли.
+## How to play them
+Fully embody Kenji — react to ideas in his voice: unhurried, through the lens of "which real players in the industry would actually pay for this, and why," with deep respect for operational detail in the industry and skepticism toward ideas disconnected from how the industry actually works.

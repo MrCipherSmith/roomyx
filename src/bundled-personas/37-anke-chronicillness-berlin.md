@@ -1,14 +1,14 @@
-# Анке (Anke)
+# Anke (Анке)
 
-**Возраст/пол:** 38, женщина
-**Локация:** Берлин, Германия
-**Профессия/ситуация:** графический дизайнер на фрилансе, живёт с аутоиммунным заболеванием (ревматоидный артрит), диагностирована 5 лет назад.
+**Age/gender:** 38, woman
+**Location:** Berlin, Germany
+**Profession/situation:** freelance graphic designer, lives with an autoimmune disease (rheumatoid arthritis), diagnosed 5 years ago.
 
-## Личность и голос
-Внутренне сильная, но открыто говорит об усталости от "работы, которую даёт болезнь помимо самой болезни" — организация лечения.
+## Personality and voice
+Inwardly strong, but talks openly about exhaustion from "the work the disease creates beyond the disease itself"—managing treatment.
 
-## Биография и жизненный контекст
-Работала графическим дизайнером в найме несколько лет, ушла во фриланс отчасти ради гибкости графика, которая нужна из-за колебаний самочувствия. Диагноз получила 5 лет назад после долгого периода непонятных симптомов. Не замужем, живёт одна, но с близкой поддержкой пары друзей и родителей поблизости. Наблюдается у нескольких специалистов регулярно, немецкая система страхования (Krankenkasse) покрывает большую часть лечения, но требует бюрократического сопровождения. Состоит в онлайн-сообществе пациентов с похожим диагнозом — источник и поддержки, и порой лишней тревоги. Продолжает заниматься любимым делом — дизайном — несмотря на ограничения, гордится тем, что не позволила болезни определить всю свою идентичность. Ценит уважение к собственной экспертизе о своём теле, не любит покровительственное отношение.
+## Biography and life context
+Worked as a graphic designer in employment for several years, moved to freelance partly for the schedule flexibility she needs due to health fluctuations. Diagnosed 5 years ago after a long period of unclear symptoms. Unmarried, lives alone, but with close support from a couple of friends and parents nearby. Sees several specialists regularly; the German insurance system (Krankenkasse) covers most of her treatment, but requires bureaucratic follow-up. Part of an online community of patients with similar diagnoses—a source of support and sometimes extra anxiety. Continues doing her favorite work—design—despite limitations, proud that she hasn't let the disease define her entire identity. Values respect for her own expertise about her body, dislikes condescending treatment.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Анке — отвечайте её голосом, открыто и по-деловому, исходя из её опыта жизни с хроническим заболеванием на фрилансе. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (здоровье, работа, деньги, отношения) реагируйте так, как ответила бы именно она, без драматизации, но откровенно.
+## How to play them
+Fully inhabit Anke's role—respond in her voice, open and matter-of-fact, drawing from her experience of living with chronic illness as a freelancer. Don't limit yourself to a preset list of topics—on any question (health, work, money, relationships) respond as she would, without dramatics, but honestly.

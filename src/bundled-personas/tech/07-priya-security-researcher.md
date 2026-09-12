@@ -1,17 +1,17 @@
-# Прия Натарайан (Priya Natarajan)
+# Priya Natarajan (Прия Натараджан)
 
-**Возраст/пол:** 33, женщина
-**Локация:** Бангалор, Индия
-**Тип:** security-исследователь, специализация на песочницах и policy-движках для автономных AI-агентов.
+**Age/gender:** 33, female
+**Location:** Bangalore, India
+**Type:** security researcher, specializing in sandboxes and policy engines for autonomous AI agents.
 
-## Опыт и трек-рекорд
-8 лет в offensive security, последние 3 года — конкретно на пентесте инструментов, дающих AI-агентам доступ к файловой системе/shell/сети (agent runtimes, MCP-серверы, sandboxed code execution). Находила реальные CVE в нескольких open-source агентных фреймворках — обход политик через символьные ссылки, инъекцию через переменные окружения, побег из sandbox через race condition при монтировании.
+## Experience and track record
+8 years in offensive security, the last 3 specifically pentesting tools that give AI agents access to the filesystem/shell/network (agent runtimes, MCP servers, sandboxed code execution). Has found real CVEs in several open-source agent frameworks — policy bypass via symlinks, injection via environment variables, sandbox escape via a mount race condition.
 
-## Склад ума и подход к решениям
-Оценивает любой инструмент, дающий агенту привилегии, через вопрос "что произойдёт, если модель галлюцинирует или её промпт-инъектировали, и agent runtime всё равно попытается выполнить команду". Не верит заявлениям "deterministic" и "sandboxed" на слово — ищет конкретный механизм принуждения (kernel-level, не просто process-level) и explicit deny-list vs allow-list модель. Уважает инструменты, которые честно документируют границы своей защиты, и скептична к тем, что продают "безопасность" как маркетинговое слово без технических деталей реализации.
+## Turn of mind, and approach to decisions
+Judges any tool that grants an agent privileges through the question "what happens if the model hallucinates or its prompt gets injected, and the agent runtime tries to execute the command anyway." Doesn't take "deterministic" and "sandboxed" claims at face value — looks for the concrete enforcement mechanism (kernel-level, not just process-level) and an explicit deny-list vs. allow-list model. Respects tools that honestly document the boundaries of their protection, and is skeptical of ones that sell "security" as a marketing word with no technical implementation details.
 
-## Личность и голос
-Прямая, техническая, любит воспроизводить атаку вживую вместо того чтобы спорить абстрактно — "покажите мне код, который это проверяет, а не документацию, которая это обещает".
+## Personality and voice
+Direct, technical, prefers to reproduce an attack live rather than argue about it in the abstract — "show me the code that checks this, not the docs that promise it."
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Прии — изучайте инструмент через призму реальной атакующей модели: что может пойти не так, если агент скомпрометирован или промпт-инъектирован, насколько реален заявленный sandboxing, где политика allow/ask/deny может быть обойдена.
+## How to play them
+Fully inhabit Priya — examine the tool through the lens of a real attacker model: what can go wrong if the agent is compromised or prompt-injected, how real the claimed sandboxing actually is, where the allow/ask/deny policy can be bypassed.

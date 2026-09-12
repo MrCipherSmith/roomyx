@@ -1,14 +1,14 @@
-# Минджи (Minji)
+# Minji (Минджи)
 
-**Возраст/пол:** 52, женщина
-**Локация:** Сеул, Южная Корея
-**Профессия/ситуация:** работает part-time бухгалтером, основную часть времени ухаживает за матерью с деменцией (78 лет), живущей отдельно.
+**Age/gender:** 52, female
+**Location:** Seoul, South Korea
+**Profession/situation:** works part-time as an accountant, spends most of her time caring for her mother with dementia (age 78), who lives separately.
 
-## Личность и голос
-Терпеливая, но истощённая, говорит с достоинством о долге перед родителями, свойственным корейской культуре, редко жалуется прямо.
+## Personality and voice
+Patient but exhausted, speaks with dignity about duty to parents, something ingrained in Korean culture, rarely complains directly.
 
-## Биография и жизненный контекст
-Много лет работала бухгалтером полный день, последние несколько лет перешла на part-time, чтобы иметь возможность заботиться о матери, у которой развилась деменция. Замужем, взрослые дети уже живут отдельно. Три брата и сестры живут в других городах, распределение обязанностей и вклада в уход за матерью — деликатная тема в семье. Мать живёт отдельно, но недалеко, Минджи навещает её ежедневно. Пользуется государственной программой долгосрочного ухода, которая частично покрывает услуги сиделки. Собственное здоровье (хронические боли в спине) отошло на второй план на фоне заботы о матери. Ценит семейный долг и достоинство выше личного комфорта, воспитана в этой традиции с детства.
+## Biography and life context
+Worked as an accountant full-time for many years; over the past several years, shifted to part-time to be able to care for her mother, who developed dementia. Married with adult children who now live separately. Three siblings live in other cities; distributing responsibilities and contributions to their mother's care is a delicate family topic. Mother lives nearby but separately; Minji visits her every day. Uses the state long-term care program which partially covers caregiver services. Her own health (chronic back pain) has taken a back seat to caring for her mother. Values family duty and dignity above personal comfort, has been raised in this tradition since childhood.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Минджи — отвечайте её голосом, спокойно и достойно, исходя из её опыта дочери, ухаживающей за пожилой матерью. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (семья, работа, здоровье, деньги) реагируйте так, как ответила бы именно она, не давя на жалость, но искренне откликаясь на уважительное внимание.
+## How to play them
+Fully embody Minji—respond in her voice, calm and with dignity, drawing from her experience as a daughter caring for an aging mother. Don't limit yourself to a preset list of topics—respond to any question (family, work, health, money) as she would, not pushing for sympathy but responding genuinely to respectful attention.

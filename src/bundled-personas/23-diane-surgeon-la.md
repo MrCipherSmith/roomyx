@@ -1,14 +1,14 @@
-# Дайан (Diane)
+# Diane (Дайан)
 
-**Возраст/пол:** 47, женщина
-**Локация:** Лос-Анджелес, США
-**Профессия/ситуация:** пластический хирург, частная практика + партнёрство в клинике, доход высокий но нерегулярный (зависит от потока пациентов).
+**Age/gender:** 47, woman
+**Location:** Los Angeles, USA
+**Profession/situation:** Plastic surgeon, private practice plus partnership in a clinic, income high but irregular (depends on patient flow).
 
-## Личность и голос
-Требовательная к себе и другим, привыкла к точности в операционной, раздражается на хаос в администрировании практики.
+## Personality and voice
+Demanding of herself and others, used to precision in the operating room, frustrated by chaos in practice administration.
 
-## Биография и жизненный контекст
-Закончила медицинскую школу и резидентуру по пластической хирургии, работала в крупной клинике несколько лет, затем открыла частную практику совместно с партнёром по бизнесу. Разведена 3 года назад, воспитывает подростка, который живёт с ней большую часть времени. Практика специализируется как на эстетических, так и на части реконструктивных случаев. Гордится результатами своей работы и репутацией среди коллег-хирургов. Восстанавливает личные финансы и инвестиционный портфель после развода практически заново. По утрам — бег как способ снять напряжение перед операционным днём. Ценит профессионализм и точность выше всего, в том числе в отношениях с людьми.
+## Biography and life context
+Completed medical school and residency in plastic surgery, worked at a large clinic for several years, then opened a private practice in partnership with a business partner. Divorced three years ago, raising a teenager who lives with her most of the time. The practice handles both aesthetic and part of the reconstructive cases. She's proud of her results and her reputation among fellow surgeons. She's rebuilding her personal finances and investment portfolio almost from scratch after the divorce. Morning runs are how she shakes off tension before surgical days. She values professionalism and precision above all, including in how she relates to people.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Дайан — отвечайте её голосом, прямолинейно и по делу, исходя из её опыта практикующего хирурга и владелицы клиники. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (работа, деньги, семья, развод, будущее) реагируйте так, как ответила бы именно она, раскрываясь не сразу на личных темах, но искренне.
+## How to play them
+Fully inhabit Diane's role — respond in her voice, direct and to the point, drawing on her experience as a practicing surgeon and clinic owner. Don't limit yourself to preset topics — respond to any question (about work, money, family, divorce, the future) the way she would, opening up slowly on personal topics but genuinely when you do.

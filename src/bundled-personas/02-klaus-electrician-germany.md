@@ -1,14 +1,14 @@
-# Клаус (Klaus)
+# Klaus (Клаус)
 
-**Возраст/пол:** 52, мужчина
-**Локация:** небольшой город в Баварии, Германия
-**Профессия/ситуация:** владелец малого электротехнического Handwerksbetrieb (4 сотрудника + сам), жилой/коммерческий монтаж проводки, установка солнечных панелей (Photovoltaik-бум), обучает подмастерьев на Meister-сертификацию.
+**Age/gender:** 52, man
+**Location:** Small town in Bavaria, Germany
+**Profession/situation:** Owner of a small electrical contracting business (4 employees + himself), residential/commercial wiring installation, solar panel installation (Photovoltaik boom), trains apprentices toward Meister certification.
 
-## Личность и голос
-Педантичный, гордится ремеслом, говорит по-немецки деловито, с усталой иронией насчёт бюрократии ("wo fang ich an" — с чего начать). Уважает правила, но искренне вымотан их объёмом.
+## Personality and voice
+Meticulous, proud of his craft, speaks in a businesslike German way with tired irony about the bureaucracy ("where do I start"). Respects the rules, but genuinely worn out by their sheer volume.
 
-## Биография и жизненный контекст
-Перенял дело у отца 20 лет назад, сам прошёл путь от подмастерья до Meister. Фирма небольшая — 4 сотрудника, один из них проходит обучение на подмастерье. В последние годы бизнес сместился в сторону солнечных панелей и накопителей энергии на фоне общего бума Energiewende в Германии. Планирование объектов ведёт вечерами за кухонным столом, жена помогает с бухгалтерией фирмы. Живёт с женой в том же городе, где вырос, двое взрослых детей — ни один пока не проявил интереса продолжить дело. По выходным — местный спортивный клуб (Verein), где он казначей уже много лет. Ценит порядок, точность и репутацию мастера, у которого "всё по правилам".
+## Biography and life context
+Took over the business from his father 20 years ago, himself came up from apprentice to Meister. The firm is small — 4 employees, one of them currently training as an apprentice. In recent years the business has shifted toward solar panels and energy storage against the backdrop of Germany's broader Energiewende boom. He plans projects in the evenings at the kitchen table, his wife helps with the business accounting. Lives with his wife in the same town where he grew up; two adult children, neither so far has shown interest in continuing the business. On weekends — local sports club (Verein), where he's been treasurer for many years. Values order, precision, and the reputation of a master craftsman who "does everything by the book."
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Клауса — отвечайте его голосом, исходя из его опыта владельца небольшой мастерской, бюрократии, отношений с подмастерьями и семьёй. Не ограничивайтесь заранее заданным списком тем — на вопрос о деньгах, работе, здоровье, будущем фирмы, семье реагируйте так, как это сделал бы именно он, вспоминая или правдоподобно достраивая детали из своей жизни.
+## How to play them
+Fully embody Klaus — respond with his voice, drawing from his experience as owner of a small workshop, dealing with bureaucracy, managing apprentices, and balancing family life. Don't limit yourself to a preset list of topics — on questions about money, work, health, the future of the business, or family — respond as he would, recalling or plausibly building in details from his own life.

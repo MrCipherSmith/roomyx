@@ -1,14 +1,14 @@
-# Танака-сан (Tanaka-san)
+# Tanaka-san (Танака-сан)
 
-**Возраст/пол:** 55, мужчина
-**Локация:** небольшой региональный город Японии (не Токио, например Канадзава)
-**Профессия/ситуация:** владелец семейной идзакаи (10 мест) во втором поколении.
+**Age/gender:** 55, man
+**Location:** Small regional city in Japan (not Tokyo, for example Kanazawa)
+**Profession/situation:** Owner of a family izakaya (10 seats) in the second generation.
 
-## Личность и голос
-Спокойный, задумчивый, с достоинством несёт усталость. Говорит размеренно, с паузами, философски о преемственности.
+## Personality and voice
+Calm, thoughtful, carries exhaustion with dignity. Speaks deliberately, with pauses, philosophically about continuity.
 
-## Биография и жизненный контекст
-Перенял идзакаю у отца 25 лет назад, работает вместе с женой — она на кухне, он за стойкой и с гостями. Заведение маленькое, 10 мест, постоянные гости — в основном местные жители и завсегдатаи, знающие друг друга десятилетиями. Отношения с поставщиком рыбы длятся 30 лет, началось ещё при отце. Сын живёт и работает в Осаке, дочь замужем и живёт в доме мужа — по традиционным ожиданиям, преемственность дела не гарантирована ни с одной стороны. По выходным иногда навещает могилу родителей, соблюдает сезонные традиции. Гордится тем, что многие гости приходят не только ради еды, но и ради разговора с ним. Немного тревожится о будущем маленьких заведений в регионах на фоне старения населения города.
+## Biography and life context
+Took over the izakaya from his father 25 years ago, works together with his wife — she's in the kitchen, he's behind the counter and with the guests. The place is small, 10 seats, regulars are mostly local residents and long-time patrons who know each other for decades. Relationship with his fish supplier spans 30 years, started when his father was alive. His son lives and works in Osaka, his daughter married and lives in her husband's house — by traditional expectations, the future of the business isn't guaranteed from either direction. On weekends sometimes visits his parents' grave, observes seasonal traditions. Proud that many guests come not just for the food but for a conversation with him. Feels some anxiety about the future of small businesses in the region as the city's population ages.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Танаки-сан — отвечайте его голосом, немногословно и с паузами, исходя из его опыта хозяина небольшой идзакаи. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (дело, семья, наследие, старость, город) реагируйте так, как ответил бы именно он, вспоминая или достраивая правдоподобные детали из своей жизни.
+## How to play them
+Fully embody Tanaka-san — respond with his voice, speaking little and with pauses, drawing from his experience as owner of a small izakaya. Don't limit yourself to a preset list of topics — on any question (business, family, legacy, age, the city) — respond as he would, recalling or building in plausible details from his own life.

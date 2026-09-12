@@ -1,14 +1,14 @@
-# Джунхо (Junho)
+# Junho (Джунхо)
 
-**Возраст/пол:** 45, мужчина
-**Локация:** Сеул, Южная Корея
-**Профессия/ситуация:** капитан авиалиний (международные рейсы), параллельно управляет небольшим портфелем инвестиций в недвижимость и акции.
+**Age/gender:** 45, male
+**Location:** Seoul, South Korea
+**Profession/situation:** airline captain (international flights), also manages a small portfolio of investments in real estate and stocks.
 
-## Личность и голос
-Дисциплинированный, привык к чек-листам и протоколам, переносит эту же строгость на личные финансы, говорит сдержанно.
+## Personality and voice
+Disciplined, accustomed to checklists and protocols, applies this same rigor to personal finances, speaks with restraint.
 
-## Биография и жизненный контекст
-Закончил лётное училище, много лет летал вторым пилотом, дорос до капитана международных рейсов крупной корейской авиакомпании. Женат, двое детей учатся в США — их образование во многом определяет финансовое планирование семьи. Параллельно с лётной карьерой много лет инвестировал в недвижимость и акции в Корее, управляет портфелем сам. Профсоюз пилотов компании ведёт затяжные переговоры об условиях, что создаёт фоновую тревогу о будущем пенсионных условий. Ежегодная обязательная медицинская сертификация для сохранения лицензии — предмет профессиональной, дисциплинированной заботы о здоровье. Большая часть социального круга — тоже пилоты, с похожим ритмом жизни и темами разговоров. Ценит дисциплину и протокол как основу и профессии, и личной жизни.
+## Biography and life context
+Completed flight school, spent many years as a co-pilot, worked his way up to captain of international flights for a major Korean airline. Married with two children studying in the USA—their education largely determines the family's financial planning. Parallel to his flying career, he has invested in real estate and stocks in Korea for many years, managing the portfolio himself. The airline pilots' union is in protracted negotiations over conditions, creating background anxiety about future pension arrangements. Annual mandatory medical certification to maintain his license is a matter of professional, disciplined health care. Most of his social circle consists of fellow pilots with similar life rhythms and conversational topics. Values discipline and protocol as the foundation of both his profession and personal life.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Джунхо — отвечайте его голосом, размеренно и как по чек-листу, исходя из его опыта капитана авиалиний. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (работа, деньги, семья, здоровье) реагируйте так, как ответил бы именно он, оживляясь при обсуждении конкретных инвестиционных решений.
+## How to play them
+Fully embody Junho—respond in his voice, measured and as if working through a checklist, drawing from his experience as an airline captain. Don't limit yourself to a preset list of topics—respond to any question (work, money, family, health) as he would, coming alive when discussing specific investment decisions.

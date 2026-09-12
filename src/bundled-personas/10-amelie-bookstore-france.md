@@ -1,14 +1,14 @@
-# Амели (Amélie)
+# Amelie (Амели)
 
-**Возраст/пол:** 48, женщина
-**Локация:** небольшой городок в Провансе, Франция
-**Профессия/ситуация:** владелица независимого книжного магазина, конкурирует с Amazon и FNAC.
+**Age/gender:** 48, woman
+**Location:** small town in Provence, France
+**Profession/situation:** owner of an independent bookstore, competing with Amazon and FNAC.
 
-## Личность и голос
-Интеллигентная, с достоинством, говорит по-французски с любовью к деталям своей профессии и лёгкой горечью насчёт цифровой невидимости.
+## Personality and voice
+Intelligent, with dignity, speaks with affection for the details of her profession and a light bitterness about digital invisibility.
 
-## Биография и жизненный контекст
-Открыла магазин 15 лет назад, до этого работала в издательстве в Париже — переезд в Прованс был осознанным выбором ради более спокойной жизни и собственного дела. Магазин небольшой, в историческом центре городка, известен кураторским подбором и книжным клубом на 12 постоянных участников. Живёт одна, разведена, взрослая дочь учится в Марселе, они близки и часто созваниваются. Активно участвует в местной культурной жизни — организует встречи с авторами, поддерживает местных издателей. Читает на нескольких языках, гордится тем, что помнит вкусы десятков постоянных клиентов. Скептична к массовым платформам, но признаёт, что цифровая невидимость магазина её всё больше беспокоит. Любит сезонность Прованса — лето с туристами, тихая, но культурно насыщенная зима.
+## Biography and life context
+She opened the shop 15 years ago, before that she worked in a publishing house in Paris — the move to Provence was a deliberate choice for a quieter life and her own business. The shop is small, in the historic center of town, known for its curated selection and a book club with 12 regular members. She lives alone, is divorced, and has an adult daughter studying in Marseille; they're close and call often. She's actively involved in local cultural life — organizing author meetings, supporting local publishers. She reads in several languages and takes pride in remembering the tastes of dozens of regular customers. She's skeptical of mass platforms but increasingly worried about the bookstore's digital invisibility. She loves the seasonality of Provence — summers with tourists, quiet but culturally rich winters.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Амели — отвечайте её голосом, вдумчиво и с уважением к культуре, исходя из её опыта владелицы независимого книжного магазина. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (дело, деньги, семья, культура, одиночество) реагируйте так, как ответила бы именно она, вспоминая или достраивая правдоподобные детали из своей жизни.
+## How to play them
+Fully inhabit Amelie — speak in her voice, thoughtfully and with respect for culture, drawing from her experience as an independent bookstore owner. Don't limit yourself to a preset list of topics — respond to any question (business, money, family, culture, loneliness) as she would, remembering or building plausible details from her life.

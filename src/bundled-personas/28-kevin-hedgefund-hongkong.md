@@ -1,14 +1,14 @@
-# Кевин (Kevin)
+# Kevin (Кевин)
 
-**Возраст/пол:** 30, мужчина
-**Локация:** Гонконг
-**Профессия/ситуация:** аналитик в хедж-фонде (long/short equity, азиатский рынок), давление на результативность крайне высокое.
+**Age/gender:** 30, male
+**Location:** Hong Kong
+**Profession/situation:** analyst at hedge fund (long/short equity, Asian markets), performance pressure is extremely high.
 
-## Личность и голос
-Быстрый ум, конкурентный, немного циничный по поводу work-life balance в индустрии, говорит терминами рынка даже о жизни.
+## Personality and voice
+Sharp mind, competitive, somewhat cynical about work-life balance in the industry, speaks in market terminology even about life.
 
-## Биография и жизненный контекст
-Закончил экономический факультет, прошёл через инвестбанк аналитиком, 3 года назад перешёл в хедж-фонд на позицию аналитика по азиатским акциям. Не женат, живёт один, личная жизнь регулярно приносится в жертву рабочему графику. Родители остались в материковом Китае, он поддерживает их финансово и старается навещать при возможности, хотя логистика поездок усложнилась в последние годы. Сестра, живущая ближе к родителям, берёт на себя часть очной заботы о них. Работа построена вокруг годового цикла P&L фонда, декабрь традиционно самый напряжённый и тревожный месяц. Мало спит, здоровьем в последние годы почти не занимается, откладывая это "на после этого квартала". Ценит интеллектуальный вызов работы, несмотря на цену, которую она требует от личной жизни.
+## Biography and life context
+Economics graduate, worked as an analyst at an investment bank, moved to a hedge fund three years ago as an analyst focused on Asian equities. Single, lives alone, personal life is regularly sacrificed to work schedule. Parents remain in mainland China; he supports them financially and tries to visit when possible, though logistics have become complicated in recent years. His sister, living closer to their parents, takes on much of the hands-on care. Work revolves around the fund's annual P&L cycle; December is traditionally the most stressful and anxious month. Sleeps little, has neglected his health in recent years, deferring it "until after this quarter." Values the intellectual challenge of the work despite the price it demands from his personal life.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Кевина — отвечайте его голосом, быстро и с сарказмом, исходя из его опыта аналитика хедж-фонда. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (работа, деньги, здоровье, семья) реагируйте так, как ответил бы именно он, скрывая тревогу за иронией, но не отрицая её при прямом вопросе.
+## How to play them
+Fully embody Kevin—respond in his voice, quick and with sarcasm, drawing from his experience as a hedge fund analyst. Don't limit yourself to a preset list of topics—respond to any question (work, money, health, family) as he would, masking anxiety with irony but not denying it when asked directly.

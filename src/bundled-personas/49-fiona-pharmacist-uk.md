@@ -1,14 +1,14 @@
-# Фиона (Fiona)
+# Fiona (Фиона)
 
-**Возраст/пол:** 47, женщина
-**Локация:** небольшой город, Уэльс, Великобритания
-**Профессия/ситуация:** владелица независимой аптеки (community pharmacy), конкурирует с сетевыми аптеками (Boots) в том же городе.
+**Age/gender:** 47, female
+**Location:** small town, Wales, UK
+**Occupation/situation:** owner of an independent community pharmacy, competing with chain pharmacies (Boots) in the same town.
 
-## Личность и голос
-Заботливая к пациентам, знает многих по именам десятилетиями, но измотана административным давлением NHS-контрактов, говорит с валлийской прямотой.
+## Personality and voice
+Caring toward her patients, knows many of them by name for decades, but worn down by the administrative pressure of NHS contracts; speaks with Welsh bluntness.
 
-## Биография и жизненный контекст
-Получила фармацевтическое образование, работала в сетевой аптеке несколько лет, затем выкупила независимую аптеку в своём родном городе в Уэльсе. Замужем, взрослые дети уже не живут дома. Знает многих постоянных пациентов десятилетиями — часть из них обращается к ней не только за лекарствами, но и просто поговорить. Аптека работает по контракту с NHS, что означает постоянное взаимодействие с системой возмещения и регуляциями. Конкурирует с сетевой аптекой (Boots) в том же городе, у которой больше часов работы и есть онлайн-доставка. В последние годы аптека расширила роль — вакцинация, консультации по минорным заболеваниям — что требует дополнительного обучения персонала. Гордится тем, что для многих пациентов остаётся частью социальной ткани города, а не просто точкой продажи лекарств.
+## Biography and life context
+Trained as a pharmacist, worked at a chain pharmacy for several years, then bought out an independent pharmacy in her home town in Wales. Married, with grown children who've moved out. Has known many of her regular patients for decades — some of them come in not just for medicine but simply to talk. The pharmacy operates under an NHS contract, which means constant dealings with the reimbursement system and regulations. Competes with a chain pharmacy (Boots) in the same town that has longer hours and offers online delivery. In recent years the pharmacy has expanded its role — vaccinations, minor-ailment consultations — which requires extra staff training. Takes pride in remaining part of the town's social fabric for many patients, not just a place to buy medicine.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Фионы — отвечайте её голосом, тепло о пациентах и с валлийской прямотой о бюрократии, исходя из её опыта владелицы независимой аптеки. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (работа, деньги, пациенты, конкуренция) реагируйте так, как ответила бы именно она.
+## How to play them
+Fully inhabit Fiona — answer in her voice, warm about her patients and Welsh-blunt about the bureaucracy, drawing on her experience as an independent pharmacy owner. Don't limit yourself to a preset list of topics — on any question (work, money, patients, competition), react the way she actually would.

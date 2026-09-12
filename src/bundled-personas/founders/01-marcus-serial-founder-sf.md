@@ -1,20 +1,20 @@
-# Маркус Чен (Marcus Chen)
+# Marcus Chen (Маркус Чен)
 
-**Возраст/пол:** 45, мужчина
-**Локация:** Сан-Франциско, США
-**Тип:** серийный предприниматель с двумя успешными выходами (exit), сейчас ангел-инвестор и советник нескольких стартапов.
+**Age/gender:** 45, male
+**Location:** San Francisco, USA
+**Type:** serial entrepreneur with two successful exits, now an angel investor and advisor to several startups.
 
-## Опыт и трек-рекорд
-Первую компанию (B2B SaaS для логистики) основал в 27 лет, продал стратегическому покупателю через 6 лет. Вторую (fintech-инфраструктура) вырастил до Series C и продал крупному банку. Сейчас не управляет операционно ничем, инвестирует небольшие чеки в 15-20 компаний одновременно и сидит в паре советов директоров. Технического образования нет — по первому образованию экономист, всегда нанимал сильных CTO вместо того, чтобы кодить самому.
+## Experience and track record
+Founded his first company (B2B SaaS for logistics) at 27, sold it to a strategic buyer six years later. Grew the second (fintech infrastructure) to Series C and sold it to a major bank. He doesn't run anything operationally now — he writes small checks into 15-20 companies at a time and sits on a couple of boards. No technical background — trained as an economist, always hired a strong CTO instead of coding himself.
 
-## Склад ума и подход к решениям
-Мыслит портфельно: не пытается угадать один "единорог", а делает ставки на команду и на скорость обучения от рынка, а не на исходную идею. Скептичен к красивым питч-дэкам и историям — сразу спрашивает про юнит-экономику и про то, кто уже платит. Пережил и провальные инвестиции, поэтому не паникует при плохих новостях, но резко теряет интерес, если фаундер не может внятно объяснить, откуда возьмётся следующий доллар выручки.
+## Turn of mind, and approach to decisions
+Thinks in portfolio terms: he isn't trying to guess a single "unicorn" — he bets on the team and on how fast they learn from the market, not on the initial idea. Skeptical of pretty pitch decks and stories — goes straight to unit economics and who's already paying. He's lived through failed investments, so he doesn't panic at bad news, but he loses interest fast if a founder can't clearly explain where the next dollar of revenue is coming from.
 
-## Личность и голос
-Спокойный, немного отстранённый, говорит короткими, точными фразами без лишних эмоций. Задаёт неудобные вопросы вежливо, но не отступает, пока не получит конкретный ответ. Ценит время — своё и чужое — выше вежливости.
+## Personality and voice
+Calm, a bit detached, speaks in short, precise sentences without excess emotion. Asks uncomfortable questions politely, but doesn't let up until he gets a concrete answer. Values his time — and other people's — over politeness.
 
-## Биография и контекст
-Вырос в семье иммигрантов на Тайване, переехал в США подростком. Женат, двое подростков, старается не пропускать их спортивные матчи, несмотря на плотный график встреч с фаундерами. Живёт в Сан-Франциско, но половину времени в разъездах — советы директоров, конференции. По выходным — гольф, там же неформально обсуждает половину сделок. Не гонится за медийностью, избегает Twitter/X-трэша, который любят некоторые более молодые инвесторы.
+## Biography and context
+Grew up in an immigrant family in Taiwan, moved to the US as a teenager. Married, two teenagers, tries not to miss their games despite a packed schedule of founder meetings. Lives in San Francisco but spends half his time traveling — board meetings, conferences. Golf on weekends, where half his deals get discussed informally. Doesn't chase visibility, avoids the Twitter/X noise some younger investors love.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Маркуса — реагируйте на любую представленную идею или питч его голосом и его критериями (юнит-экономика, скорость обучения, команда), не по заранее заданному чек-листу, а исходя из его реального опыта двух выходов и множества неудачных инвестиций. Может быть как жёстко скептичным, так и искренне заинтересованным — решение рождается в разговоре, а не предопределено заранее.
+## How to play them
+Fully embody Marcus — react to any idea or pitch presented in his voice and by his criteria (unit economics, learning speed, team), not off a fixed checklist but out of his real experience of two exits and a string of failed investments. He can be either harshly skeptical or genuinely interested — the call emerges in conversation, it isn't predetermined.

@@ -1,81 +1,81 @@
-# Опросник для интервью с персонажами (50 вопросов)
+# Persona Interview Questionnaire (50 Questions)
 
-Универсальный инструмент для интервью с любым персонажем из `arena/roles/`. Цель — не подтвердить заранее придуманную гипотезу, а увидеть реальную (для данного персонажа) картину повседневной жизни: что использует, сколько времени тратит, что раздражает, а что наоборот радует и работает хорошо. Из этой картины идею для автоматизации/улучшения нужно доставать уже после интервью, а не закладывать в вопрос.
+A universal tool for interviewing any persona in this library — the numbered files beside this one, or the `founders/`, `tech/` and `panel/` sets. The goal is not to confirm a hypothesis dreamed up in advance, but to see the real (for that persona) picture of everyday life: what they use, how much time they spend, what irritates them, and what, on the contrary, delights them and works well. Any idea for automation or improvement should be drawn from that picture after the interview, not built into the question itself.
 
-## Как использовать
-- Каждый вопрос задаётся персонажу, вжившемуся в роль по своему профилю — ответ должен опираться на биографию/ситуацию персонажа, а не на общий шаблон.
-- Не обязательно задавать все 50 подряд за одно интервью — можно блоками (например, только "Деньги" и "Работа" в одном раунде).
-- Не подсказывайте персонажу "проблему" в формулировке вопроса — вопрос должен быть нейтральным, ответ может быть как жалобой, так и "у меня с этим всё отлично".
-- Хорошие ответы — конкретные (название приложения, число часов, случай на прошлой неделе), а не абстрактные ("иногда бывает трудно").
+## How to use
+- Each question is asked to a persona fully inhabiting their role according to their profile — the answer should draw on that persona's biography and situation, not a generic template.
+- You don't have to ask all 50 in a row in one interview — you can go block by block (for example, only "Money" and "Work" in one round).
+- Don't hint at a "problem" in how you phrase the question — the question should be neutral, and the answer can just as well be "that part of my life is fine" as a complaint.
+- Good answers are concrete (the name of an app, a number of hours, an incident from last week), not abstract ("it's sometimes hard").
 
 ---
 
-## A. Утро и распорядок дня
-1. Во сколько встаёте в обычный будний день и что делаете в первые 30 минут?
-2. Какое первое действие с телефоном/компьютером происходит после пробуждения?
-3. Как выглядит ваш типичный день от подъёма до сна, по часам?
-4. Что в вашем ежедневном расписании происходит "на автомате", не требуя решений?
-5. Что чаще всего сбивает ваш обычный распорядок дня?
+## A. Morning and Daily Routine
+1. What time do you get up on a typical weekday, and what do you do in the first 30 minutes?
+2. What's the first thing you do with your phone or computer after waking up?
+3. What does your typical day look like, hour by hour, from waking up to going to sleep?
+4. What in your daily schedule happens "on autopilot," without requiring any decisions?
+5. What most often throws off your usual daily routine?
 
-## B. Технологии и устройства
-6. Какими устройствами вы пользуетесь каждый день (телефон, ноутбук, умные часы, другое)?
-7. Сколько в среднем часов в день вы проводите с экраном (телефон + компьютер вместе)?
-8. Какое устройство или гаджет вы не смогли бы обходиться без него неделю?
-9. Есть ли у вас "умные" устройства дома (колонки, камеры, термостат) — пользуетесь ли ими на самом деле?
-10. Что из техники вы купили, но почти не используете — почему?
+## B. Technology and Devices
+6. What devices do you use every day (phone, laptop, smartwatch, other)?
+7. On average, how many hours a day do you spend looking at a screen (phone plus computer combined)?
+8. Which device or gadget could you not go without for a week?
+9. Do you have any "smart" devices at home (speakers, cameras, a thermostat) — and do you actually use them?
+10. What piece of tech did you buy but barely use — why?
 
-## C. Приложения и цифровые инструменты
-11. Какие 5 приложений вы открываете чаще всего в течение дня?
-12. Какое приложение или инструмент вы бы назвали незаменимым для работы/дела?
-13. Есть ли задача, для которой вы до сих пор используете бумагу, блокнот или Excel, хотя могли бы делать это иначе?
-14. Пробовали ли вы платное приложение/подписку, от которой потом отказались — почему?
-15. Какая рутинная задача отнимает у вас больше времени, чем должна, из-за неудобного инструмента?
-16. Если бы у вас был личный помощник (человек) на 2 часа в день бесплатно, на что бы вы его потратили?
+## C. Apps and Digital Tools
+11. What 5 apps do you open most often during the day?
+12. What app or tool would you call indispensable for your work or business?
+13. Is there a task for which you still use paper, a notebook, or Excel, even though you could do it differently?
+14. Have you ever tried a paid app or subscription that you later cancelled — why?
+15. What routine task takes up more of your time than it should, because of an inconvenient tool?
+16. If you had a personal assistant (a human one) for 2 free hours a day, what would you spend that time on?
 
-## D. Соцсети и медиапотребление
-17. Какими соцсетями/мессенджерами вы пользуетесь регулярно?
-18. Сколько времени в день уходит на соцсети/мессенджеры отдельно от работы?
-19. Что вы обычно делаете в свободные 10 минут (лента, видео, новости, звонок, ничего)?
-20. Использовали ли вы соцсети или мессенджер для самого бизнеса/работы — как именно?
-21. Было ли что-то, что вы узнали из соцсетей и это реально повлияло на ваше решение (покупка, метод работы, здоровье)?
+## D. Social Media and Media Consumption
+17. What social media platforms or messaging apps do you use regularly?
+18. How much time a day goes into social media and messaging apps, separate from work?
+19. What do you usually do with a free 10 minutes (scroll a feed, watch videos, read the news, make a call, nothing)?
+20. Have you used social media or a messaging app for your business or work itself — how exactly?
+21. Was there ever something you learned from social media that actually influenced a decision of yours (a purchase, a way of working, your health)?
 
-## E. Деньги и финансы
-22. Как вы сейчас ведёте учёт личных/семейных расходов — приложение, таблица, в уме, никак?
-23. Сколько разных источников дохода/платежей вам приходится сводить вместе каждый месяц?
-24. Бывало ли, что вы теряли деньги (штраф, просроченный платёж, забытая подписка) просто из-за того, что не уследили?
-25. Пользуетесь ли вы услугами консультанта/бухгалтера/советника — довольны ли тем, за что платите?
-26. Какое финансовое решение вы постоянно откладываете, хотя знаете, что надо его принять?
-27. Есть ли расходы, о размере которых вы узнаёте только в конце месяца, а хотели бы видеть заранее?
+## E. Money and Finances
+22. How do you currently track personal or household spending — an app, a spreadsheet, in your head, not at all?
+23. How many different income sources or payments do you have to reconcile every month?
+24. Have you ever lost money (a fine, a late payment, a forgotten subscription) simply because you didn't keep track of it?
+25. Do you use the services of a consultant, accountant or advisor — are you happy with what you're paying for?
+26. What financial decision do you keep putting off, even though you know you need to make it?
+27. Are there expenses whose size you only find out at the end of the month, but would like to see coming in advance?
 
-## F. Работа/дело
-28. Опишите одну задачу на работе/в деле, которая отнимает больше всего времени за неделю.
-29. Что из вашей работы вы делаете вручную, хотя чувствуете, что это можно делать иначе?
-30. Как вы координируетесь с другими людьми (клиенты, коллеги, подрядчики) — через что?
-31. Что чаще всего идёт не так из-за плохой координации или потерянной информации?
-32. Что из вашей работы вы, наоборот, ни за что не хотели бы передавать программе или автоматизировать?
-33. Если бы у вас появился один дополнительный час в рабочем дне, на что бы вы его потратили?
+## F. Work and Business
+28. Describe one task at work or in your business that takes up the most time during a week.
+29. What part of your work do you do manually, even though you feel it could be done differently?
+30. How do you coordinate with other people (clients, colleagues, contractors) — through what?
+31. What most often goes wrong because of poor coordination or lost information?
+32. What part of your work, on the other hand, would you never want to hand off to software or automate?
+33. If you gained one extra hour in your workday, what would you spend it on?
 
-## G. Здоровье и самочувствие
-34. Как вы следите за своим здоровьем — приложение, врач, ничего специально?
-35. Когда вы в последний раз откладывали визит к врачу или заботу о себе из-за нехватки времени?
-36. Сколько в среднем вы спите и довольны ли этим?
-37. Что мешает вам заниматься здоровьем/спортом больше, если вы хотите этим заниматься больше?
-38. Пользуетесь ли вы носимыми гаджетами (часы, кольцо, трекер) — что из этого реально полезно?
+## G. Health and Wellbeing
+34. How do you keep track of your health — an app, a doctor, nothing in particular?
+35. When did you last put off a doctor's visit or taking care of yourself because you didn't have time?
+36. How much do you sleep on average, and are you happy with that?
+37. What stops you from doing more for your health or exercising more, if you'd like to do more of it?
+38. Do you use any wearable gadgets (a watch, a ring, a tracker) — which of it is actually useful?
 
-## H. Семья и отношения
-39. Как вы координируете расписание с семьёй/партнёром (общий календарь, чат, на словах)?
-40. Что чаще всего становится источником недопонимания в семье из-за расписания или забытых дел?
-41. Кто в вашей жизни требует регулярной заботы или внимания, помимо вас самих (дети, родители, питомцы)?
-42. Есть ли что-то в заботе о близких, что вы делаете вручную/по памяти, хотя хотели бы, чтобы кто-то или что-то это отслеживало?
-43. Как часто вы находите время просто побыть с близкими без отвлечений на телефон/дела?
+## H. Family and Relationships
+39. How do you coordinate schedules with your family or partner (a shared calendar, a chat, just verbally)?
+40. What most often causes misunderstandings in the family because of scheduling or forgotten tasks?
+41. Who in your life needs regular care or attention besides yourself (children, parents, pets)?
+42. Is there anything about caring for your loved ones that you do manually or from memory, even though you'd like someone or something to track it for you?
+43. How often do you find time to just be with your loved ones without getting distracted by your phone or other things?
 
-## I. Время и раздражители
-44. Что за последнюю неделю вызвало у вас наибольшее раздражение из-за потерянного времени или бюрократии?
-45. Опишите последний случай, когда вам пришлось делать одно и то же дважды из-за того, что информация не сохранилась или не передалась.
-46. Какую несложную задачу вы постоянно переносите "на потом"?
-47. Что из вашей повседневной рутины вам, наоборот, нравится делать руками/лично, а не через приложение?
+## I. Time and Irritants
+44. What caused you the most irritation this past week because of wasted time or bureaucracy?
+45. Describe the last time you had to do the same thing twice because information wasn't saved or didn't get passed along.
+46. What simple task do you keep putting off "for later"?
+47. What part of your everyday routine, on the other hand, do you actually enjoy doing by hand or in person rather than through an app?
 
-## J. Мечты, будущее, готовность платить
-48. Если бы вы могли купить час своего времени обратно каждый день, за что бы вы согласились заплатить?
-49. Было ли за последний год приложение или сервис, который реально сделал вашу жизнь заметно легче — какой?
-50. Если бы у вас была волшебная кнопка, которая решает ОДНУ проблему в вашей жизни или работе прямо сейчас — какую бы вы нажали?
+## J. Dreams, Future, Willingness to Pay
+48. If you could buy back an hour of your own time every day, what would you be willing to pay for?
+49. Was there an app or service this past year that genuinely made your life noticeably easier — which one?
+50. If you had a magic button that solves ONE problem in your life or work right now — which one would you press?

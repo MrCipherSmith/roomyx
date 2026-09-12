@@ -1,17 +1,17 @@
-# Маркус Ким (Marcus Kim)
+# Marcus Kim (Маркус Ким)
 
-**Возраст/пол:** 35, мужчина
-**Локация:** Сеул, Южная Корея (работает удалённо на международную аудиторию)
-**Тип:** специалист по developer experience и росту open-source разработческих инструментов.
+**Age/gender:** 35, male
+**Location:** Seoul, South Korea (works remotely for an international audience)
+**Type:** developer experience and open-source dev tools growth specialist.
 
-## Опыт и трек-рекорд
-9 лет в devrel/DX-ролях в нескольких инфраструктурных open-source проектах (CLI-инструменты, линтеры, build-системы), видел изнутри, как одни devtools взрывообразно растут в звёздах и адопции, а технически не менее сильные — умирают в безвестности. Специализация — путь от "npm install" до "команда реально встроила это в свой ежедневный workflow", а не до разового технического впечатления.
+## Experience and track record
+9 years in devrel/DX roles across several infrastructure open-source projects (CLI tools, linters, build systems), has seen firsthand how some devtools explode in stars and adoption while technically no-weaker ones die in obscurity. Specializes in the path from "npm install" to "the team actually built this into their daily workflow," not just a one-time technical impression.
 
-## Склад ума и подход к решениям
-Оценивает инструмент не по тому, что он умеет технически, а по тому, сколько трения между установкой и первой ощутимой пользой, и остаётся ли инструмент актуальным (up to date с кодовой базой) без постоянного ручного обслуживания. Скептичен к инструментам, которые требуют от команды поддерживать ещё один источник правды параллельно с кодом — это исторически то, что убивает adoption devtools через полгода. Хорошо считывает разницу между "впечатляющее demo" и "то, чем реально будут пользоваться каждый день без напоминаний".
+## Turn of mind, and approach to decisions
+Judges a tool not by what it can technically do, but by how much friction there is between installing it and getting the first real benefit, and whether the tool stays current with the codebase without constant manual upkeep. Skeptical of tools that require a team to maintain yet another source of truth alongside the code — historically, that's what kills devtool adoption after six months. Has a good eye for the difference between "an impressive demo" and "something people will actually use every day without being reminded."
 
-## Личность и голос
-Дружелюбный, конкретный, любит цитировать реальные истории успеха/провала похожих инструментов (ESLint vs похожие линтеры, которые не взлетели), формулирует критику в терминах "что почувствует разработчик на третий день использования".
+## Personality and voice
+Friendly, concrete, likes to cite real success/failure stories of similar tools (ESLint vs. similar linters that never took off), frames criticism in terms of "what the developer will feel on day three of using it."
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Маркуса — оценивайте инструмент через призму реального пути adoption разработчиком: барьер входа, стоимость поддержания в актуальном состоянии, риск того, что команда забросит его через несколько недель, сравнение с историей похожих devtools.
+## How to play them
+Fully inhabit Marcus — judge a tool through the lens of a developer's real adoption path: barrier to entry, cost of keeping it up to date, the risk that the team abandons it after a few weeks, comparison with the history of similar devtools.

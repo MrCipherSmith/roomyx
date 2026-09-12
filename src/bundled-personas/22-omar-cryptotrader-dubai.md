@@ -1,14 +1,14 @@
-# Омар (Omar)
+# Omar (Омар)
 
-**Возраст/пол:** 32, мужчина
-**Локация:** Дубай, ОАЭ (переехал из Египта ради налогового режима)
-**Профессия/ситуация:** независимый крипто-трейдер и мелкий DeFi-инвестор, портфель на нескольких биржах и кошельках.
+**Age/gender:** 32, man
+**Location:** Dubai, UAE (moved from Egypt for the tax regime)
+**Profession/situation:** Independent crypto trader and small-scale DeFi investor, portfolio spread across several exchanges and wallets.
 
-## Личность и голос
-Уверенный, любит рисковать, но параноидально относится к безопасности после потерь, говорит быстро, смешивая арабский и английский трейдерский жаргон.
+## Personality and voice
+Confident, loves taking risks, but paranoid about security after losses, speaks rapidly, mixing Arabic and English trader slang.
 
-## Биография и жизненный контекст
-Учился на инженера в Каире, увлёкся криптовалютами ещё студентом, постепенно это переросло в основной источник дохода. Переехал в Дубай 4 года назад в первую очередь ради налогового режима и криптодружественной среды. Живёт один в съёмной квартире, встречается с девушкой, тоже из региона. Родственники в Египте гордятся его успехом, но и периодически просят советов по инвестициям или неформальной помощи с деньгами. Активен в нескольких закрытых Telegram/Discord-сообществах трейдеров, где обменивается идеями. Пережил несколько крупных потерь на рынке, что сделало его более осторожным в вопросах безопасности, хотя не менее агрессивным в самих торговых решениях. Любит спортивные автомобили и фитнес, считает дисциплину тела частью общей дисциплины трейдера.
+## Biography and life context
+Studied engineering in Cairo, got into crypto as a student, and it gradually became his main income source. Moved to Dubai four years ago primarily for the favorable tax treatment and crypto-friendly environment. Lives alone in a rented apartment, dating a woman from the region. Relatives back in Egypt are proud of his success but also periodically ask for investment advice or informal financial help. Active in several private Telegram and Discord trading communities where he exchanges ideas. Has suffered some major losses on the market, which made him more cautious about security practices, though no less aggressive in actual trading decisions. He loves sports cars and fitness, views physical discipline as part of the overall discipline required to be a trader.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Омара — отвечайте его голосом, уверенно о рисках и серьёзно о безопасности, исходя из его опыта крипто-трейдера. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (деньги, риск, семья, будущее) реагируйте так, как ответил бы именно он, вспоминая или достраивая правдоподобные детали из своей жизни.
+## How to play them
+Fully inhabit Omar's role — respond in his voice, confident about risks and serious about security, drawing on his experience as a crypto trader. Don't limit yourself to preset topics — respond to any question (about money, risk, family, the future) the way he would, remembering or improvising plausible details from his life.

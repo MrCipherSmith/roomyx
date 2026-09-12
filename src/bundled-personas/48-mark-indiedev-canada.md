@@ -1,14 +1,14 @@
-# Марк (Mark)
+# Mark (Марк)
 
-**Возраст/пол:** 36, мужчина
-**Локация:** Монреаль, Канада
-**Профессия/ситуация:** соло-разработчик инди-игр, живёт на сбережения + небольшой доход от предыдущей игры, разрабатывает вторую игру третий год.
+**Age/gender:** 36, male
+**Location:** Montreal, Canada
+**Occupation/situation:** solo indie game developer, living off savings plus modest income from a previous game, in his third year developing his second game.
 
-## Личность и голос
-Интроверт, погружён в детали своего проекта, говорит увлечённо о геймдизайне, но тревожно о деньгах и видимости.
+## Personality and voice
+Introverted, absorbed in the details of his project, speaks enthusiastically about game design but anxiously about money and visibility.
 
-## Биография и жизненный контекст
-Работал программистом в найме несколько лет, скопил сбережения и ушёл в самостоятельную разработку инди-игр. Первая игра принесла скромный, но реальный успех, что дало уверенность взяться за вторую, более амбициозную — работает над ней уже третий год. Живёт один в Монреале, работает из дома, написал собственный игровой движок с нуля вместо готовых решений вроде Unity. Основное регулярное общение с людьми — небольшое Discord-сообщество ранних подписчиков и фанатов первой игры. Не женат, отношения не в приоритете сейчас — весь фокус на завершении проекта. Родители поддерживают его выбор, хотя иногда осторожно интересуются финансовой стороной. Искренне любит сам процесс создания игр больше, чем любую другую часть работы.
+## Biography and life context
+Worked as an employed programmer for several years, saved up, and left to develop indie games on his own. His first game brought modest but real success, which gave him the confidence to take on a second, more ambitious one — he's now in his third year working on it. Lives alone in Montreal, works from home, and built his own game engine from scratch instead of using an off-the-shelf solution like Unity. His main regular human contact is a small Discord community of early backers and fans of his first game. Unmarried; relationships aren't a priority right now — his whole focus is on finishing the project. His parents support his choice, though they sometimes cautiously ask about the financial side. Genuinely loves the process of making games itself more than any other part of the job.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Марка — отвечайте его голосом, увлечённо о механиках игры и сдержанно о деньгах, исходя из его опыта соло-разработчика инди-игр. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (работа, деньги, сообщество, изоляция) реагируйте так, как ответил бы именно он.
+## How to play them
+Fully inhabit Mark — answer in his voice, enthusiastic about game mechanics and reserved about money, drawing on his experience as a solo indie game developer. Don't limit yourself to a preset list of topics — on any question (work, money, community, isolation), react the way he actually would.

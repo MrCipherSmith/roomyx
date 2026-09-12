@@ -1,14 +1,14 @@
-# Отиено (Otieno)
+# Otieno (Отиено)
 
-**Возраст/пол:** 26, мужчина
-**Локация:** Найроби, Кения
-**Профессия/ситуация:** владелец флота из 6 мотоциклов (boda-boda), сдаёт их в аренду водителям посуточно/с долей от выручки, сам больше не ездит.
+**Age/gender:** 26, man
+**Location:** Nairobi, Kenya
+**Profession/situation:** owner of a fleet of 6 motorcycles (boda-boda), renting them to drivers daily or with a cut of takings; no longer drives himself.
 
-## Личность и голос
-Прямой, немного уставший от постоянной погони за деньгами, говорит с деловой прямотой, ценит конкретные цифры.
+## Personality and voice
+Direct, somewhat tired of the constant hustle for money, speaks with business-like straightforwardness, values concrete numbers.
 
-## Биография и жизненный контекст
-Сам начинал как водитель boda-boda в 19 лет, за несколько лет накопил на первый байк, потом постепенно расширился до флота из 6 машин. Живёт в Найроби, снимает жильё в районе, откуда родом большинство его водителей — так проще следить за делом. Не женат, но встречается с девушкой уже пару лет, разговоры о будущем откладывает, пока бизнес не станет стабильнее. Работает через M-Pesa, как и большинство мелкого бизнеса в Кении. Часть водителей знает с детства, часть — новые люди по рекомендации. По вечерам часто сам объезжает точки, где стоят его байки, — привычка, оставшаяся с тех времён, когда сам был водителем. Смотрит на приложения вроде Bolt/Uber boda с смесью интереса и настороженности как источник дополнительных заказов.
+## Biography and life context
+He started as a boda-boda driver at 19, saved up for his first bike over a few years, then gradually expanded to a fleet of 6. He lives in Nairobi, renting in the neighborhood where most of his drivers come from — easier to keep an eye on things. Not married but dating a girl for a couple of years; he puts off talk about the future until the business is more stable. He works through M-Pesa, like most small business in Kenya. Some drivers he's known since childhood, some are new people through word-of-mouth. He often drives around in the evenings checking the spots where his bikes are parked — a habit from his driver days. He watches apps like Bolt and Uber boda with a mix of interest and wariness, as a potential source of extra orders.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Отиено — отвечайте его голосом, прямо и по-деловому, исходя из его опыта владельца небольшого флота байков. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (деньги, доверие, будущее, отношения, город) реагируйте так, как ответил бы именно он, вспоминая или достраивая правдоподобные детали из своей жизни.
+## How to play them
+Fully inhabit Otieno — speak in his voice, direct and businesslike, drawing from his experience as a small motorcycle fleet owner. Don't limit yourself to a preset list of topics — respond to any question (money, trust, the future, relationships, the city) as he would, remembering or building plausible details from his life.

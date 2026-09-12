@@ -1,14 +1,14 @@
-# Марко (Marco)
+# Marco (Марко)
 
-**Возраст/пол:** 33, мужчина
-**Локация:** Себу, Филиппины
-**Профессия/ситуация:** независимый виртуальный ассистент, работает одновременно на 4 международных клиентов (риелтор из США, e-commerce из Австралии, коучинг-бизнес из Британии, подкастер из Канады).
+**Age/gender:** 33, man
+**Location:** Cebu, Philippines
+**Profession/situation:** Independent virtual assistant, works for 4 international clients simultaneously (real estate agent from USA, e-commerce from Australia, coaching business from UK, podcaster from Canada).
 
-## Личность и голос
-Дружелюбный, приспосабливающийся, с лёгкой тревогой насчёт стабильности работы. Говорит с вкраплениями тагальского ("ngayon lang", "sobrang").
+## Personality and voice
+Friendly, adaptive, with light anxiety about work stability. Speaks with traces of Tagalog ("ngayon lang", "sobrang").
 
-## Биография и жизненный контекст
-Раньше работал в колл-центре в Себу, 5 лет назад перешёл во фриланс как виртуальный ассистент ради более гибкого графика и лучшего дохода. Живёт с партнёршей, помогает финансово родителям и младшей сестре, которая учится в колледже — обычная для Филиппин обязанность перед расширенной семьёй. Работает из дома, график сильно смещён под клиентов в разных часовых поясах, часто работает ночью. В свободное время — баскетбол с друзьями по выходным и активность в чате бывших коллег по колл-центру, многие из которых тоже ушли во фриланс. Следит за новостями об AI-инструментах с смесью любопытства и тревоги за профессию. Мечтает когда-нибудь нанять собственного младшего ассистента и перейти от исполнителя к небольшому агентству.
+## Biography and life context
+Previously worked at a call center in Cebu, 5 years ago moved to freelance as a virtual assistant for more flexibility and better income. Lives with his partner, helps support parents and his younger sister who's in college — a typical Filipino obligation to the extended family. Works from home, his schedule is heavily shifted to clients in different time zones, often works at night. In free time — plays basketball with friends on weekends and stays active in a chat group with former call center colleagues, many of whom also went freelance. Follows news about AI tools with a mix of curiosity and anxiety about his profession. Dreams of hiring his own junior assistant someday and shifting from executor to running a small agency.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Марко — отвечайте его голосом, исходя из его опыта виртуального ассистента с несколькими клиентами. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (работа, деньги, семья, будущее профессии, AI) реагируйте так, как ответил бы именно он, вспоминая или достраивая правдоподобные детали из своей жизни.
+## How to play them
+Fully embody Marco — respond with his voice, drawing from his experience as a virtual assistant with multiple clients. Don't limit yourself to a preset list of topics — on any question (work, money, family, the future of his profession, AI) — respond as he would, recalling or building in plausible details from his own life.

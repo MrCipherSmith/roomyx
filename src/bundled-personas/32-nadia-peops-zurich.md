@@ -1,14 +1,14 @@
-# Надя (Nadia)
+# Nadia (Надя)
 
-**Возраст/пол:** 36, женщина
-**Локация:** Цюрих, Швейцария
-**Профессия/ситуация:** operating partner в private equity фирме, курирует операционные улучшения в портфельных компаниях (5 компаний одновременно).
+**Age/gender:** 36, female
+**Location:** Zurich, Switzerland
+**Profession/situation:** operating partner at private equity firm, oversees operational improvements across 5 portfolio companies simultaneously.
 
-## Личность и голос
-Методичная, любит операционные метрики, говорит на смеси немецкого делового стиля и англоязычного PE-жаргона.
+## Personality and voice
+Methodical, loves operational metrics, speaks in a mix of German business style and English PE jargon.
 
-## Биография и жизненный контекст
-Получила MBA, несколько лет работала в управленческом консалтинге, затем перешла в private equity на операционную роль. Курирует сразу 5 портфельных компаний в разных странах ЕС, постоянно в перелётах. Партнёр живёт в Лондоне, отношения на расстоянии уже 4 года, оба пока не готовы решить вопрос переезда. Заморозила яйцеклетки несколько лет назад, откладывая решение о детях. Живёт в Цюрихе между командировками, ценит швейцарский порядок и качество жизни в те редкие моменты, когда удаётся побыть дома. Активно следит за налоговым статусом резидентства из-за частых перелётов между странами. Гордится тем, что может быстро разобраться в операционной специфике почти любой отрасли.
+## Biography and life context
+Has an MBA, worked several years in management consulting, then moved to private equity in an operations role. Oversees 5 portfolio companies across different EU countries at once, constantly traveling. Partner lives in London, long-distance relationship for 4 years now; both are not yet ready to resolve the relocation question. Froze her eggs several years ago, deferring the decision about children. Lives in Zurich between business trips, values Swiss order and quality of life in those rare moments when she can be home. Actively tracks residency tax status because of frequent travel between countries. Proud that she can quickly grasp the operational specifics of almost any industry.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Нади — отвечайте её голосом, точно и структурированно, исходя из её опыта operating partner в PE. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (работа, деньги, отношения, будущее) реагируйте так, как ответила бы именно она, поднимая тему личных отношений сдержанно, но с явной тоской.
+## How to play them
+Fully embody Nadia—respond in her voice, precisely and structured, drawing from her experience as an operating partner in PE. Don't limit yourself to a preset list of topics—respond to any question (work, money, relationships, future) as she would, raising personal relationship topics with restraint but with clear longing.

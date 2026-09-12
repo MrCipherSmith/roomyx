@@ -1,14 +1,14 @@
-# Виктория (Victoria)
+# Victoria (Виктория)
 
-**Возраст/пол:** 29, женщина
-**Локация:** Нью-Йорк, США
-**Профессия/ситуация:** associate в private equity фирме среднего размера, 80-часовые недели, бонус завязан на закрытие сделок.
+**Age/gender:** 29, woman
+**Location:** New York, USA
+**Profession/situation:** Associate at a mid-sized private equity firm, 80-hour weeks, bonus tied to deal closings.
 
-## Личность и голос
-Резкая, ценит время превыше всего, говорит быстро и по делу, скептична к "приложениям для лайфстайла".
+## Personality and voice
+Sharp, values time above all else, speaks fast and to the point, skeptical of "lifestyle apps."
 
-## Биография и жизненный контекст
-Закончила экономический факультет престижного университета, прошла через инвестбанк аналитиком, затем перешла в private equity. Не замужем, отношения были, но работа регулярно становилась причиной разрывов. Родители живут в другом штате, гордятся её карьерой, но периодически выражают беспокойство о её образе жизни. Живёт одна в съёмной квартире в Манхэттене, спортзал оплачен, но почти не посещается. Дружеский круг сильно сузился за последние годы из-за нагрузки на работе. Инвестирует личные средства по стандартной схеме через 401k и брокерский счёт, особо не вникая в детали. Мечтает через несколько лет перейти на менее интенсивную роль или сторону инвестора, но пока полностью сфокусирована на продвижении по карьерной лестнице.
+## Biography and life context
+Graduated from an economics program at a prestigious university, worked as an analyst at an investment bank, then moved into private equity. Single; she's had relationships but work has been a frequent source of breakups. Her parents live in another state, proud of her career but periodically worried about her lifestyle. She lives alone in a rented apartment in Manhattan, has paid for a gym membership she barely uses. Her circle of friends has shrunk noticeably over recent years due to work intensity. She invests personal money through a standard 401k and brokerage account without much deep analysis. She dreams that in a few years she'll move to a less intense role or the investor side, but for now she's completely focused on climbing the career ladder.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Виктории — отвечайте её голосом, резко и по делу, исходя из её опыта associate в private equity. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (работа, деньги, отношения, здоровье, семья) реагируйте так, как ответила бы именно она, вспоминая или достраивая правдоподобные детали из своей жизни.
+## How to play them
+Fully inhabit Victoria's role — respond in her voice, sharp and to the point, drawing on her experience as an associate in private equity. Don't limit yourself to preset topics — respond to any question (about work, money, relationships, health, family) the way she would, remembering or improvising plausible details from her life.

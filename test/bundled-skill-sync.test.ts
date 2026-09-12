@@ -172,3 +172,50 @@ describe("progressive disclosure", () => {
     }
   });
 });
+
+describe("the persona library ships readable", () => {
+  const PERSONAS = join(import.meta.dir, "..", "src", "bundled-personas");
+  const files = readdirSync(PERSONAS, { recursive: true, encoding: "utf8" }).filter((f) => f.endsWith(".md"));
+  const CYRILLIC = /[Ѐ-ӿ]/;
+
+  test("the library is the size the skill says it is", () => {
+    // The skill points readers at "fifty numbered interview personas, plus
+    // founders/, tech/ and panel/, plus questionnaire-50.md". If that stops
+    // being true the skill is lying to an agent that cannot check.
+    expect(files.filter((f) => /^\d\d-.+\.md$/.test(f))).toHaveLength(50);
+    expect(files).toContain("questionnaire-50.md");
+    expect(files.length).toBeGreaterThanOrEqual(87);
+  });
+
+  test("no Russian survives except a persona's own name", () => {
+    // The whole library shipped in Russian to a global registry for three
+    // releases — an English reader followed English instructions into a library
+    // they could not read. The names keep their Cyrillic deliberately, in
+    // parentheses on the title line, so rooms run before the translation stay
+    // findable by the names people already know.
+    for (const file of files) {
+      const [title, ...rest] = readFileSync(join(PERSONAS, file), "utf8").split("\n");
+      expect(title).toBeDefined();
+      const offending = rest.filter((line) => CYRILLIC.test(line));
+      expect({ file, offending }).toEqual({ file, offending: [] });
+    }
+  });
+
+  test("the questionnaire still has fifty questions", () => {
+    // It is read to a character one question at a time; losing one to a
+    // translation pass would be invisible until someone counted.
+    const text = readFileSync(join(PERSONAS, "questionnaire-50.md"), "utf8");
+    expect(text.split("\n").filter((l) => /^\d+\. /.test(l))).toHaveLength(50);
+  });
+
+  test("nothing points at the library's old home", () => {
+    // `arena/roles/**` was the path this library lived at before roomyx was
+    // extracted. Every reference to it is an instruction that cannot be
+    // followed, and one survived in the questionnaire long after the skill's
+    // own copy was fixed.
+    for (const file of files) {
+      expect(readFileSync(join(PERSONAS, file), "utf8")).not.toContain("arena/roles");
+    }
+    expect(SKILL).not.toContain("arena/roles");
+  });
+});

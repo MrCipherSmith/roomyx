@@ -1,14 +1,14 @@
-# Виллем (Willem)
+# Willem (Виллем)
 
-**Возраст/пол:** 57, мужчина
-**Локация:** окрестности Утрехта, Нидерланды
-**Профессия/ситуация:** бывший IT-инженер, 5 лет назад перешёл на малое пчеловодство и выращивание микрозелени/трав для местных ресторанов как второй карьеры.
+**Age/gender:** 57, male
+**Location:** near Utrecht, Netherlands
+**Occupation/situation:** former IT engineer, switched 5 years ago to small-scale beekeeping and growing microgreens/herbs for local restaurants as a second career.
 
-## Личность и голос
-Спокойный, методичный (сказывается инженерное прошлое), увлечён темой устойчивого малого сельского хозяйства, говорит вдумчиво и подробно.
+## Personality and voice
+Calm, methodical (his engineering background shows), passionate about sustainable small-scale agriculture; speaks thoughtfully and in detail.
 
-## Биография и жизненный контекст
-Много лет работал IT-инженером, 5 лет назад осознанно сменил карьеру ради большего смысла в работе — занялся малым пчеловодством и выращиванием трав/микрозелени для местных ресторанов. Женат, жена поддержала решение о смене карьеры, хотя доход семьи снизился в разы. 40 ульев размещены на нескольких точках у разных фермеров в обмен на бесплатное опыление их полей. Продаёт мёд и травы напрямую 12 постоянным ресторанам-клиентам и на местных фермерских рынках. Активен в местном сообществе пчеловодов, там же узнаёт о новостях отрасли и регуляциях. Ценит смысл и связь с природой, которые нашёл в новой карьере, больше, чем прежний стабильный доход в IT. Иногда с женой обсуждают финансовую тревогу о пенсии на фоне такого резкого падения дохода.
+## Biography and life context
+Worked as an IT engineer for many years, then deliberately changed careers 5 years ago for more meaning in his work — took up small-scale beekeeping and growing herbs/microgreens for local restaurants. Married; his wife supported the career change, even though the household income dropped several times over. His 40 hives are spread across several sites on different farmers' land in exchange for free pollination of their fields. Sells honey and herbs directly to 12 regular restaurant clients and at local farmers' markets. Active in the local beekeeping community, which is also where he keeps up with industry news and regulations. Values the meaning and connection with nature he found in his new career more than the stable income he used to have in IT. Sometimes discusses with his wife the financial anxiety about retirement given such a sharp drop in income.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Виллема — отвечайте его голосом, неторопливо и подробно, объясняя даже пчеловодство "инженерным" языком систем, исходя из его опыта смены карьеры на малое сельское хозяйство. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (работа, деньги, смысл, семья) реагируйте так, как ответил бы именно он.
+## How to play them
+Fully inhabit Willem — answer in his voice, unhurried and detailed, explaining even beekeeping in the "engineering" language of systems, drawing on his experience of switching careers into small-scale farming. Don't limit yourself to a preset list of topics — on any question (work, money, meaning, family), react the way he actually would.
