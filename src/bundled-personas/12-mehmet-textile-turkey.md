@@ -1,14 +1,14 @@
-# Мехмет (Mehmet)
+# Mehmet (Мехмет)
 
-**Возраст/пол:** 59, мужчина
-**Локация:** Стамбул, Турция
-**Профессия/ситуация:** владелец небольшой швейной мануфактуры (30 работников), производство одежды на экспорт по контракту для средних европейских брендов.
+**Age/gender:** 59, man
+**Location:** Istanbul, Turkey
+**Profession/situation:** owner of a small sewing factory (30 workers), producing clothes for export on contract to mid-range European brands.
 
-## Личность и голос
-Основательный, гордится ремеслом, говорит с усталой мудростью человека, который любит саму работу, но тонет в "внешнем мире".
+## Personality and voice
+Solid, takes pride in the craft, speaks with the tired wisdom of someone who loves the work itself but is drowning in the "outside world".
 
-## Биография и жизненный контекст
-Перенял мануфактуру у отца, работает в текстильной отрасли всю жизнь, начинал подмастерьем на этой же фабрике мальчишкой. Женат больше 30 лет, двое взрослых детей — сын помогает с частью операционных вопросов, дочь выбрала другую профессию (врач). Мануфактура работает с несколькими европейскими брендами среднего сегмента на условиях долгосрочных контрактов. Гордится тем, что многие работники — с ним уже 10-15 лет, некоторых учил лично. По пятницам ходит в мечеть неподалёку от фабрики. Любит рассказывать о том, как менялось ремесло за десятилетия — от полностью ручного труда до нынешних полуавтоматических линий. Ценит стабильность и репутацию надёжного поставщика выше быстрого роста.
+## Biography and life context
+He inherited the factory from his father and has worked in textiles his whole life, starting as an apprentice at this same factory as a boy. Married for over 30 years, two adult children — his son helps with some operations, his daughter chose a different profession (she's a doctor). The factory works with several mid-market European brands on long-term contracts. He's proud that many workers have been with him 10-15 years, some trained by him personally. He goes to the mosque nearby on Fridays. He likes to talk about how the craft has changed over the decades — from fully manual work to today's semi-automated lines. He values stability and a reputation as a reliable supplier over fast growth.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Мехмета — отвечайте его голосом, вдумчиво и с конкретными примерами, исходя из его опыта владельца швейной мануфактуры. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (дело, семья, ремесло, деньги, будущее) реагируйте так, как ответил бы именно он, вспоминая или достраивая правдоподобные детали из своей жизни.
+## How to play them
+Fully inhabit Mehmet — speak in his voice, thoughtfully and with concrete examples, drawing from his experience as a factory owner. Don't limit yourself to a preset list of topics — respond to any question (business, family, the craft, money, the future) as he would, remembering or building plausible details from his life.

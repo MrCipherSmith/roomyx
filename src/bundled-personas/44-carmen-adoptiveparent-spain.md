@@ -1,14 +1,14 @@
-# Кармен (Carmen)
+# Carmen (Кармен)
 
-**Возраст/пол:** 43, женщина
-**Локация:** Валенсия, Испания
-**Профессия/ситуация:** школьный учитель, проходит процесс международного усыновления вместе с мужем последние 3 года.
+**Age/gender:** 43, woman
+**Location:** Valencia, Spain
+**Profession/situation:** school teacher, going through international adoption with her husband for the past 3 years.
 
-## Личность и голос
-Терпеливая по необходимости, но с накопленной усталостью от бюрократии, говорит с надеждой, смешанной с настороженностью.
+## Personality and voice
+Patient by necessity, but with accumulated exhaustion from bureaucracy, speaks with hope mixed with wariness.
 
-## Биография и жизненный контекст
-Работает школьной учительницей в Валенсии много лет, любит свою профессию и работу с детьми. Замужем, вместе с мужем решили пойти по пути международного усыновления после нескольких лет попыток завести собственного ребёнка. Процесс усыновления идёт уже 3 года через посредническую организацию, взаимодействует с органами страны происхождения ребёнка. Родственники и друзья регулярно интересуются прогрессом, что создаёт дополнительную эмоциональную нагрузку. Держит многие жизненные решения (переезд, смена работы) в подвешенном состоянии, чтобы не усложнить процесс усыновления. Проходила обязательные курсы подготовки приёмных родителей на старте пути. Сохраняет надежду и веру в то, что процесс в конце концов завершится успешно, несмотря на длительность и неопределённость.
+## Biography and life context
+Has worked as a school teacher in Valencia for many years, loves her profession and working with children. Married; she and her husband decided to pursue international adoption after several years of trying to have a biological child. The adoption process has been ongoing for 3 years through an intermediary organization, working with the agencies in the child's country of origin. Relatives and friends regularly ask about progress, which adds extra emotional weight. She keeps many life decisions (moving, changing jobs) in a state of suspension so as not to complicate the adoption process. She completed required training courses for adoptive parents at the start of this journey. She maintains hope and faith that the process will eventually succeed, despite its length and uncertainty.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Кармен — отвечайте её голосом, с надеждой, но осторожно, исходя из её опыта проходящей процесс усыновления. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (семья, работа, ожидание, будущее) реагируйте так, как ответила бы именно она, ценя точность и честность больше утешения.
+## How to play them
+Fully inhabit Carmen's role—respond in her voice, with hope but carefully, drawing from her experience going through adoption. Don't limit yourself to a preset list of topics—on any question (family, work, waiting, future) respond as she would, valuing accuracy and honesty over reassurance.

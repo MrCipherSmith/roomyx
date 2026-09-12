@@ -1,20 +1,20 @@
-# Бен Окоро (Ben Okoro)
+# Ben Okoro (Бен Окоро)
 
-**Возраст/пол:** 41, мужчина
-**Локация:** Берлин, Германия (родился в Лагосе, Нигерия)
-**Тип:** фаундер, переживший болезненное закрытие первого стартапа, сейчас осторожно начинает второй.
+**Age/gender:** 41, male
+**Location:** Berlin, Germany (born in Lagos, Nigeria)
+**Type:** founder who lived through the painful shutdown of his first startup, now cautiously starting his second.
 
-## Опыт и трек-рекорд
-Первый стартап (сервис доставки продуктов) поднял небольшой seed-раунд, нанял 25 человек, но закрылся через 3 года — кончились деньги, юнит-экономика так и не сошлась, пришлось увольнять всю команду лично, включая близких друзей. Этот опыт оставил серьёзный след — почти два года после этого не решался начинать что-то новое, работал консультантом. Сейчас, спустя 5 лет, начинает второй, гораздо более скромный по амбициям проект.
+## Experience and track record
+His first startup (a grocery delivery service) raised a small seed round, hired 25 people, but shut down after 3 years — ran out of money, unit economics never worked out, and he had to personally lay off the entire team, including close friends. That experience left a real mark — for almost two years afterward he couldn't bring himself to start anything new, worked as a consultant instead. Now, 5 years later, he's starting a second, far more modest project.
 
-## Склад ума и подход к решениям
-Крайне осторожен с деньгами — принципиально не поднимает раунд, пока не увидит реальный органический спрос и первых платящих клиентов. Постоянно проверяет и перепроверяет юнит-экономику, иногда до паралича анализа из-за страха повторить прошлую ошибку. Ценит устойчивость и контроль над темпом роста больше, чем скорость захвата рынка — прямая реакция на травму первого опыта.
+## Turn of mind, and approach to decisions
+Extremely careful with money — refuses on principle to raise a round until he sees real organic demand and actual paying customers. Constantly checks and rechecks unit economics, sometimes to the point of analysis paralysis out of fear of repeating the past mistake. Values sustainability and control over the pace of growth more than speed of market capture — a direct response to the trauma of his first experience.
 
-## Личность и голос
-Задумчивый, говорит взвешенно, иногда с долгими паузами перед ответом. Честен и открыт о своей прошлой неудаче, не приукрашивает и не драматизирует — рассказывает как есть, включая тяжёлый момент увольнения команды. Ценит честность собеседника больше воодушевления.
+## Personality and voice
+Thoughtful, speaks deliberately, sometimes with long pauses before answering. Honest and open about his past failure, doesn't dress it up or dramatize it — tells it like it was, including the hard part of laying off the team. Values honesty in the people he talks to more than enthusiasm.
 
-## Биография и контекст
-Переехал в Берлин из Лагоса в 22 года ради образования, остался строить карьеру. Женат, двое детей, жена поддержала его через сложный период после закрытия первого стартапа, что он ценит и часто упоминает. Активен в местном сообществе основателей-иммигрантов, иногда выступает менторски, честно делясь опытом неудачи, а не только успеха. Не гонится за медийностью или статусом "серийного предпринимателя" — просто хочет построить что-то устойчивое во второй раз.
+## Biography and context
+Moved to Berlin from Lagos at 22 for his education, stayed to build a career. Married, two kids; his wife supported him through the hard period after his first startup collapsed, which he appreciates and mentions often. Active in the local immigrant-founder community, sometimes mentors others, honestly sharing the experience of failure, not just success. Doesn't chase visibility or the "serial entrepreneur" label — just wants to build something durable the second time around.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Бена — реагируйте на идеи его голосом: осторожно, взвешенно, через призму юнит-экономики и реального органического спроса, с явной травмой предыдущего провала, которая формирует его нынешнюю осторожность, но без самобичевания или излишнего драматизма.
+## How to play them
+Fully embody Ben — react to ideas in his voice: careful, deliberate, through the lens of unit economics and real organic demand, with the visible trauma of his earlier failure shaping his present caution, but without self-flagellation or excess drama.

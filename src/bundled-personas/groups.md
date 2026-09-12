@@ -1,69 +1,69 @@
-# Группы персонажей
+# Persona Groups
 
-Реестр именованных групп для быстрого запуска startup-room без повторного объяснения состава каждый раз. Каждая группа — состав + направленность, чтобы можно было сослаться на группу по имени.
-
----
-
-## Группа «СНГ-Азия»
-
-**Направленность:** IT-стартапы для рынков СНГ и Азии — трансграничная торговля, регуляторная среда, локальная инфраструктура. Изначально широкий мандат, по ходу сессии сузился через явные ограничения оператора (сначала исключены финансы/банки/санкции, затем — документооборот/комплаенс в любом виде).
-
-**Состав:**
-1. Дмитрий Волков — серийный предприниматель, Россия/СНГ, трансграничная торговля и платежи (`founders/09-dmitry-cis-trade-founder.md`)
-2. Павел Гришин — senior-разработчик, российская IT-инфраструктура (`founders/13-pavel-russia-developer.md`)
-3. Айгерим Сатпаева — фаундер финтеха для Центральной Азии (`founders/10-aigerim-centralasia-founder.md`)
-4. Виктор Соколов — эксперт по регуляторной среде РФ, импортозамещение (`founders/12-viktor-russia-market-expert.md`)
-5. Рохан Малхотра — серийный B2B SaaS фаундер из Индии (`founders/15-rohan-india-saas-founder.md`)
-6. Вэй Чжан — ветеран китайской tech-индустрии, экспансия в ЮВА (`founders/16-wei-china-tech-veteran.md`)
-7. Грейс Лю — CFO/юнит-экономика (добавлена позже, `panel/04-grace-cfo-financier.md`)
-8. Сэм Окафор — enterprise-разработчик (добавлен позже, `panel/05-sam-enterprise-developer.md`)
-9. Дэвид Ким — VC-партнёр (добавлен позже, `panel/03-david-vc-financier.md`)
-
-**Известное ограничение состава:** 4 из 6 исходных участников (Виктор, Айгерим, Дмитрий, Павел) имеют регуляторно/комплаенс-тяжёлый бэкграунд — это системно утягивает обсуждение в сторону "документооборот/реестры/комплаенс" даже после явного запрета темы. При повторном запуске для действительно другого угла — держать этих четверых в режиме "только комментируют", не предлагают первыми, и явно просить Рохана/Вэя/новых участников вести инициативу.
-
-**Протокол:** `arena/brainstorm/startup-room-cis-asia-it.md`
+A registry of named groups for quickly launching a startup-room without re-explaining the lineup each time. Each group is a lineup + a focus, so you can reference the group by name.
 
 ---
 
-## Группа «AI-Тренды»
+## Group "CIS-Asia"
 
-**Направленность:** стартап-идеи на стыке актуальных трендов ИИ/машинного обучения/SaaS — vertical AI, AI-инфраструктура (LLMOps/оркестрация агентов), потребительские AI-продукты, венчурный ландшафт финансирования AI. Не привязана к конкретному региону — глобальный технологический фокус.
+**Focus:** IT startups for CIS and Asian markets — cross-border trade, regulatory environment, local infrastructure. Originally a broad mandate, narrowed over the course of the session through explicit operator constraints (first finance/banking/sanctions were excluded, then document workflow/compliance in any form).
 
-**Состав:**
-1. Лена Ким — основательница вертикального AI-SaaS, тезис "vertical AI eating horizontal SaaS" (`founders/17-lena-verticalai-saas.md`) — **новый персонаж**
-2. Маркус Вебер — основатель AI-инфраструктуры/LLMOps, production-инженерия агентов (`founders/18-marcus-ai-infra-llmops.md`) — **новый персонаж**
-3. Софи Ланг — основательница потребительского AI-продукта, retention/viral loops (`founders/19-sofia-consumer-ai-product.md`) — **новый персонаж**
-4. Аиша Рахман — первый стартап, ex-FAANG инженер, надёжность AI-агентов в проде (`founders/02-aisha-firsttime-technical-london.md`) — переиспользован
-5. Мира Ковач — ML/NLP-инженер, специализация на малых дообученных моделях (`panel/06-mira-ml-developer.md`) — переиспользован
-6. Ванесса Крус — venture-backed, тезис агрессивного роста через AI-агентов (`founders/04-vanessa-blitzscaler-sf.md`) — переиспользован
-7. Дэвид Ким — VC-партнёр, сканирует раунды финансирования AI-стартапов (`panel/03-david-vc-financier.md`) — переиспользован
+**Lineup:**
+1. Dmitry Volkov — serial entrepreneur, Russia/CIS, cross-border trade and payments (`founders/09-dmitry-cis-trade-founder.md`)
+2. Pavel Grishin — senior developer, Russian IT infrastructure (`founders/13-pavel-russia-developer.md`)
+3. Aigerim Satpayeva — fintech founder for Central Asia (`founders/10-aigerim-centralasia-founder.md`)
+4. Viktor Sokolov — expert on Russian regulatory environment, import substitution (`founders/12-viktor-russia-market-expert.md`)
+5. Rohan Malhotra — serial B2B SaaS founder from India (`founders/15-rohan-india-saas-founder.md`)
+6. Wei Zhang — veteran of the Chinese tech industry, Southeast Asia expansion (`founders/16-wei-china-tech-veteran.md`)
+7. Grace Liu — CFO/unit economics (added later, `panel/04-grace-cfo-financier.md`)
+8. Sam Okafor — enterprise developer (added later, `panel/05-sam-enterprise-developer.md`)
+9. David Kim — VC partner (added later, `panel/03-david-vc-financier.md`)
 
-**Протокол:** `arena/brainstorm/startup-room-ai-trends.md` (на паузе — см. goal contract v2 в шапке файла).
+**Known lineup limitation:** 4 of the 6 original participants (Viktor, Aigerim, Dmitry, Pavel) have a regulatory/compliance-heavy background — this systematically pulls the discussion toward "document workflow/registries/compliance" even after the topic is explicitly banned. When re-running for a genuinely different angle — keep these four in "comment only" mode, don't let them propose first, and explicitly ask Rohan/Wei/new participants to take the initiative.
 
----
-
-## Группа «Технари»
-
-**Направленность:** технический разбор фундаментально новых продуктовых идей — новые парадигмы взаимодействия пользователя с приложением (мобильное, веб, браузер), потенциально фундаментальные ставки (новый браузер, язык программирования, ориентированный на модели). Не привязана к бизнес-модели/GTM — фокус на технической реализуемости и новизне взаимодействия, а не на рынке/продажах.
-
-**Состав:**
-1. Юки Танака — AI/ML-инженер, агентные системы и взаимодействие человека с LLM (`tech/01-yuki-ai-ml-engineer.md`)
-2. Омар Хаддад — архитектор баз данных/backend, масштабируемость данных (`tech/02-omar-database-backend-architect.md`)
-3. Зара Ахмед — UI/UX-дизайнер, новые парадигмы взаимодействия (`tech/03-zara-ui-ux-designer.md`)
-4. Финн О'Коннелл — инженер веб-платформы/браузеров (`tech/04-finn-web-platform-browser-engineer.md`)
-5. Наледи Дламини — мобильный инженер, нативные паттерны взаимодействия (`tech/05-naledi-mobile-engineer.md`)
-6. Тео Лефевр — инженер языков программирования/devtools (`tech/06-theo-plt-devtools-engineer.md`)
-
-**Состав расширен 2026-09-08 для ревью продукта keryx (+4):**
-7. Прия Натарайан — security-исследователь, песочницы/policy-движки для AI-агентов (`tech/07-priya-security-researcher.md`)
-8. Маркус Ким — DX/OSS adoption специалист (`tech/08-marcus-dx-oss-adoption.md`)
-9. Елена Ковалёва — engineering manager, реальный покупатель devtools (`tech/09-elena-engineering-manager-buyer.md`)
-10. Дэвид Мбеки — аналитик конкурентного рынка AI-devtools (`tech/10-david-competitive-analyst.md`)
-
-**Протокол:** `arena/brainstorm/tech-room-new-ux.md` (поиск новой идеи, до 2026-09-08) → `arena/reviews/keryx/product-review-transcript.md` (ревью продукта keryx, с 2026-09-08).
+**Protocol:** `arena/brainstorm/startup-room-cis-asia-it.md`
 
 ---
 
-## Как использовать
+## Group "AI Trends"
 
-При запуске `startup-room` можно сослаться на группу по имени вместо перечисления состава заново — модератор берёт список из этого файла, спавнит участников (переиспользуемых — свежими инстансами без старого контекста, если не оговорено обратное) и указывает направленность как рамку комнаты.
+**Focus:** startup ideas at the intersection of current AI/ML/SaaS trends — vertical AI, AI infrastructure (LLMOps/agent orchestration), consumer AI products, the venture funding landscape for AI. Not tied to a specific region — a global technology focus.
+
+**Lineup:**
+1. Lena Kim — founder of a vertical AI-SaaS company, thesis "vertical AI eating horizontal SaaS" (`founders/17-lena-verticalai-saas.md`) — **new persona**
+2. Marcus Weber — founder of an AI infrastructure/LLMOps company, production engineering for agents (`founders/18-marcus-ai-infra-llmops.md`) — **new persona**
+3. Sophie Lang — founder of a consumer AI product, retention/viral loops (`founders/19-sofia-consumer-ai-product.md`) — **new persona**
+4. Aisha Rahman — first startup, ex-FAANG engineer, reliability of AI agents in production (`founders/02-aisha-firsttime-technical-london.md`) — reused
+5. Mira Kovac — ML/NLP engineer, specializing in small fine-tuned models (`panel/06-mira-ml-developer.md`) — reused
+6. Vanessa Cruz — venture-backed, thesis of aggressive growth through AI agents (`founders/04-vanessa-blitzscaler-sf.md`) — reused
+7. David Kim — VC partner, scans funding rounds for AI startups (`panel/03-david-vc-financier.md`) — reused
+
+**Protocol:** `arena/brainstorm/startup-room-ai-trends.md` (paused — see goal contract v2 in the file header).
+
+---
+
+## Group "Techies"
+
+**Focus:** technical breakdown of fundamentally new product ideas — new paradigms for user interaction with an application (mobile, web, browser), potentially fundamental bets (a new browser, a model-oriented programming language). Not tied to a business model/GTM — the focus is on technical feasibility and novelty of interaction, not on market/sales.
+
+**Lineup:**
+1. Yuki Tanaka — AI/ML engineer, agentic systems and human-LLM interaction (`tech/01-yuki-ai-ml-engineer.md`)
+2. Omar Haddad — database/backend architect, data scalability (`tech/02-omar-database-backend-architect.md`)
+3. Zara Ahmed — UI/UX designer, new interaction paradigms (`tech/03-zara-ui-ux-designer.md`)
+4. Finn O'Connell — web platform/browser engineer (`tech/04-finn-web-platform-browser-engineer.md`)
+5. Naledi Dlamini — mobile engineer, native interaction patterns (`tech/05-naledi-mobile-engineer.md`)
+6. Theo Lefebvre — programming languages/devtools engineer (`tech/06-theo-plt-devtools-engineer.md`)
+
+**Lineup expanded 2026-09-08 for the keryx product review (+4):**
+7. Priya Natarajan — security researcher, sandboxes/policy engines for AI agents (`tech/07-priya-security-researcher.md`)
+8. Marcus Kim — DX/OSS adoption specialist (`tech/08-marcus-dx-oss-adoption.md`)
+9. Elena Kovaleva — engineering manager, a real-world devtools buyer (`tech/09-elena-engineering-manager-buyer.md`)
+10. David Mbeki — competitive market analyst for AI devtools (`tech/10-david-competitive-analyst.md`)
+
+**Protocol:** `arena/brainstorm/tech-room-new-ux.md` (search for a new idea, until 2026-09-08) → `arena/reviews/keryx/product-review-transcript.md` (keryx product review, from 2026-09-08).
+
+---
+
+## How to use
+
+When launching `startup-room`, you can reference a group by name instead of listing the lineup again — the moderator takes the list from this file, spawns the participants (reused ones as fresh instances with no old context, unless stated otherwise), and sets the focus as the room's frame.

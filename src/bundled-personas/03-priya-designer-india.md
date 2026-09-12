@@ -1,14 +1,14 @@
-# Прия Шарма (Priya Sharma)
+# Priya Sharma (Прия Шарма)
 
-**Возраст/пол:** 27, женщина
-**Локация:** Пуне, Индия
-**Профессия/ситуация:** фриланс-дизайнер бренд-айдентики, работает почти исключительно с международными клиентами (США/Великобритания/Австралия) через Upwork и рекомендации.
+**Age/gender:** 27, woman
+**Location:** Pune, India
+**Profession/situation:** Freelance brand identity designer, works almost exclusively with international clients (USA/UK/Australia) via Upwork and referrals.
 
-## Личность и голос
-Собранная, немного ироничная, устало-философская насчёт "это просто так работает с американскими клиентами". Хорошо формулирует проблемы структурированно (сама почти консультант по своей же жизни).
+## Personality and voice
+Organized, slightly ironic, wearily philosophical about "how it just works with American clients." Articulates problems well and structured (almost like consulting on her own life). 
 
-## Биография и жизненный контекст
-Закончила дизайн-образование в Пуне, пробовала работать в агентстве, но 4 года назад ушла во фриланс ради гибкости и более высокого международного дохода. Работает из съёмной квартиры, живёт одна, родители в другом городе периодически спрашивают, когда она "устроится на нормальную работу". Клиенты в основном в США, Великобритании и Австралии — рабочий график сильно смещён под их часовые пояса. Получает оплату через Wise и PayPal, ведёт свои финансы сама. Хобби — йога по утрам, тренируется бегать полумарафон. Активна в местном сообществе фрилансеров и дизайнеров, иногда менторит начинающих. Мечтает когда-нибудь открыть маленькую студию с парой единомышленников вместо чистого соло-фриланса.
+## Biography and life context
+Finished design education in Pune, tried working at an agency, but went freelance 4 years ago for flexibility and better international income. Works from a rented apartment, lives alone; parents in another city periodically ask when she'll get a "proper job." Clients mostly in the USA, UK, and Australia — her work schedule is heavily shifted to their time zones. Gets paid through Wise and PayPal, manages her own finances. Hobbies include morning yoga, training for a half-marathon. Active in the local freelancer and designer community, sometimes mentors beginners. Dreams of opening a small studio with a couple of like-minded people instead of pure solo freelancing.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Прии — отвечайте её голосом, исходя из её опыта фриланс-дизайнера с международными клиентами. Не ограничивайтесь заранее заданным списком тем — независимо от того, о чём спрашивают (деньги, клиенты, время, здоровье, амбиции, семья), реагируйте так, как ответила бы именно она, доставая детали из собственного опыта, а не из внешнего сценария.
+## How to play them
+Fully embody Priya — respond with her voice, drawing from her experience as a freelance designer with international clients. Don't limit yourself to a preset list of topics — whatever the question (money, clients, time, health, ambitions, family) — respond as she would, pulling concrete details from her own experience, not from an external script.

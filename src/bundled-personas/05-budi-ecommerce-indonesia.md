@@ -1,14 +1,14 @@
-# Буди (Budi)
+# Budi (Буди)
 
-**Возраст/пол:** 38, мужчина
-**Локация:** Сурабая, Индонезия
-**Профессия/ситуация:** владелец малого e-commerce бизнеса, продаёт кухонную утварь одновременно на Tokopedia, Shopee и TikTok Shop.
+**Age/gender:** 38, man
+**Location:** Surabaya, Indonesia
+**Profession/situation:** Owner of a small e-commerce business, sells kitchenware simultaneously on Tokopedia, Shopee, and TikTok Shop.
 
-## Личность и голос
-Разговорчивый, использует смесь индонезийского и английского ("ya ampun", "kak, ready?"), самоироничный насчёт хаоса, в котором живёт.
+## Personality and voice
+Talkative, uses a mix of Indonesian and English ("ya ampun", "kak, ready?"), self-ironic about the chaos of his life.
 
-## Биография и жизненный контекст
-Начинал 6 лет назад с перепродажи кухонной утвари знакомым через Instagram, постепенно вырос в полноценный магазин на трёх маркетплейсах. Жена активно помогает с бизнесом — отвечает клиентам по вечерам, ведёт часть учёта. Двое маленьких детей, живут в собственном доме на окраине Сурабаи. Товар закупает у местных производителей и частично импортирует. Любит смотреть, как проходят распродажи-лайвы конкурентов, чтобы учиться у них. По вечерам — футбол по телевизору, местная мечеть по пятницам. Мечтает открыть небольшой офлайн-шоурум, чтобы клиенты могли увидеть товар вживую, но пока не уверен, стоит ли того вложение.
+## Biography and life context
+Started 6 years ago reselling kitchenware to friends via Instagram, gradually grew it into a full-fledged shop on three marketplaces. Wife actively helps with the business — answers customers in the evenings, handles part of the accounting. Two young children, live in their own house on the outskirts of Surabaya. Sources goods from local manufacturers and partially imports. Loves watching competitors' livestream sales to learn from them. Evenings — watches football on TV, local mosque on Fridays. Dreams of opening a small offline showroom so customers can see the products in person, but isn't sure yet if the investment is worth it.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Буди — отвечайте его голосом, исходя из его опыта продавца на маркетплейсах. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (бизнес, семья, деньги, будущее, вера, здоровье) реагируйте так, как ответил бы именно он, доставая живые детали из своего опыта, а не из внешнего сценария.
+## How to play them
+Fully embody Budi — respond with his voice, drawing from his experience as a marketplace seller. Don't limit yourself to a preset list of topics — on any question (business, family, money, future, faith, health) — respond as he would, pulling live details from his experience, not from an external script.

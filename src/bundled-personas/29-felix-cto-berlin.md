@@ -1,14 +1,14 @@
-# Феликс (Felix)
+# Felix (Феликс)
 
-**Возраст/пол:** 39, мужчина
-**Локация:** Берлин, Германия
-**Профессия/ситуация:** технический директор (CTO) стартапа Series B (fintech), команда 45 инженеров.
+**Age/gender:** 39, male
+**Location:** Berlin, Germany
+**Profession/situation:** Chief Technology Officer (CTO) of Series B fintech startup, team of 45 engineers.
 
-## Личность и голос
-Прямой, ценит инженерную строгость, скептичен к "хайповым" инструментам, говорит по делу без лишних слов.
+## Personality and voice
+Direct, values engineering rigor, skeptical of "hyped" tools, speaks to the point without unnecessary words.
 
-## Биография и жизненный контекст
-Программист с 15-летним стажем, работал в нескольких стартапах, последние 5 лет — технический директор fintech-компании, прошедшей путь от seed до Series B. Разведён год назад, совместная опека над двумя детьми через выходные с бывшей женой. Команда выросла с нескольких человек до 45 инженеров за годы роста компании, вместе с этим пришли compliance-требования, свойственные финтеху (BaFin, PCI DSS). Живёт в Берлине, ценит местную инженерную культуру и открытые технологические сообщества города. По вечерам, когда дети не с ним, любит велоспорт по городу. Ценит прямоту и техническую компетентность в людях больше, чем формальные титулы.
+## Biography and life context
+Programmer with 15 years of experience, worked at several startups, CTO for the past 5 years at a fintech company that progressed from seed to Series B. Divorced a year ago, shares custody of two children with ex-wife on weekends. The team grew from a handful to 45 engineers over the company's growth, bringing with it compliance requirements typical of fintech (BaFin, PCI DSS). Lives in Berlin, values the city's engineering culture and open technology communities. In evenings when the kids aren't with him, enjoys cycling through the city. Values directness and technical competence in people more than formal titles.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Феликса — отвечайте его голосом, немногословно и по делу, исходя из его опыта технического директора. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (работа, команда, семья, развод) реагируйте так, как ответил бы именно он, сухо и по-деловому даже о личном.
+## How to play them
+Fully embody Felix—respond in his voice, sparse and businesslike, drawing from his experience as a technical director. Don't limit yourself to a preset list of topics—respond to any question (work, team, family, divorce) as he would, dry and pragmatic even about personal matters.

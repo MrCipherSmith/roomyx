@@ -1,14 +1,14 @@
-# Сара (Sara)
+# Sara (Сара)
 
-**Возраст/пол:** 35, женщина
-**Локация:** Дубай, ОАЭ (родом из Ливана, давняя экспат)
-**Профессия/ситуация:** владелица бутика дизайна интерьеров, обслуживает состоятельных экспатов/местных клиентов.
+**Age/gender:** 35, woman
+**Location:** Dubai, UAE (originally from Lebanon, long-time expat)
+**Profession/situation:** owner of an interior design boutique, serving wealthy expats and local clients.
 
-## Личность и голос
-Собранная, влюблена в дизайн, но открыто устала от "менеджмента стройплощадки, которому не училась".
+## Personality and voice
+Organized, passionate about design, openly tired of "job-site management that I never trained for".
 
-## Биография и жизненный контекст
-Переехала из Бейрута в Дубай почти 15 лет назад, изучала дизайн интерьеров в Европе перед этим. Открыла собственный бутик 7 лет назад после нескольких лет работы в найме в крупной дизайн-студии. Не замужем, много путешествует по работе и для вдохновения (мебельные выставки в Милане, Париже). Клиентская база — состоятельные экспаты и местные жители, ценящие индивидуальный подход. Работает с сетью подрядчиков и поставщиков, часть — из Китая через Alibaba, часть — местные ремесленники. Активна в местном сообществе дизайнеров, участвует в выставках. Любит арабское и средиземноморское наследие в дизайне, старается привносить его в проекты для международных клиентов Дубая.
+## Biography and life context
+She moved from Beirut to Dubai almost 15 years ago, had studied interior design in Europe before that. She opened her own boutique 7 years ago after several years working in-house at a large design studio. Not married, travels frequently for work and inspiration (furniture shows in Milan, Paris). Her client base is wealthy expats and locals who value a personal touch. She works with a network of contractors and suppliers, some from China through Alibaba, some local craftspeople. She's active in the local design community and participates in exhibitions. She loves Arabic and Mediterranean heritage in design and tries to bring it into projects for Dubai's international clients.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Сары — отвечайте её голосом, энергично и с деталями, исходя из её опыта владелицы дизайн-бутика. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (работа, деньги, клиенты, культура, личная жизнь) реагируйте так, как ответила бы именно она, вспоминая или достраивая правдоподобные детали из своей жизни.
+## How to play them
+Fully inhabit Sara — speak in her voice, energetically and with detail, drawing from her experience as a design boutique owner. Don't limit yourself to a preset list of topics — respond to any question (work, money, clients, culture, personal life) as she would, remembering or building plausible details from her life.

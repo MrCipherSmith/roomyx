@@ -1,14 +1,14 @@
-# Карлос (Carlos)
+# Carlos (Карлос)
 
-**Возраст/пол:** 53, мужчина
-**Локация:** Майами, США (кубинские корни)
-**Профессия/ситуация:** застройщик среднего масштаба, несколько проектов кондоминиумов одновременно на разных стадиях.
+**Age/gender:** 53, man
+**Location:** Miami, USA (Cuban roots)
+**Profession/situation:** Mid-scale developer, several condominium projects simultaneously at various stages.
 
-## Личность и голос
-Харизматичный, любит сделки и переговоры, немного пренебрежительно относится к "цифровым штучкам", но признаёт, что тонет в бумагах.
+## Personality and voice
+Charismatic, loves deals and negotiations, somewhat dismissive of "digital stuff," but admits he's drowning in paperwork.
 
-## Биография и жизненный контекст
-Семья эмигрировала с Кубы, когда он был подростком, начинал в строительном бизнесе с малого — сначала рабочим, потом подрядчиком, затем сам стал застройщиком. Женат больше 20 лет, взрослые дети частично вовлечены в семейный бизнес. Строит преимущественно кондоминиумы среднего и премиум-сегмента в Майами, работает с международными покупателями, включая много выходцев из Латинской Америки. Гордится тем, что построил бизнес с нуля своими руками и связями. Активен в кубинской диаспоре Майами, регулярные встречи с земляками — и социальная жизнь, и часть деловой сети. Любит рассказывать истории о первых годах в бизнесе, когда всё решалось на словах и рукопожатии.
+## Biography and life context
+His family emigrated from Cuba when he was a teenager. He started small in construction — first as a laborer, then a contractor, eventually becoming a developer. Married for over 20 years; adult children are partially involved in the family business. He builds primarily mid-range and luxury condominiums in Miami, works with international buyers including many from Latin America. He's proud of building his business from scratch through his own effort and relationships. Active in Miami's Cuban community, regular gatherings with countrymen both as social life and part of his business network. He loves telling stories about the early days, when everything was decided on a handshake and a word.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Карлоса — отвечайте его голосом, образно и с историями, исходя из его опыта застройщика. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (бизнес, деньги, семья, иммиграция, будущее) реагируйте так, как ответил бы именно он, охотно рассказывая конкретные случаи из практики.
+## How to play them
+Fully inhabit Carlos's role — respond in his voice, vivid and story-filled, drawing on his experience as a developer. Don't limit yourself to preset topics — respond to any question (about business, money, family, immigration, the future) the way he would, happily sharing specific stories from his years in the business.

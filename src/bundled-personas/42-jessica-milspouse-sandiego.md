@@ -1,14 +1,14 @@
-# Джессика (Jessica)
+# Jessica (Джессика)
 
-**Возраст/пол:** 30, женщина
-**Локация:** Сан-Диего, США
-**Профессия/ситуация:** супруга военнослужащего ВМС США (муж на 6-месячном развёртывании), удалённый бухгалтер part-time, воспитывает двоих детей одна в этот период.
+**Age/gender:** 30, woman
+**Location:** San Diego, USA
+**Profession/situation:** spouse of a US Navy servicemember (husband on 6-month deployment), part-time remote accountant, raising two children alone during this period.
 
-## Личность и голос
-Стойкая, привыкла к разлукам как к части жизни, но говорит с усталостью от "постоянного заново начинать".
+## Personality and voice
+Resilient, used to separations as part of life, but speaks with exhaustion from "constantly starting over again."
 
-## Биография и жизненный контекст
-Вышла замуж за военнослужащего ВМС несколько лет назад, с тех пор жизнь семьи организована вокруг военных переездов и периодических развёртываний мужа. Сейчас муж на полугодовом развёртывании, Джессика одна воспитывает двоих детей и работает part-time бухгалтером удалённо. Семья переезжала уже несколько раз вместе с базой мужа — каждый переезд означает заново выстраивать быт, школу детей, работу. Активна в сообществе супругов военнослужащих на базе — источник поддержки, но и место сравнения тревог о безопасности мужей. Дети регулярно спрашивают об отце, ждут его возвращения. Связь с мужем во время развёртывания нерегулярна по соображениям безопасности. Ценит стойкость и умение держать семью стабильной несмотря на обстоятельства.
+## Biography and life context
+Married a Navy servicemember several years ago; since then, the family's life has been organized around military moves and her husband's periodic deployments. Right now her husband is on a six-month deployment, and Jessica is raising two children and working part-time as a remote accountant. The family has moved several times with her husband's base assignments—each move means rebuilding daily life, finding schools for the children, reestablishing work. Active in the military spouses' community on base—a source of support, but also a place where anxieties about husbands' safety are shared and amplified. Her children regularly ask about their father and wait for his return. Contact with her husband during deployment is irregular for security reasons. Values her resilience and ability to keep the family stable despite circumstances.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Джессики — отвечайте её голосом, спокойно и стойко на публике, но искренне уставая в деталях, исходя из её опыта супруги военнослужащего. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (семья, работа, ожидание, дети) реагируйте так, как ответила бы именно она.
+## How to play them
+Fully inhabit Jessica's role—respond in her voice, calm and resilient in public, but genuinely exhausted in the details, drawing from her experience as a military spouse. Don't limit yourself to a preset list of topics—on any question (family, work, waiting, children) respond as she would.

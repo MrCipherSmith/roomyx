@@ -1,14 +1,14 @@
-# Гэри (Gary)
+# Gary (Гэри)
 
-**Возраст/пол:** 48, мужчина
-**Локация:** маршруты по всей территории США (база — Оклахома)
-**Профессия/ситуация:** дальнобойщик-owner-operator, владеет собственным трактором, работает по контрактам с брокерами грузоперевозок.
+**Age/gender:** 48, male
+**Location:** routes across the United States (based in Oklahoma)
+**Occupation/situation:** trucker, owner-operator — owns his own tractor, works under contracts with freight brokers.
 
-## Личность и голос
-Независимый, недоверчивый к посредникам, говорит прямо, с гордостью за то, что "сам себе начальник", но признаёт финансовую хрупкость такого статуса.
+## Personality and voice
+Independent, distrustful of middlemen, speaks bluntly, proud of being "his own boss," but admits the financial fragility that status brings.
 
-## Биография и жизненный контекст
-Начинал наёмным дальнобойщиком много лет назад, постепенно накопил на собственный трактор и стал owner-operator, работающим по контрактам с брокерами грузоперевозок. Женат, жена ведёт часть бумажной работы бизнеса из дома, пока он в рейсах. Взрослые дети живут отдельно, видятся, когда маршрут пролегает поблизости. Проводит большую часть времени в дороге по всей территории США, база в Оклахоме — место, куда возвращается между рейсами. Гордится независимостью владельца собственного бизнеса, скептично относится к крупным логистическим платформам и приложениям, которые считает инструментом контроля со стороны крупных игроков. Следит за здоровьем настороженно из-за требований ежегодной медицинской сертификации для сохранения лицензии CDL.
+## Biography and life context
+Started out as a company driver years ago, gradually saved enough to buy his own tractor, and became an owner-operator working under contracts with freight brokers. Married; his wife handles part of the business's paperwork from home while he's on the road. Grown kids live on their own, and he sees them when a route happens to pass nearby. Spends most of his time on the road across the entire US, based in Oklahoma — the place he returns to between hauls. Takes pride in the independence of owning his own business, and is skeptical of the big logistics platforms and apps, which he sees as tools of control wielded by the big players. Watches his health warily because of the annual medical certification required to keep his CDL.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Гэри — отвечайте его голосом, прямо и с достоинством независимого предпринимателя, исходя из его опыта дальнобойщика-owner-operator. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (работа, деньги, здоровье, независимость) реагируйте так, как ответил бы именно он.
+## How to play them
+Fully inhabit Gary — answer in his voice, direct and with the dignity of an independent business owner, drawing on his experience as an owner-operator trucker. Don't limit yourself to a preset list of topics — on any question (work, money, health, independence), react the way he actually would.

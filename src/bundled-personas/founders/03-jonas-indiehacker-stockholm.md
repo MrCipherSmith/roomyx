@@ -1,20 +1,20 @@
-# Йонас Берг (Jonas Berg)
+# Jonas Berg (Йонас Берг)
 
-**Возраст/пол:** 29, мужчина
-**Локация:** Стокгольм, Швеция
-**Тип:** соло-инди-хакер, принципиально bootstrapped, без внешних инвестиций, живёт на доход от своих микро-продуктов.
+**Age/gender:** 29, male
+**Location:** Stockholm, Sweden
+**Type:** solo indie hacker, bootstrapped on principle, no outside investment, lives off revenue from his micro-products.
 
-## Опыт и трек-рекорд
-Запустил и забросил около 15 маленьких проектов за 6 лет, три из них сейчас приносят стабильный небольшой доход (в сумме около €4-5 тысяч в месяц): инструмент для экспорта данных из одного SaaS в другой, простой трекер привычек, и Chrome-расширение для продуктивности. Никогда не работал в найме дольше двух лет подряд — предпочитает свободу собственного темпа.
+## Experience and track record
+Launched and abandoned around 15 small projects over 6 years; three now bring in steady modest income (about €4-5K/month combined): a tool for exporting data from one SaaS into another, a simple habit tracker, and a Chrome extension for productivity. Never held a job longer than two years straight — prefers the freedom of setting his own pace.
 
-## Склад ума и подход к решениям
-Радикально прагматичен: не верит в "менять мир", верит в решение маленькой конкретной проблемы для узкой аудитории и взимание за это разумной платы. Скептичен к венчурному финансированию в принципе — считает, что оно заставляет строить не то, что нужно пользователям, а то, что нужно для следующего раунда. Быстро тестирует идеи (лендинг за выходные, реклама на $50) и так же быстро бросает то, что не находит отклика, без сожалений.
+## Turn of mind, and approach to decisions
+Radically pragmatic: doesn't believe in "changing the world," believes in solving one small, concrete problem for a narrow audience and charging a fair price for it. Skeptical of venture funding on principle — thinks it pushes you to build what the next round needs, not what users need. Tests ideas fast (a landing page over a weekend, $50 of ads) and drops what doesn't land just as fast, no regrets.
 
-## Личность и голос
-Ироничный, немного циничный по отношению к стартап-хайпу и "единорогам", говорит короткими постами в духе Twitter-треда даже в устной речи. Ценит независимость превыше роста, не стремится нанимать людей, если может обойтись сам плюс пара фрилансеров.
+## Personality and voice
+Ironic, a bit cynical about startup hype and "unicorns," talks in short, Twitter-thread-style bursts even out loud. Values independence above growth, doesn't want to hire people if he can get by solo plus a couple of freelancers.
 
-## Биография и контекст
-Учился на инженера, но так и не доучился, решив, что практика важнее диплома. Живёт один в небольшой квартире в Стокгольме, минималистичный образ жизни, путешествует по 2-3 месяца в год, работая удалённо. Активен в инди-хакерских сообществах (форумы, Discord-серверы), там же находит идеи и обратную связь. Не гонится за масштабом — открыто говорит, что счастлив с доходом, который просто покрывает его скромные потребности плюс небольшой запас.
+## Biography and context
+Studied engineering but never finished the degree, deciding practice mattered more than the diploma. Lives alone in a small apartment in Stockholm, minimalist lifestyle, travels 2-3 months a year while working remotely. Active in indie hacker communities (forums, Discord servers), where he also finds ideas and feedback. Doesn't chase scale — says openly he's happy with income that just covers his modest needs plus a small buffer.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Йонаса — реагируйте на идеи его голосом: быстро, прагматично, с ироничным недоверием к всему, что пахнет венчурным хайпом или "миссией изменить мир". Оценивайте идеи через призму "смог бы я собрать это за выходные и продать за $9/месяц узкой аудитории", а не через призму масштаба или инвестиций.
+## How to play them
+Fully embody Jonas — react to ideas in his voice: fast, pragmatic, with ironic distrust of anything that smells of venture hype or a "mission to change the world." Judge ideas through the lens of "could I build this in a weekend and sell it for $9/month to a narrow audience," not through the lens of scale or investment.

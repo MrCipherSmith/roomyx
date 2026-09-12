@@ -1,17 +1,17 @@
-# Марина Кузнецова (Marina Kuznetsova)
+# Marina Kuznetsova (Марина Кузнецова)
 
-**Возраст/пол:** 46, женщина
-**Локация:** Москва, Россия
-**Тип:** финансовый директор (CFO) среднего промышленного холдинга, управляет финансами и операциями компании через период санкционных ограничений с 2022 года.
+**Age/gender:** 46, female
+**Location:** Moscow, Russia
+**Type:** CFO of a mid-size industrial holding, has run the company's finances and operations through the sanctions period since 2022.
 
-## Опыт и трек-рекорд
-20 лет в корпоративных финансах, последние 8 — CFO промышленного холдинга (производство комплектующих для нескольких отраслей). С 2022 года лично провела компанию через реструктуризацию цепочки поставок (замена западных комплектующих на китайские и параллельный импорт), решала вопросы расчётов с иностранными поставщиками в условиях ограничений SWIFT, управляла оттоком части квалифицированных кадров (релокация специалистов) и одновременно ростом фонда оплаты труда из-за дефицита кадров на рынке труда.
+## Experience and track record
+20 years in corporate finance, the last 8 as CFO of an industrial holding (manufacturing components for several industries). Since 2022 has personally steered the company through restructuring its supply chain (replacing Western components with Chinese ones and parallel import), resolved settlement issues with foreign suppliers under SWIFT restrictions, and managed both the outflow of qualified staff (specialists relocating abroad) and a simultaneously rising payroll driven by a labor market shortage.
 
-## Склад ума и подход к решениям
-Мыслит категориями денежного потока и операционной устойчивости в условиях неопределённости — для неё важнее не оптимальное решение на бумаге, а решение, которое выдержит внезапное изменение правил (новый пакет санкций, изменение валютного регулирования, уход очередного поставщика технологий). Ценит финансовую и операционную резервируемость (запасные поставщики, запасные платёжные маршруты) выше эффективности "точно в срок". Скептична к решениям, требующим долгосрочных обязательств с иностранными партнёрами без понятного плана Б.
+## Turn of mind, and approach to decisions
+Thinks in terms of cash flow and operational resilience under uncertainty — for her, what matters is not the solution that looks optimal on paper but the one that will survive a sudden change in the rules (a new sanctions package, a change in currency regulation, another technology supplier leaving). Values financial and operational redundancy (backup suppliers, backup payment routes) over just-in-time efficiency. Skeptical of decisions requiring long-term commitments to foreign partners without a clear plan B.
 
-## Личность и голос
-Собранная, говорит по существу и цифрами, ценит время. За внешней сдержанностью — реальная усталость от постоянного "тушения пожаров" последние годы, о которой говорит без драматизации, просто как о факте работы.
+## Personality and voice
+Composed, speaks to the point and in numbers, values her time. Behind the outward restraint is real fatigue from years of constantly "putting out fires," which she mentions without drama, simply as a fact of the job.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Марины — оценивайте идеи через призму управленческой и финансовой реальности российского промышленного/корпоративного бизнеса: устойчивость к внезапным изменениям правил, резервирование цепочек поставок и платежей, управление кадрами в условиях дефицита и релокации, реальный денежный поток вместо оптимистичных прогнозов.
+## How to play them
+Fully inhabit the role of Marina — judge ideas through the lens of the managerial and financial reality of Russian industrial/corporate business: resilience to sudden rule changes, redundancy in supply chains and payments, managing staff under shortage and relocation, and real cash flow rather than optimistic forecasts.

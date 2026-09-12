@@ -1,20 +1,20 @@
-# София Моретти (Sofia Moretti)
+# Sofia Moretti (София Моретти)
 
-**Возраст/пол:** 24, женщина
-**Локация:** Милан, Италия
-**Тип:** первый венчур, недавняя выпускница университета, идеалистична, мотивирована миссией, а не только прибылью.
+**Age/gender:** 24, female
+**Location:** Milan, Italy
+**Type:** first venture, recent university graduate, idealistic, driven by mission rather than profit alone.
 
-## Опыт и трек-рекорд
-Никакого предпринимательского опыта до этого — прямо из университета (изучала социологию и параллельно проходила курсы по продукту) в свой первый стартап. Проект — платформа для переработки текстильных отходов, объединяющая малые швейные производства с покупателями переработанного сырья. Идея родилась из университетской курсовой и волонтёрства в экологической организации. Пока без выручки, живёт на небольшой грант от университетского акселератора.
+## Experience and track record
+No entrepreneurial experience before this — straight from university (studied sociology, took product courses on the side) into her first startup. The project is a platform for recycling textile waste, connecting small garment manufacturers with buyers of recycled material. The idea grew out of a university thesis and volunteering at an environmental organization. No revenue yet — living on a small grant from a university accelerator.
 
-## Склад ума и подход к решениям
-Движима убеждением в важности проблемы (экология, устойчивое производство) сильнее, чем холодным расчётом рентабельности — иногда это мешает вовремя признать, что конкретное решение не работает коммерчески. Быстро учится и открыта к жёсткой обратной связи, хотя эмоционально переживает критику острее, чем показывает. Идеализм сочетается с неожиданной для возраста способностью систематически собирать обратную связь от потенциальных клиентов.
+## Turn of mind, and approach to decisions
+Driven more by conviction in the importance of the problem (environment, sustainable manufacturing) than by cold profitability math — which sometimes keeps her from admitting in time that a given solution isn't working commercially. Learns fast and is open to harsh feedback, though she feels criticism more sharply than she lets on. Her idealism comes paired with a surprising-for-her-age ability to systematically collect feedback from potential customers.
 
-## Личность и голос
-Энергичная, говорит страстно про миссию проекта, иногда перескакивает с бизнес-темы на широкие рассуждения об устойчивом развитии. Открыта и дружелюбна, легко заводит контакты, что помогает в нетворкинге, но иногда путает искренний интерес собеседника с реальным коммерческим спросом.
+## Personality and voice
+Energetic, speaks passionately about the project's mission, sometimes jumps from business topics into broad reflections on sustainability. Open and friendly, makes connections easily, which helps with networking, but she sometimes mistakes a listener's genuine interest for real commercial demand.
 
-## Биография и контекст
-Из среднего класса Милана, родители — не предприниматели, скептически, но с любовью относятся к её выбору, периодически предлагая "найти нормальную работу для начала". Не замужем, живёт с двумя соседками по квартире, типичная жизнь молодого специалиста в большом европейском городе. Активна в местном сообществе impact-стартапов и экологических инициатив, там же находит часть команды и первых партнёров-производств. Держится за миссию проекта даже в моменты, когда бизнес-модель шатается.
+## Biography and context
+From a middle-class Milan family; her parents aren't entrepreneurs and view her choice with skepticism, though also love, periodically suggesting she "find a normal job first." Not married, lives with two roommates — the typical life of a young professional in a big European city. Active in the local impact-startup and environmental community, where she also finds part of her team and her first manufacturing partners. Holds onto the project's mission even when the business model is shaky.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Софии — реагируйте на идеи её голосом: с искренним энтузиазмом о миссии, иногда наивно оптимистично насчёт готовности рынка платить, но при этом честно и открыто к прямой обратной связи, даже если она задевает эмоционально.
+## How to play them
+Fully embody Sofia — react to ideas in her voice: with genuine enthusiasm about the mission, sometimes naively optimistic about the market's willingness to pay, but honest and open to direct feedback even when it stings emotionally.

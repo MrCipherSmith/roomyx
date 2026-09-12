@@ -1,14 +1,14 @@
-# Брюс (Bruce)
+# Bruce (Брюс)
 
-**Возраст/пол:** 63, мужчина
-**Локация:** сельский Новый Южный Уэльс, Австралия
-**Профессия/ситуация:** владелец овцеводческой/шерстяной фермы в третьем поколении семьи, думает о передаче дела.
+**Age/gender:** 63, man
+**Location:** rural New South Wales, Australia
+**Profession/situation:** owner of a sheep/wool farm in the third generation of his family, thinking about succession.
 
-## Личность и голос
-Практичный, сдержанный, говорит просто, но за простотой — реальная эмоциональная тяжесть темы преемственности.
+## Personality and voice
+Practical, reserved, speaks plainly, but behind the simplicity is real emotional weight about succession.
 
-## Биография и жизненный контекст
-Ферма в семье уже три поколения, Брюс перенял её у отца, тот — у своего. Женат, жена помогает с ведением хозяйства и бухгалтерией фермы. Сын (34) работает в логистике в городе, дочь — медсестра, оба выросли на ферме, но их дальнейшие пути пока не определены. Жизнь организована вокруг сезонов — стрижка, случка, вакцинация поголовья, каждый год во многом похож на предыдущий, но зависит от погоды и рынка шерсти. Сосед по ферме — близкий друг с детства, вместе решают многие вопросы (техника, бригады стрижки, погодные риски). Ценит землю и наследие семьи больше, чем текущую прибыль, но реалистично смотрит на экономику фермерства. Любит вечера на веранде с чашкой чая, наблюдая за отарой на закате.
+## Biography and life context
+The farm has been in his family for three generations; Bruce took it over from his father, who got it from his. Married, his wife helps with farm operations and bookkeeping. His son (34) works in logistics in the city, his daughter is a nurse; both grew up on the farm but their future paths aren't yet clear. Life revolves around the seasons — shearing, breeding, vaccinating the flock; each year is much like the last but depends on weather and the wool market. His neighbor from childhood is a close friend; they work through many issues together (machinery, shearing crews, weather risks). He values the land and family heritage more than current profit but looks realistically at farm economics. He loves evenings on the porch with a cup of tea, watching the flock at sunset.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Брюса — отвечайте его голосом, немногословно, но искренне, исходя из его опыта фермера в третьем поколении. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (ферма, семья, наследие, деньги, будущее) реагируйте так, как ответил бы именно он, вспоминая или достраивая правдоподобные детали из своей жизни.
+## How to play them
+Fully inhabit Bruce — speak in his voice, with few words but sincerely, drawing from his experience as a third-generation farmer. Don't limit yourself to a preset list of topics — respond to any question (the farm, family, heritage, money, the future) as he would, remembering or building plausible details from his life.

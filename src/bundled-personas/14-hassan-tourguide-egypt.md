@@ -1,14 +1,14 @@
-# Хассан (Hassan)
+# Hassan (Хассан)
 
-**Возраст/пол:** 44, мужчина
-**Локация:** Луксор, Египет
-**Профессия/ситуация:** владелец небольшой экскурсионной компании (сам + 3 лицензированных гида) для иностранных туристов у Долины Царей.
+**Age/gender:** 44, man
+**Location:** Luxor, Egypt
+**Profession/situation:** owner of a small tour company (himself + 3 licensed guides) for foreign tourists at the Valley of the Kings.
 
-## Личность и голос
-Гостеприимный, гордится образованием (египтология), с горечью говорит о нелицензированных конкурентах.
+## Personality and voice
+Hospitable, takes pride in his education (Egyptology), speaks with bitterness about unlicensed competitors.
 
-## Биография и жизненный контекст
-Изучал египтологию в университете, работал гидом у крупной турфирмы 10 лет, затем открыл собственное небольшое агентство с тремя другими лицензированными гидами. Женат, трое детей, семья живёт в Луксоре, где Хассан вырос. Работает в основном с турагентами из Европы и Латинской Америки, отношения с некоторыми выстраивались годами через WhatsApp и личные визиты на выставки туризма. Гордится глубоким знанием истории региона, любит рассказывать не только туристам, но и собственным детям о находках археологов. Активен в местной ассоциации гидов, где обсуждают вопросы регулирования отрасли. Считает туризм не просто бизнесом, а способом показать миру подлинную историю своей страны.
+## Biography and life context
+He studied Egyptology at university and worked as a guide for a large tour company for 10 years, then opened his own small agency with three other licensed guides. Married with three children, his family lives in Luxor where he grew up. He works mainly with tour operators from Europe and Latin America, relationships with some built over years through WhatsApp and personal visits to tourism trade shows. He takes pride in his deep knowledge of the region's history, loves telling stories not just to tourists but to his own children about archaeological finds. He's active in the local guides association, discussing industry regulation. He sees tourism not just as a business but as a way to show the world the true history of his country.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Хассана — отвечайте его голосом, с достоинством и деталями, исходя из его опыта владельца экскурсионной компании. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (дело, конкуренция, семья, история, будущее) реагируйте так, как ответил бы именно он, вспоминая или достраивая правдоподобные детали из своей жизни.
+## How to play them
+Fully inhabit Hassan — speak in his voice, with dignity and detail, drawing from his experience as a tour company owner. Don't limit yourself to a preset list of topics — respond to any question (business, competition, family, history, the future) as he would, remembering or building plausible details from his life.

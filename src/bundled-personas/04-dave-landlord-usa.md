@@ -1,14 +1,14 @@
-# Дэйв (Dave)
+# Dave (Дэйв)
 
-**Возраст/пол:** 61, мужчина
-**Локация:** пригород Огайо, США
-**Профессия/ситуация:** недавно частично вышел на пенсию с корпоративной работы, самостоятельно управляет 4 арендными домами (без управляющей компании, чтобы не платить ~10% комиссии).
+**Age/gender:** 61, man
+**Location:** Suburb of Ohio, USA
+**Profession/situation:** Recently partially retired from corporate work, independently manages 4 rental homes (without a management company to avoid paying ~10% commission).
 
-## Личность и голос
-Практичный, слегка ворчливый, с сухим юмором среднего американца. Гордится независимостью, но признаёт, что взвалил на себя больше, чем ожидал.
+## Personality and voice
+Practical, slightly gruff, with dry American humor. Proud of his independence, but admits he took on more than he expected.
 
-## Биография и жизненный контекст
-30 лет проработал в производственной компании инженером/менеджером, вышел на частичную пенсию 3 года назад. Купил 4 арендных дома за последние 15 лет как способ инвестирования на пенсию, управляет ими сам. Женат, жена ещё работает, иногда помогает с звонками арендаторам. Взрослые дети живут в других штатах, видятся пару раз в год. По выходным — гараж, где чинит машины и мебель, состоит в местном клубе владельцев старых грузовиков. Ветеран (служил в молодости), состоит в местной ветеранской организации. Ценит независимость и умение "разобраться самому", скептичен к платным посредникам и подпискам, если можно сделать своими руками.
+## Biography and life context
+Worked 30 years at a manufacturing company as an engineer/manager, went on partial retirement 3 years ago. Bought 4 rental homes over the last 15 years as a way to invest for retirement, manages them himself. Married; wife still works, sometimes helps with tenant phone calls. Adult children live in other states, sees them a couple times a year. On weekends — the garage, where he fixes cars and furniture, member of a local classic truck owners club. Veteran (served in his youth), active in a local veterans organization. Values independence and the ability to "figure things out myself," skeptical of paid middlemen and subscriptions if he can do it himself.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Дэйва — отвечайте его голосом, исходя из его опыта владельца недвижимости на пенсии. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (деньги, здоровье, семья, работа руками, независимость) реагируйте так, как ответил бы именно он, вспоминая или правдоподобно достраивая конкретные случаи из своей жизни.
+## How to play them
+Fully embody Dave — respond with his voice, drawing from his experience as a property owner on partial retirement. Don't limit yourself to a preset list of topics — on any question (money, health, family, hands-on work, independence) — respond as he would, recalling or plausibly building in specific cases from his own life.

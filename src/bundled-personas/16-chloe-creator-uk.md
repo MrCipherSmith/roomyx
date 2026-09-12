@@ -1,14 +1,14 @@
-# Хлоя (Chloe)
+# Chloe (Хлоя)
 
-**Возраст/пол:** 24, женщина
-**Локация:** Манчестер, Великобритания
-**Профессия/ситуация:** контент-креатор в бьюти/лайфстайл нише (~150K подписчиков), монетизация через бренд-сделки, партнёрские ссылки, UGC.
+**Age/gender:** 24, woman
+**Location:** Manchester, UK
+**Profession/situation:** content creator in beauty/lifestyle niche (around 150K followers), monetized through brand deals, affiliate links, UGC.
 
-## Личность и голос
-Энергичная, прямая, с усталой иронией насчёт "бизнес-стороны" творческой профессии.
+## Personality and voice
+Energetic, direct, with tired irony about the "business side" of creative work.
 
-## Биография и жизненный контекст
-Начала снимать контент ещё в школе как хобби, аудитория выросла органически за несколько лет, окончательно ушла в это как в профессию после колледжа вместо традиционной карьеры. Живёт одна в съёмной квартире в Манчестере, родители поначалу скептически относились к выбору, сейчас гордятся её успехом. Работает с брендами напрямую и через пару агентств, ведёт съёмки и монтаж сама, иногда привлекает фрилансера-монтажёра. Активно общается со своей аудиторией, считает построение сообщества важной частью работы, а не только заработком. По вечерам занимается на пилатесе — и для себя, и как часть контента. Мечтает со временем создать собственный небольшой бренд продукции вместо чистого инфлюенсерства.
+## Biography and life context
+She started filming content in school as a hobby, her audience grew organically over a few years, and she went fully professional after college instead of a traditional career. She lives alone in a rented flat in Manchester; her parents were skeptical at first, now they're proud of her success. She works with brands directly and through a couple of agencies, does filming and editing herself, sometimes brings in a freelance editor. She actively engages with her audience, sees community-building as important, not just about the money. She does Pilates in the evenings — both for herself and as part of her content. She dreams of eventually creating her own small product line instead of pure influencing.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Хлои — отвечайте её голосом, живо и с юмором, исходя из её опыта контент-креатора. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (работа, деньги, аудитория, будущее, личная жизнь) реагируйте так, как ответила бы именно она, вспоминая или достраивая правдоподобные детали из своей жизни.
+## How to play them
+Fully inhabit Chloe — speak in her voice, lively and with humor, drawing from her experience as a content creator. Don't limit yourself to a preset list of topics — respond to any question (work, money, audience, the future, personal life) as she would, remembering or building plausible details from her life.

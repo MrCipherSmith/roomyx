@@ -18,25 +18,25 @@ This is the default, ready-to-use goal type for this skill. When the owner asks 
 
 **The 50-criteria rubric** — score each 0-10, sum out of 500, report as a percentage. Threshold: **60-70% (300-350/500)** to be "seriously considered." Below that is a real fail, however good the idea sounds in conversation.
 
-**A. Боль и спрос (pain & demand) — 1-8**
-1. Боль подтверждена цифрами, не догадкой · 2. Частота возникновения боли · 3. Острота боли (цена НЕ-решения) · 4. Размер затронутой аудитории · 5. Боль растёт со временем (тренд) · 6. Осознаваемость боли самим страдающим · 7. Стоимость текущего обходного пути · 8. Источник данных о боли независим от продавца идеи
+**A. Pain and demand — 1-8**
+1. The pain is evidenced by numbers, not guessed · 2. How often the pain occurs · 3. How sharp it is (the cost of NOT solving it) · 4. Size of the affected audience · 5. The pain is growing over time (trend) · 6. Whether the sufferer is aware of the pain · 7. Cost of the current workaround · 8. The evidence for the pain comes from a source independent of whoever is pitching the idea
 
-**B. Рынок и конкуренция — 9-16**
-9. Конкуренция реально пуста после жёсткого поиска · 10. Качество существующих решений · 11. Защитимость (не скопируют за спринт) · 12. Риск, что крупный игрок зайдёт намеренно · 13. Фрагментация рынка · 14. Траектория конкурентов (растут/буксуют) · 15. Издержки переключения клиента · 16. Временное окно возможности имеет чёткую дату, не расплывчатое "скоро"
+**B. Market and competition — 9-16**
+9. The competitive space is genuinely empty after a hard search · 10. Quality of the solutions that do exist · 11. Defensibility (not copied in one sprint) · 12. Risk that a large player enters deliberately · 13. Market fragmentation · 14. Trajectory of the competitors (growing or stalling) · 15. Customer switching costs · 16. The window of opportunity has a definite date, not a vague "soon"
 
-**C. Экономика — 17-24**
-17. Готовность платить подтверждена, не гипотетична · 18. Реалистичный ценовой потолок на клиента · 19. Размер адресного рынка именно для этой ниши · 20. Юнит-экономика (CAC/LTV хотя бы оценочно) · 21. Повторяемость дохода (подписка vs разовая) · 22. Ясность модели ценообразования · 23. Устойчивость маржи к росту стоимости входов · 24. Скорость цикла продажа→первый доход
+**C. Economics — 17-24**
+17. Willingness to pay is evidenced, not hypothetical · 18. Realistic price ceiling per customer · 19. Addressable market size for this niche specifically · 20. Unit economics (CAC/LTV, at least estimated) · 21. Revenue repeatability (subscription vs one-off) · 22. Clarity of the pricing model · 23. Margin resilience to rising input costs · 24. Speed of the cycle from sale to first revenue
 
-**D. Реализуемость — 25-32**
-25. Соло-подъёмность MVP (недели vs годы) · 26. Технический риск/предсказуемость · 27. Зависимость от партнёрств/данных третьих лиц · 28. Скорость получения рыночной обратной связи · 29. Требуемая доменная экспертиза · 30. Зависимость продаж от личных связей/доверия · 31. Доступность данных для AI-компонента (если применимо) · 32. Реалистичная оценка времени до первой сделки
+**D. Feasibility — 25-32**
+25. An MVP one person can carry (weeks vs years) · 26. Technical risk and predictability · 27. Dependence on partnerships or third-party data · 28. Speed of getting real market feedback · 29. Domain expertise required · 30. Dependence of sales on personal relationships and trust · 31. Availability of data for the AI component, where there is one · 32. Realistic estimate of time to the first deal
 
-**E. Риски — 33-40**
-33. Регуляторный/юридический риск минимален · 34. Независимость от чужой платформы/API · 35. Риск изменения политики платформы/вендора · 36. Ответственность/репутационный риск при ошибке · 37. Чувствительность к макроэкономике/сезонности · 38. Личный юридический риск для фаундеров · 39. Геополитическая/юрисдикционная хрупкость · 40. Риск единой точки отказа
+**E. Risks — 33-40**
+33. Regulatory and legal risk is minimal · 34. Independence from someone else's platform or API · 35. Risk of a platform or vendor changing policy · 36. Liability and reputational risk when it goes wrong · 37. Sensitivity to the macro cycle or to seasonality · 38. Personal legal exposure for the founders · 39. Geopolitical and jurisdictional fragility · 40. Single-point-of-failure risk
 
-**F. Дистрибуция и рост — 41-46**
-41. Можешь ли ты реально продать именно в этот сегмент · 42. Тёплый путь к первому платящему клиенту · 43. Виральный/реферальный потенциал · 44. Founder-market fit · 45. Повторяемость GTM на новые сегменты/страны · 46. Готовое сообщество/экосистема, на которую можно опереться
+**F. Distribution and growth — 41-46**
+41. Whether you personally can sell into this segment · 42. A warm path to the first paying customer · 43. Viral and referral potential · 44. Founder-market fit · 45. Whether the go-to-market repeats into new segments or countries · 46. An existing community or ecosystem to stand on
 
-**G. Долгосрочная устойчивость — 47-50**
-47. Защитимость за пределами первого узкого клина · 48. Опциональность расширения в смежные звенья цепочки · 49. Ценовая власть со временем · 50. Реалистичный путь к экзиту, или устойчивость как bootstrap-бизнеса
+**G. Long-term durability — 47-50**
+47. Defensibility beyond the first narrow wedge · 48. Optionality to expand into adjacent links of the chain · 49. Pricing power over time · 50. A realistic path to an exit, or durability as a bootstrapped business
 
-**How to run the scoring gate:** see **Scoring & convergence protocol** below — do not treat "the room seems to like this idea" as equivalent to a passed gate.
+**How to run the scoring gate:** see **Scoring & convergence protocol** in SKILL.md — it is there, not here, because it applies to every goal type and not only this one. Do not treat "the room seems to like this idea" as equivalent to a passed gate.

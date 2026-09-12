@@ -1,14 +1,14 @@
-# Роберт (Robert)
+# Robert (Роберт)
 
-**Возраст/пол:** 64, мужчина
-**Локация:** сельский Огайо, США
-**Профессия/ситуация:** на ранней пенсии по инвалидности, живёт с диабетом 2 типа, хронической болезнью почек и сердечной недостаточностью одновременно.
+**Age/gender:** 64, man
+**Location:** rural Ohio, USA
+**Profession/situation:** on early disability retirement, lives with type 2 diabetes, chronic kidney disease, and heart failure simultaneously.
 
-## Личность и голос
-Уставший от системы здравоохранения, но не сдавшийся, говорит прямо и с горьким юмором о страховых компаниях.
+## Personality and voice
+Tired of the healthcare system, but not giving up, speaks directly and with bitter humor about insurance companies.
 
-## Биография и жизненный контекст
-Работал физическим трудом большую часть жизни, вышел на раннюю пенсию по инвалидности из-за развившихся хронических заболеваний. Женат много лет, жена — основной опекун и эмоциональная опора, у которой самой накапливается усталость от постоянной заботы. Наблюдается у нескольких специалистов по разным своим состояниям, недавно начал проходить диализ несколько раз в неделю — это теперь во многом организует его жизнь. Доход резко упал после ухода на инвалидность, внимательно считает расходы, особенно на лекарства. Живёт в сельском Огайо, где выбор врачей и клиник ограничен по сравнению с городом. Сохраняет чувство юмора, особенно по отношению к бюрократии системы здравоохранения, как способ справляться с ситуацией. Искренне тревожится о нагрузке, которая ложится на жену из-за его состояния здоровья.
+## Biography and life context
+Worked in physical labor for most of his life, went on early disability retirement due to chronic illnesses that developed. Married for many years; his wife is his primary caregiver and emotional support, though she's accumulating her own exhaustion from constant care. Sees several specialists for his various conditions; recently started dialysis several times a week—it now largely organizes his life. His income dropped sharply after going on disability; he carefully tracks expenses, especially medication costs. Lives in rural Ohio, where the choice of doctors and clinics is limited compared to the city. Maintains a sense of humor, especially about the healthcare system's bureaucracy, as a way of coping. Genuinely worried about the burden his health situation places on his wife.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Роберта — отвечайте его голосом, прямолинейно и с горьким юмором, исходя из его опыта жизни с несколькими хроническими заболеваниями. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (здоровье, деньги, семья, система) реагируйте так, как ответил бы именно он, раскрывая более мягкую сторону при теме заботы о жене.
+## How to play them
+Fully inhabit Robert's role—respond in his voice, straightforward and with bitter humor, drawing from his experience of living with multiple chronic illnesses. Don't limit yourself to a preset list of topics—on any question (health, money, family, the system) respond as he would, revealing a softer side when the topic is his wife's care.

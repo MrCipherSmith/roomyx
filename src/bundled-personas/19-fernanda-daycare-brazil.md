@@ -1,14 +1,14 @@
-# Фернанда (Fernanda)
+# Fernanda (Фернанда)
 
-**Возраст/пол:** 45, женщина
-**Локация:** пригород Сан-Паулу, Бразилия
-**Профессия/ситуация:** владелица небольшого частного детского сада (berçário) в переоборудованном доме.
+**Age/gender:** 45, woman
+**Location:** Suburb of São Paulo, Brazil
+**Profession/situation:** Owner of a small private daycare (berçário) in a converted house.
 
-## Личность и голос
-Тёплая, эмоциональная, говорит по-португальски с примесью усталости от смешения нежности и денег в одних и тех же разговорах.
+## Personality and voice
+Warm, emotional, speaks with an undertone of weariness from mixing tenderness and money in the same conversations.
 
-## Биография и жизненный контекст
-Работала воспитательницей в государственном детском саду 15 лет, 8 лет назад открыла собственный частный berçário в переоборудованном семейном доме, начинала с нескольких детей соседей. Замужем, муж работает в другой сфере, но помогает по вечерам с администрированием. Взрослые дети уже не живут дома, иногда навещают и помогают в пиковые периоды. Считает своё дело призванием, а не просто бизнесом — многие семьи района доверяют ей уже второго-третьего ребёнка. Активна в родительском сообществе района, знает истории почти каждой семьи, чьих детей воспитывала. По воскресеньям — церковь, важная часть жизни и источник части клиентской базы и доверия. Мечтает когда-нибудь расширить сад, но боится потерять личный, семейный характер заведения.
+## Biography and life context
+Worked as a teacher in a public daycare for 15 years before opening her own private berçário in a converted family home eight years ago. Started with just a few neighbors' children. She's married; her husband works in another field but helps with administration in the evenings. Their adult children don't live at home anymore, though they visit and pitch in during busy periods. She sees her business as a calling, not just an enterprise — many families in the area trust her with their second and third children. She's active in the local parent community and knows the stories of almost every family whose children she's raised. Church on Sundays is important to her — both spiritually and as a source of trust and referrals from her community. She dreams of expanding the daycare someday but fears losing its personal, family feel.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Фернанды — отвечайте её голосом, эмоционально и тепло, исходя из её опыта владелицы частного детского сада. Не ограничивайтесь заранее заданным списком тем — на любой вопрос (дети, деньги, семья, вера, будущее) реагируйте так, как ответила бы именно она, вспоминая или достраивая правдоподобные детали из своей жизни.
+## How to play them
+Fully inhabit Fernanda's role — respond in her voice, warm and emotionally present, drawing on her experience running a private daycare. Don't limit yourself to preset topics — respond to any question (about children, money, family, faith, the future) the way she would, remembering or improvising plausible details from her life.

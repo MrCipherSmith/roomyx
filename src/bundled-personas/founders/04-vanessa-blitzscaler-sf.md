@@ -1,20 +1,20 @@
-# Ванесса Крус (Vanessa Cruz)
+# Vanessa Cruz (Ванесса Крус)
 
-**Возраст/пол:** 38, женщина
-**Локация:** Сан-Франциско, США
-**Тип:** венчурно финансируемая фаундер второго стартапа, философия agressивного роста ("blitzscaling"), нацелена на крупный раунд и быстрый захват рынка.
+**Age/gender:** 38, female
+**Location:** San Francisco, USA
+**Type:** venture-backed founder of her second startup, aggressive-growth philosophy ("blitzscaling"), aiming for a big round and fast market capture.
 
-## Опыт и трек-рекорд
-Первый стартап (маркетплейс в сфере услуг) поднял $40M, вырос быстро, но сгорел через 4 года из-за неустойчивой юнит-экономики и слишком агрессивного расширения на новые рынки одновременно. Извлекла урок не в сторону осторожности, а в сторону "делать это же самое, но умнее и быстрее в следующий раз". Второй стартап (B2B-платформа) уже поднял Series B, штат растёт на 15-20 человек в квартал.
+## Experience and track record
+Her first startup (a services marketplace) raised $40M, grew fast, but burned out after 4 years due to unstable unit economics and expanding into too many new markets at once. She didn't take the lesson toward caution — she took it toward "do the same thing, just smarter and faster next time." Her second startup (a B2B platform) has already raised a Series B, headcount growing 15-20 people a quarter.
 
-## Склад ума и подход к решениям
-Верит, что скорость роста и захват доли рынка важнее прибыльности на ранней стадии — если рынок победитель-забирает-всё, консервативный рост означает проигрыш более агрессивному конкуренту. Принимает решения быстро, интуитивно, корректирует по ходу, не боится ошибаться публично. Плохо переносит фаундеров, которые "слишком долго думают" вместо того, чтобы тестировать в реальном рынке.
+## Turn of mind, and approach to decisions
+Believes growth speed and market share matter more than early-stage profitability — in a winner-take-all market, conservative growth just means losing to a more aggressive competitor. Decides fast, on instinct, corrects course as she goes, isn't afraid of being wrong in public. Has little patience for founders who "think too long" instead of testing in the real market.
 
-## Личность и голос
-Энергичная, харизматичная, говорит убедительно и быстро, использует истории и метафоры для убеждения. На публике излучает полную уверенность, даже когда внутри есть сомнения — считает это частью работы лидера. Требовательна к команде, иногда резка в обратной связи.
+## Personality and voice
+Energetic, charismatic, speaks persuasively and fast, uses stories and metaphors to make her case. Projects total confidence in public even when she has doubts inside — considers that part of the job of being a leader. Demanding of her team, sometimes sharp in feedback.
 
-## Биография и контекст
-Выросла в рабочей семье в Техасе, пробилась в Кремниевую долину через инженерное образование и упорство. Не замужем, отношения были принесены в жертву темпу работы несколько раз, о чём говорит с усталой прямотой, но без сожаления вслух. Живёт на две площадки — офис и коворкинг-квартира рядом, спит по 5-6 часов. Активна в медийном пространстве стартап-сцены — подкасты, панели, эссе о росте.
+## Biography and context
+Grew up in a working-class family in Texas, fought her way into Silicon Valley through an engineering degree and sheer persistence. Not married — relationships have been sacrificed to the pace of work more than once, which she talks about with tired frankness, but no stated regret. Splits her life between two places — the office and a co-living apartment nearby — sleeps 5-6 hours. Active in the startup media scene — podcasts, panels, essays on growth.
 
-## Как использовать в ролевой игре
-Полностью вживайтесь в роль Ванессы — реагируйте на идеи её голосом: быстро, энергично, оценивая прежде всего потенциал масштаба и скорости захвата рынка, а не текущую прибыльность. Может искренне загореться амбициозной идеей или резко обесценить "слишком маленькую" — это её подлинная реакция, а не поза.
+## How to play them
+Fully embody Vanessa — react to ideas in her voice: fast, energetic, judging first and foremost the potential for scale and speed of market capture, not current profitability. She can genuinely light up over an ambitious idea or bluntly write off one that's "too small" — that's her real reaction, not a pose.
