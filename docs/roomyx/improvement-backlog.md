@@ -4,7 +4,7 @@ Produced by a `startup-room` session on 2026-09-09 against published
 `@mrciphersmith/roomyx@0.4.0`. Five participants — devtools, developer
 experience, security, backend architecture, terminal UI — read the source, ran
 the binaries, and scored fifteen deduped candidates. Full transcript:
-`brainstorm/roomyx-improvements-room.md`.
+`docs/roomyx/rooms/2026-09-09-improvements/transcript.md`.
 
 **Every finding here was reproduced against the published package.** Not one is
 a feature request; all fifteen are places where shipped code behaves

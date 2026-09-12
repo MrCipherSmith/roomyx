@@ -21,7 +21,7 @@ A registry of named groups for quickly launching a startup-room without re-expla
 
 **Known lineup limitation:** 4 of the 6 original participants (Viktor, Aigerim, Dmitry, Pavel) have a regulatory/compliance-heavy background — this systematically pulls the discussion toward "document workflow/registries/compliance" even after the topic is explicitly banned. When re-running for a genuinely different angle — keep these four in "comment only" mode, don't let them propose first, and explicitly ask Rohan/Wei/new participants to take the initiative.
 
-**Protocol:** `arena/brainstorm/startup-room-cis-asia-it.md`
+**Protocol:** a transcript from an earlier run of this group (`startup-room-cis-asia-it`), kept in the project this library came from and not shipped here
 
 ---
 
@@ -38,7 +38,7 @@ A registry of named groups for quickly launching a startup-room without re-expla
 6. Vanessa Cruz — venture-backed, thesis of aggressive growth through AI agents (`founders/04-vanessa-blitzscaler-sf.md`) — reused
 7. David Kim — VC partner, scans funding rounds for AI startups (`panel/03-david-vc-financier.md`) — reused
 
-**Protocol:** `arena/brainstorm/startup-room-ai-trends.md` (paused — see goal contract v2 in the file header).
+**Protocol:** a transcript from an earlier run of this group (`startup-room-ai-trends`), kept in the project this library came from and not shipped here (paused — see goal contract v2 in the file header).
 
 ---
 
@@ -60,7 +60,7 @@ A registry of named groups for quickly launching a startup-room without re-expla
 9. Elena Kovaleva — engineering manager, a real-world devtools buyer (`tech/09-elena-engineering-manager-buyer.md`)
 10. David Mbeki — competitive market analyst for AI devtools (`tech/10-david-competitive-analyst.md`)
 
-**Protocol:** `arena/brainstorm/tech-room-new-ux.md` (search for a new idea, until 2026-09-08) → `arena/reviews/keryx/product-review-transcript.md` (keryx product review, from 2026-09-08).
+**Protocol:** a transcript from an earlier run of this group (`tech-room-new-ux`), kept in the project this library came from and not shipped here — first a search for a new idea, then a product review, both from 2026-09-08.
 
 ---
 

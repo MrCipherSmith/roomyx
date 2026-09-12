@@ -33,6 +33,23 @@ transcript where every message is intact and the discussion is nonsense. See
 D-01a, and `docs/roomyx/skill-review-2026-09-11.md` for why closing the gap
 needs a dispatcher identity that survives across processes.
 
+## What is in this repository
+
+| | |
+| --- | --- |
+| `src/` | The package. `src/*.ts` is the shipped artefact — there is no build step. |
+| `src/bundled-skills/` | The `startup-room` skill, as installed by `roomyx skills sync`. |
+| `src/bundled-personas/` | The persona library and the 50-question interview script. |
+| `test/` | 58 files. `bun test` runs them; `bun run test:e2e` adds the ones that start a real server. |
+| `scripts/` | Three harnesses that are not unit tests: `soak`, `fuzz`, `replay`. See **Testing** below. |
+| `docs/roomyx/decisions.md` | Every design decision, numbered, with the alternative that was rejected. |
+| `docs/roomyx/ACTIONS.md` | What is outstanding, with evidence per item. |
+| `docs/roomyx/rooms/` | Archived rooms — transcripts, logs and rendered frames. |
+| `docs/roomyx/planning/` | The PRD, architecture and roadmap this was built from. |
+
+`AGENTS.md` and `CLAUDE.md` are at the root because that is where coding agents
+look for them; they are instructions for tooling, not documentation for readers.
+
 ## Requirements
 
 **[Bun](https://bun.sh) 1.1 or newer must be on your `PATH`.** roomyx ships

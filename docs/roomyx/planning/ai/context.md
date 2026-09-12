@@ -440,7 +440,7 @@ grep of both decision files confirms it. The "ships TypeScript, no build step" s
 is README prose (`README.md:18–19`), so R4 needs a doc edit, not a carve-out.
 
 Job-level decisions already registered in
-`jobs/gproject-roomyx-backlog/decisions.md`: `D_mode = task_in_project`,
+`docs/roomyx/planning/decisions.md`: `D_mode = task_in_project`,
 `D_source_of_truth = docs/roomyx/improvement-backlog.md`,
 `D_ranking_axis = ranked order ≠ build order`, `D_decision_gates = R3→D-01, R5/S2→D-06`.
 
@@ -488,7 +488,7 @@ Job-level decisions already registered in
 | Source | Where | Relevance |
 |---|---|---|
 | `docs/roomyx/improvement-backlog.md` | repo | HIGH — the 15 items, sizes, ordering, acceptance criteria |
-| `brainstorm/roomyx-improvements-room.md` (77 KB) | repo | MEDIUM — full room transcript behind the backlog |
+| `docs/roomyx/rooms/2026-09-09-improvements/transcript.md` (77 KB) | repo | MEDIUM — full room transcript behind the backlog |
 | `docs/roomyx/decisions.md`, `docs/roomyx-installer/decisions.md` | repo | HIGH — D-01/D-06 gates |
 | `docs/roomyx/testing-story.md` | repo | MEDIUM — the walkthrough R1/R3/R9 are measured against (`:171` scroll promise) |
 | `docs/roomyx/specification.md`, `prd.md` | repo | MEDIUM — AC numbering the tests cite |
