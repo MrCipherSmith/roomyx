@@ -41,8 +41,29 @@ contact with reality.
   the first thing that stops a stranger. A day or two. Theo verified the code
   uses no Bun-native APIs — the dependency is the zero-build-step packaging
   choice, not the product.
-- **Translate the persona library** (Jonas). 87 files, all in Russian, on global
-  npm. A weekend plus a review pass.
+- **Translate the persona library *and the rubric*** (Jonas; rubric added
+  2026-09-12 after measuring). Counted rather than estimated: **87 of 87**
+  persona files carry Cyrillic — 52 at the top level (the 50 numbered personas,
+  `questionnaire-50.md`, `groups.md`), 19 in `founders/`, 10 in `tech/`, 6 in
+  `panel/`. Names are already dual (`Нгози Адеагбо (Ngozi Adeagbo)`), so the
+  identities survive translation; the biographies do not.
+
+  The rubric belongs in this item and was missing from it. The package is
+  **bilingual along an awkward seam**: `SKILL.md` is English but for one line —
+  a Russian quote kept deliberately as evidence of where a dispatcher's mistake
+  was caught — and `reference/roomyx.md` is fully English, while
+  `reference/goal-startup-idea.md` is Russian for 14 of its 42 lines, including
+  every group heading and every one of the 50 criteria.
+
+  So an English reader installs the skill, reads English instructions, and is
+  sent to a Russian persona library and a Russian scoring rubric. That is not a
+  localisation nicety: the rubric is what the room renders a verdict with, and
+  the personas are what it is cast from. Translating one without the other
+  leaves the product half-readable.
+
+  A weekend plus a review pass for the personas; the rubric is an afternoon, and
+  it should be done first — it is 50 lines and it gates whether a verdict means
+  anything to the reader.
 - **Print what a room cost** (Jonas). Message count against an estimate. "That
   number is what decides whether I run one, and right now I'm guessing."
 - **Split the persona corpus into its own MIT package** (David). Free and
