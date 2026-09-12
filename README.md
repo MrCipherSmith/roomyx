@@ -15,8 +15,23 @@ on.
 
 `roomyx room new` and `roomyx room append` do write, and that is not an
 exception to the rule: creating a log nobody serves takes the writer count from
-zero to one, and `append` refuses outright when the registry shows a live room
-serving that path. See D-01a.
+zero to one.
+
+**What roomyx enforces is narrower than the rule, and it is worth being exact
+about which.** `append` refuses when it can *see* another writer — a held writer
+lease, or a room reporting an attached dispatcher. An embedder that dispatches
+in-process is visible that way. An agent dispatcher is not: it runs `roomyx
+serve` and writes with `roomyx room append`, a fresh process each time, so it
+holds no lease and the room reports no dispatcher. In that arrangement `append`
+notes on stderr that a live room is serving the log, and proceeds.
+
+So the single-writer rule is a discipline the dispatcher keeps, and roomyx
+enforces it only where it has evidence. The log itself is safe either way —
+`seq` allocation is under a lock, and three writers racing it are tested. What
+is at risk without the discipline is the conversation: two dispatchers produce a
+transcript where every message is intact and the discussion is nonsense. See
+D-01a, and `docs/roomyx/skill-review-2026-09-11.md` for why closing the gap
+needs a dispatcher identity that survives across processes.
 
 ## Requirements
 
@@ -163,12 +178,40 @@ Creates a room log, and appends messages to one.
 | `--roster id:Name,...` | Participants. `id` is what `room.get_agent_detail` takes. |
 | `--from <id>` / `--body <s>` | Required by `append`. |
 | `--kind <k>` / `--in-reply-to <n>` | Optional message structure. |
-| `--force` | Append anyway when a live room is serving that log. |
+| `--take-over` | Write when the room is live but its writer is provably gone. |
 
 `new` refuses to overwrite an existing log — it is append-only, and clobbering
-one loses a session. `append` refuses when the registry shows a live room
-serving that path, because that room's dispatcher is the log's single writer
-(D-01a). `--force` is for when you know the room is gone.
+one loses a session.
+
+`append` refuses only when it can see another writer: a held writer lease, or a
+room reporting an attached dispatcher. When it cannot — which is the case for an
+agent dispatcher running `roomyx serve` and appending from a separate process —
+it prints a note naming the room that is serving the log, and writes. There is
+no flag that overrides a writer that is really there; the only honest move is to
+stop it.
+
+`--take-over` is for a room whose writer is **provably gone** — its server has
+stopped, or the lease it left has expired without being refreshed. It records
+the take-over in the log, naming whose lease it took.
+
+### `roomyx room delta <log> --for <id>` / `roomyx room commands <log>` / `roomyx room ack <log> <id>`
+
+What a dispatcher needs from a room that is already running. All three read the
+room's **own** MCP server, so the room has to be live — they resolve its port
+through the registry, the same way `append` finds a live room.
+
+| | |
+| --- | --- |
+| `room delta <log> --for <id>` | The messages that participant has not seen, never including their own. Reports `since_seq` and `cursor_from`, so an empty delta is distinguishable from a wrong cursor. `--since <seq>` overrides the cursor. |
+| `room commands <log>` | Owner commands waiting in the room's queue. The owner posts these from the TUI with `o`; nothing pushes them, so a dispatcher has to look. |
+| `room ack <log> <id>` | Marks one as dealt with, so `pending` keeps meaning "not yet handled" instead of growing forever. |
+
+They exist because the bundled skill told dispatchers to call three MCP tools
+that nothing could reach: no command exposed them, `.mcp.json` registers the
+*management* server rather than a room, and a room's own server binds an
+ephemeral port recorded only in the registry. Measured at ~220 ms per call,
+against ~225 ms for the runtime to start at all — so calling one every turn
+costs a dispatcher nothing.
 
 ### `roomyx serve <logPath> [flags]`
 
@@ -229,8 +272,13 @@ offers the same thing as a ticked box.
 A room is built out of these — the `startup-room` skill casts its participants
 from this directory. It looks in `.roomyx/personas/` first and falls back to
 `~/.roomyx/personas/`, so a project copy overrides the machine-wide one — the
-same order every runtime uses for skills. The 50-criteria scoring rubric travels inside the skill
-itself.
+same order every runtime uses for skills. The 50-criteria scoring rubric travels
+inside the skill, in `reference/goal-startup-idea.md`.
+
+Every profile is in English, with the persona's name carrying its original
+Cyrillic in parentheses — `Ngozi Adeagbo (Нгози Адеагбо)`. The library and the
+rubric were written in Russian and shipped that way until `0.12.1`; the names
+keep both spellings so rooms cast before the translation stay findable.
 
 | Flag | Default | Meaning |
 | --- | --- | --- |
