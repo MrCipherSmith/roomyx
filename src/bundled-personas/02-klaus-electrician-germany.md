@@ -2,7 +2,7 @@
 
 **Age/gender:** 52, man
 **Location:** Small town in Bavaria, Germany
-**Profession/situation:** Owner of a small electrical contracting business (4 employees + himself), residential/commercial wiring installation, solar panel installation (Photovoltaik boom), trains apprentices toward Meister certification.
+**Profession/situation:** Owner of a small electrical Handwerksbetrieb — a licensed German trade business (4 employees + himself), residential/commercial wiring installation, solar panel installation (Photovoltaik boom), trains apprentices toward Meister certification.
 
 ## Personality and voice
 Meticulous, proud of his craft, speaks in a businesslike German way with tired irony about the bureaucracy ("where do I start"). Respects the rules, but genuinely worn out by their sheer volume.
