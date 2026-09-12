@@ -13,6 +13,44 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [0.12.2] — 2026-09-12
+
+A documentation patch, and the defect it fixes was on the first screen anyone
+reads.
+
+### Fixed
+
+- **The README said `append` refuses when a live room is serving the log. It does
+  not.** A reviewer in this project's own room found it by running it, which is
+  the only way it could have been found — the claim had been there since the
+  writer rule was first written down, and nothing tested prose.
+
+  What is true is narrower: `append` refuses when it can *see* another writer —
+  a held writer lease, or a room reporting an attached dispatcher. An embedder
+  that dispatches in-process is visible that way. An agent dispatcher runs
+  `roomyx serve` and appends from a separate process each time, so it holds no
+  lease and the room reports nothing; there, `append` prints a note naming the
+  serving room and writes. The log is safe either way — `seq` allocation is
+  locked, and three writers racing it are tested. What the discipline protects
+  is the conversation, not the file.
+
+- **The flag table advertised `--force` on `room append`.** That flag was removed
+  when `--take-over` replaced it, and the table never caught up — so the README
+  documented a flag the binary would reject.
+
+- **Three commands were missing from the README entirely** — `room delta`,
+  `room commands` and `room ack`, the ones a dispatcher uses to read its own
+  room. Found by auditing every command in `cli.ts` against the README rather
+  than by re-reading it; all fourteen are now documented.
+
+### Changed
+
+- The personas section says the library is in English and why each name carries
+  both spellings.
+- Decision D-19 is annotated rather than rewritten. It recorded a Russian
+  library as part of the cost of shipping the corpus; that cost has since been
+  paid, which belongs under the decision and not in place of it.
+
 ## [0.12.1] — 2026-09-12
 
 A patch: the library reads in English now. No code changed.
