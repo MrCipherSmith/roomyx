@@ -21,7 +21,7 @@ Repo root: `/home/altsay/roomyx` · branch `main`, clean at time of discovery
   - `/home/altsay/roomyx/docs/roomyx-installer/decisions.md` (D-01..D-04)
   - `/home/altsay/roomyx/package.json`
   - `/home/altsay/roomyx/.github/workflows/ci.yml`, `release.yml`
-  - `/home/altsay/roomyx/jobs/gproject-roomyx-backlog/decisions.md`, `state.json`
+  - `/home/altsay/roomyx/docs/roomyx/planning/decisions.md`, `state.json`
 - **Codebase scanned:** yes — structural only (file inventory, LOC, `src/cli.ts:20-36`
   `parseFlags`, entry points). No behaviour re-verification: the backlog's findings are
   already reproduced against the published package and are treated as given.
@@ -101,7 +101,7 @@ which makes them a compatibility event rather than a free change.
 ### About the backlog itself
 
 - Fifteen findings, **all reproduced against the published package**; zero feature
-  requests. Full transcript preserved at `brainstorm/roomyx-improvements-room.md` and
+  requests. Full transcript preserved at `docs/roomyx/rooms/2026-09-09-improvements/transcript.md` and
   `.jsonl`. [source: `improvement-backlog.md:1-12`, repo listing]
 - **Two orderings, both explicit and non-identical:**
   - Build order: ship-now items → R3 → R4 → R8 → R2 → R1

@@ -208,14 +208,21 @@ describe("the persona library ships readable", () => {
     expect(text.split("\n").filter((l) => /^\d+\. /.test(l))).toHaveLength(50);
   });
 
-  test("nothing points at the library's old home", () => {
-    // `arena/roles/**` was the path this library lived at before roomyx was
-    // extracted. Every reference to it is an instruction that cannot be
-    // followed, and one survived in the questionnaire long after the skill's
-    // own copy was fixed.
+  test("nothing points at the project this library came from", () => {
+    // `arena/` is where the library lived before roomyx was extracted. Every
+    // path into it is an instruction that cannot be followed, and they died
+    // one narrow grep at a time: the skill's `arena/roles/**` went first, the
+    // questionnaire's survived a release longer, and `groups.md` still held
+    // three `arena/brainstorm/` and one `arena/reviews/` after a test that
+    // only looked for `arena/roles` had declared the library clean.
+    //
+    // So this checks the prefix, not one path under it.
     for (const file of files) {
-      expect(readFileSync(join(PERSONAS, file), "utf8")).not.toContain("arena/roles");
+      expect({ file, text: readFileSync(join(PERSONAS, file), "utf8") }).toEqual({
+        file,
+        text: expect.not.stringContaining("arena/") as unknown as string,
+      });
     }
-    expect(SKILL).not.toContain("arena/roles");
+    expect(BUNDLE).not.toContain("arena/");
   });
 });
