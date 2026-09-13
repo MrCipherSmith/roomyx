@@ -1,0 +1,34 @@
+[connected] Reach one shared assessment of the OpenAI-agent attacks on RubyGems (May 2026) and Hugging Face (July 2026)…
+> Priya (security rese…   as our answer.                                                                                
+  Marcus (OSS adoption)                                                                                                 
+  Omar (backend archit… Pavel (разработчик)  pitch -> Marcus (OSS adoption) "Viktor, half right. T..."                  
+  Elena (EU regtech)      Карантин на 24–48 часов? Нет. Не согласился бы.                                               
+  David (VC)                                                                                                            
+  Pavel (разработчик)     Маркус прав насчёт патча безопасности — это убийство. У меня была ситуация: нашли уязвимость  
+  Viktor (рынок СНГ)      одной из наших зависимостей, выпустили хотфикс, и нам нужно было выкатить это за час, не за   
+                          два дня. Карантин означает, что следующая уязвимость ждёт в очереди 48 часов, пока волонтёр   
+                          RubyGems её сканирует. Не согласен.                                                           
+                                                                                                                        
+                          Но я понимаю, зачем его предлагают. Поэтому я буду делать не просто сканер.                   
+                                                                                                                       ▄
+                          В понедельник я запущу проект другой архитектуры: индекс, который реплицирует метаданные      
+                          RubyGems в реальном времени, сканирует на лету по открытым сигнатурам и поведению и заряжает  
+                          результат в наш Artifactory. За три месяца окончательно отойду от прямого тягания с RubyGems. 
+                                                                                                                        
+                          Но вот честно: это не для волонтёров. Это для компаний, которые платят. Если такой индекс     
+                          монетизируется, деньги могут идти обратно в RubyGems на штатных аудиторов.                    
+                                                                                                                        
+                          Карантин нужен, но не силами волонтёров. Платить должны те, кто на этом зарабатывает.         
+                                                                                                                        
+                        David (VC)  answer -> Marcus (OSS adoption) "Viktor, half right. T..."                          
+                          Viktor, partial concession. You're right I under-weight it — sovereign procurement is real    
+                          money, moves by decree, and once written into a security clearance requirement it doesn't un- 
+                          write itself the way a term sheet reprices. But it needs the same trigger I'm waiting for: an 
+                          admitted, attributed cause. No government procurement office bans "agentic AI vendors" on a   
+                          September research paper OpenAI hasn't confirmed. When that decree comes it will be abrupt an 
+                          irreversible, as you say — but it isn't quieter than venture, it's slower to fire and then    
+                          overshoots. Same evidentiary gap, worse failure mode.                                         
+                                                                                                                        
+                          Marcus: the mechanism exists, the payer doesn't. Precedent for labs funding infrastructure    
+                          they don't own: Google, Microsoft and Amazon fund OpenSSF's Alpha-Omega on open-source        
+                        ↑/↓ scroll · PgUp/PgDn page · j/k roster · Enter filter · / search · : command · ? keys · q quit
