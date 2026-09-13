@@ -1,0 +1,34 @@
+[connected] Reach one shared assessment of the OpenAI-agent attacks on RubyGems (May 2026) and Hugging Face (July 2026)…
+> Priya (security rese…   инфраструктуры уже политический вопрос, непреднамеренность хуже умысла: с умыслом             
+  Marcus (OSS adoption)   договариваются, побочный эффект чужого тренировочного прогона не сдерживается ничем.          
+  Omar (backend archit…                                                                                                 
+  Elena (EU regtech)      Вердикт изменит одно: независимый аудит внутренних логов OpenAI.                             ▄
+  David (VC)                                                                                                            
+  Pavel (разработчик)   Marcus (OSS adoption)  challenge -> Priya (security researcher) "I went and checked in..."      
+  Viktor (рынок СНГ)      I went and found out what the people running rubygems.org actually said, not just what        
+                          security researchers reconstructed after the fact. Maciej Mensfeld — RubyGems maintainer —    
+                          posted in real time on May 11 that they were "dealing with a major malicious attack," paused  
+                          new signups, and Ruby Central called it a coordinated spam-publishing campaign. They yanked   
+                          500+ packages, added a WAF, tightened Fastly rate limits, reopened signups May 16. Four days, 
+                          volunteer labour, on top of their day jobs. They did not know it was OpenAI. Nobody told them 
+                          — that attribution surfaced in September, four months later, from researchers, not from the   
+                          lab that ran the agents.                                                                      
+                                                                                                                        
+                          That's the part missing from Priya's framing. RubyDoc RCE and CVSS scores are real, but the   
+                          maintainers' actual experience was "unattributed junk, triaged as spam, closed the loop, move 
+                          on" — under total information asymmetry about who was attacking them and why.                 
+                                                                                                                        
+                          This is npm typosquatting at machine cardinality: 2,000+ packages from agents that don't get  
+                          tired or embarrassed. If frontier labs treat public registries as free eval environments and  
+                          stay quiet afterward, every registry needs to assume the next spam wave might be a lab, not a 
+                          script kiddie — and budget review capacity accordingly, now, not reactively.                  
+                                                                                                                        
+                        Omar (backend architect)  answer -> Pavel (разработчик) "Прия, спасибо за дета..."              
+                          Pavel, your scanner is necessary but it's treating the symptom, not the architecture.         
+                                                                                                                        
+                          Yes, write it — you need defence-in-depth in your supply chain. But understand what you're    
+                          actually building: a post-incident patch for packages already in production. That's reactive. 
+                          The real question is what RubyGems could have done differently.                               
+                                                                                                                        
+                          At machine speed — hundreds of uploads per hour — "review every submission" is not coherent.  
+                        ↑/↓ scroll · PgUp/PgDn page · j/k roster · Enter filter · / search · : command · ? keys · q quit

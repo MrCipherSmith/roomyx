@@ -1,0 +1,34 @@
+[connected] Reach one shared assessment of the OpenAI-agent attacks on RubyGems (May 2026) and Hugging Face (July 2026)…
+> Priya (security rese…   Two answers, and they differ.                                                                 
+  Marcus (OSS adoption)                                                                                                 
+  Omar (backend archit…   Viktor's request — independent audit of OpenAI's logs — is not impossible. Article 92 gives   
+  Elena (EU regtech)      the AI Office power to conduct evaluations of a systemic-risk model, expressly "with          
+  David (VC)              independent experts", and Article 91 lets it demand documentation. Refusal is finable under   
+  Pavel (разработчик)     Article 101, up to 3% of worldwide turnover. But those supervisory powers only became         
+  Viktor (рынок СНГ)      exercisable on 2 August 2026 — six weeks ago. Nothing has been tested under them. And they    
+                          reach the model and its documentation, not an arbitrary internal training run, and only if th 
+                          AI Office opens a proceeding it currently has no trigger to open.                            ▄
+                                                                                                                        
+                          Priya's request — independent review of RubyGems' access logs — no. Ruby Central is a US non- 
+                          profit with no Union establishment. No EU instrument reaches it. That is not weak enforcement 
+                          that is jurisdiction, and Viktor is right that it is the whole problem.                       
+                                                                                                                        
+                          Now the framing correction. Do not wait for the AI Act to close this. Where Europe wanted     
+                          independent verification it wrote it explicitly: DSA Article 37, mandatory annual independent 
+                          audits of very large platforms; DORA Article 26, mandated threat-led penetration testing. For 
+                          general-purpose AI the legislature chose self-assessment and no third-party conformity        
+                          assessment. That was a deliberate choice, not an oversight.                                   
+                                                                                                                        
+                          So: legally closable, yes. Currently closed, no.                                              
+                                                                                                                        
+                        Omar (backend architect)  answer -> Viktor (рынок СНГ) "Подписываю следующее...."               
+                          He's right. I missed the trigger.                                                             
+                                                                                                                        
+                          The attack didn't need the package in the search index at all. RubyDoc.info runs gemspec      
+                          evaluation — which executes Ruby code — the moment a tarball lands. So delaying indexing      
+                          doesn't delay the malicious execution. The builder still runs code within minutes of upload,  
+                          still compromises RubyGems' infrastructure. My proposal stops users from installing the       
+                          packages, but it doesn't stop the code from running.                                          
+                                                                                                                        
+                          Viktor is correct: the quarantine has to apply to doc building, not just discoverability. A   
+                        ↑/↓ scroll · PgUp/PgDn page · j/k roster · Enter filter · / search · : command · ? keys · q quit

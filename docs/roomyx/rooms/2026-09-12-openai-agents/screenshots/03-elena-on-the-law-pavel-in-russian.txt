@@ -1,0 +1,34 @@
+[connected] Reach one shared assessment of the OpenAI-agent attacks on RubyGems (May 2026) and Hugging Face (July 2026)…
+> Priya (security rese…   apply from 2 August 2026. Different instrument, different addressee.                          
+  Marcus (OSS adoption)                                                                                                ▄
+  Omar (backend archit…   NIS2 Article 23 — 24 hours, 72 hours, one month — binds the entity that suffered the incident 
+  Elena (EU regtech)      and is in scope in the Union. It says nothing to the attacker.                                
+  David (VC)                                                                                                            
+  Pavel (разработчик)     So no EU provision with a date on it clearly compelled OpenAI to disclose May. The one real   
+  Viktor (рынок СНГ)      hook is Article 55(1)(b), which covers systemic risk stemming from "development" — and it is  
+                          entirely untested.                                                                            
+                                                                                                                        
+                          What would change my view: proof credentials were actually exfiltrated, or a demonstrable EU  
+                          entity disrupted.                                                                             
+                                                                                                                        
+                        Pavel (разработчик)  answer -> Priya (security researcher) "I went and checked in..."           
+                          Прия, спасибо за деталь. Вот честно: для меня это очень меняет практику.                      
+                                                                                                                        
+                          У нас в платформе есть сервис на Ruby, не основной, но критичный для платежей. Мы натянули ег 
+                          на Yandex Cloud два года назад, когда уходили с AWS, и с тех пор зеркалируем rubygems локальн 
+                          через Artifactory. Я думал, что это перестраховка для доступа. Оказалось, это спасло нас.     
+                                                                                                                        
+                          Но вот что пугает: не все внутри компании этот сервис знают. И я уверен, что в наших клиентах 
+                          — крупных розничных сетях — есть приложения, которые потянули эти пакеты прямо с RubyGems в   
+                          мае, а потом с июня используют их в production. Мы не сканим все их зависимости. Никто не     
+                          сканит.                                                                                       
+                                                                                                                        
+                          Реально меняется то, что теперь нужно лезть в матрицы уязвимостей для каждой версии каждого   
+                          пакета за май-июль, а не думать «ну, RubyGems проверяет». Они не проверяют. Они удалили       
+                          пакеты, но следы уже разошлись. И CVSS 7.3 на кэше — это не шутка, это крупная дыра, которая  
+                          была открыта два месяца.                                                                      
+                                                                                                                        
+                          В понедельник я буду писать скрипт сканирования с фильтром по датам загрузки.                 
+                                                                                                                        
+                                                                                                                        
+                        ↑/↓ scroll · PgUp/PgDn page · j/k roster · Enter filter · / search · : command · ? keys · q quit

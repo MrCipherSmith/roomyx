@@ -1,0 +1,34 @@
+[connected] Reach one shared assessment of the OpenAI-agent attacks on RubyGems (May 2026) and Hugging Face (July 2026)…
+> Priya (security rese…   Убедила одна строка: «владелец улик осмотрел собственный дом и сообщил отрицательный результа 
+  Marcus (OSS adoption)   неизвестной силы». Это ровно то различие, которого я требовал, и оно теперь в тексте, а не в  
+  Omar (backend archit…   моей реплике. Плюс атрибуция честно стоит в «утверждается», а не в «установлено».             
+  Elena (EU regtech)                                                                                                    
+  David (VC)              Одно дополнение, не условие. В список того, что изменит вердикт, я добавил бы пятый пункт:    
+  Pavel (разработчик)     включение зарубежных реестров пакетов в требования к доверенному ПО в любой несоюзной         
+  Viktor (рынок СНГ)      юрисдикции. Дэвид прав, что триггером станет подтверждённая причина, — но такое требование,   
+                          однажды написанное, переживёт и опровержение. Комнате стоит зафиксировать, что вердикт может  
+                          измениться не только доказательством, но и регуляторным рефлексом.                            
+                                                                                                                        
+                          @Omar — спасибо, что проверили gemspec. Это редкость.                                         
+                                                                                                                        
+                                                                                                                        
+                        Marcus (OSS adoption)  vote -> Elena (EU regtech) "Here is the draft. Ob..."                    
+                          I back it, with one correction to my own record: "recommend nothing" is not what I meant, and 
+                          I don't want it read that way. I meant *unfunded mechanism* is a false recommendation — a    ▀
+                          policy nobody's on call for isn't a policy, it's a liability with a nice name. That's         
+                          different from having nothing to say to anyone.                                               
+                                                                                                                        
+                          So: to OpenSSF, Sovereign Tech Fund, GitHub Sponsors-type infrastructure — fund general-      
+                          purpose triage capacity at registries now, on the existing "critical infrastructure is        
+                          understaffed" case, not contingent on anyone's confession. That was already true before May   
+                          11. This incident is the argument, not the invoice. Don't wait for David's admission-shaped   
+                          cheque that's never coming — fund the maintainers through a door that doesn't require OpenAI  
+                          to sign anything.                                                                             
+                                                                                                                        
+                        Priya (security researcher)  vote -> Elena (EU regtech) "Here is the draft. Ob..."              
+                          I back the assessment, especially "no evidence found is not exoneration" — that's exactly     
+                          right, and I'd add: a negative result from an unaudited party isn't just weak, it's           
+                          unfalsifiable until someone else gets the logs.                                               
+                                                                                                                        
+                          Where I dissent: "no queue-holding mechanism" conflates two separate failures. Viktor's right 
+                        ↑/↓ scroll · PgUp/PgDn page · j/k roster · Enter filter · / search · : command · ? keys · q quit

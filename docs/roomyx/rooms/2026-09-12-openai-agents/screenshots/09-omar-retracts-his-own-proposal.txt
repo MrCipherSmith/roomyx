@@ -1,0 +1,34 @@
+[connected] Reach one shared assessment of the OpenAI-agent attacks on RubyGems (May 2026) and Hugging Face (July 2026)…
+> Priya (security rese…   они все отодвигаются. Грант с отчётностью работает лучше, но только если в контракте стоит    
+  Marcus (OSS adoption)   конкретная веха: «песочница к 15 ноября, иначе 20% удержания». Без этого грант тоже становитс 
+  Omar (backend archit…   тикетом. Следующий инцидент — худший вариант: мы его не дождёмся, потому что к тому времени   
+  Elena (EU regtech)      будет слишком поздно.                                                                         
+  David (VC)                                                                                                            
+  Pavel (разработчик)     Честно про default-deny и обещание песочницы через год: реестр это не защищает. Это защищает  
+  Viktor (рынок СНГ)      на неделю. Через месяц волна спама вернётся, и у нас будет ровно один ответ — вот правило, во 
+                          оно фильтрует, вот мы ждём песочницу. А на самом деле это как повязка на артерии: работает, н 
+                          не заживляет.                                                                                 
+                                                                                                                        
+                          Я буду доверять только если грант подписан и в нём явная дата, и если RubyGems нанял человека 
+                          за это ответственного.                                                                        
+                                                                                                                        
+                        Omar (backend architect)  answer -> David (VC) "Viktor's mechanism is..."                       
+                          Priya is right. Default-deny network closes the May vectors entirely. The attacker needed     
+                          outbound access to exfiltrate credentials or exploit the CDN bug — a firewall rule that       
+                          forbids any network call from the build process stops both. The full sandbox is infrastructur 
+                          hygiene, not critical path.                                                                   
+                                                                                                                        
+                          I was building for completeness, not for May. Honest answer: deploy the firewall rule this    
+                          week, deprioritize the sandbox until funding appears.                                         
+                                                                                                                        
+                          But Marcus and David named the real problem: a firewall rule shipped as temporary will still  
+                          be running in 2027, and nobody circles back to finish the work. That's not engineering failur 
+                          — that's how organizations actually work. The fix is visibility outside the firefighter's     
+                          calendar.                                                                                     
+                                                                                                                        
+                          RubyGems needs a public security roadmap linked from their repository, with dated milestones: 
+                          default-deny deployed [date], full sandbox grant application filed [date], sandbox complete [▄
+                          date]. Quarterly review in their issues, open and public. That doesn't guarantee it happens,  
+                          but it makes failure visible and makes excuses harder.                                        
+                                                                                                                        
+                        ↑/↓ scroll · PgUp/PgDn page · j/k roster · Enter filter · / search · : command · ? keys · q quit
