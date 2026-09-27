@@ -1,0 +1,36 @@
+# Flow Journal
+
+- 2026-09-27T19:54:55.641Z - flow created
+- 2026-09-27T19:57:25.152Z - task-added: T5: Failing tests for the five P0 defects: lease ratchet, seq ceiling, lock deadline, owner-queue leak, shutdown exit
+- 2026-09-27T19:57:25.480Z - task-added: T6: Stop a one-shot append holding a writer lease; consult isPidAlive; keep takenOverFrom; split stale from displaced
+- 2026-09-27T19:57:25.823Z - task-added: T7: Bound seq in messageLineSchema and make nextSeq refuse an out-of-range recorded seq
+- 2026-09-27T19:57:26.158Z - task-added: T8: Make the lock wait deadline reach its own stale reclaim
+- 2026-09-27T19:57:26.500Z - task-added: T9: Settle the owner-queue entry when the handler throws
+- 2026-09-27T19:57:26.844Z - task-added: T10: Always exit on shutdown; exit non-zero when close() rejected
+- 2026-09-27T19:57:27.176Z - task-added: T11: Verify wave A: the five new tests fail before and pass after, suite green
+- 2026-09-27T19:57:42.655Z - task-depends-set: T6: dependsOn T5 (was empty) — the scaffold T1 was a placeholder; the real precondition is the failing-test task T5
+- 2026-09-27T19:57:43.066Z - task-depends-set: T7: dependsOn T5 (was empty) — the scaffold T1 was a placeholder; the real precondition is the failing-test task T5
+- 2026-09-27T19:57:43.502Z - task-depends-set: T8: dependsOn T5 (was empty) — the scaffold T1 was a placeholder; the real precondition is the failing-test task T5
+- 2026-09-27T19:57:43.878Z - task-depends-set: T9: dependsOn T5 (was empty) — the scaffold T1 was a placeholder; the real precondition is the failing-test task T5
+- 2026-09-27T19:57:44.225Z - task-depends-set: T10: dependsOn T5 (was empty) — the scaffold T1 was a placeholder; the real precondition is the failing-test task T5
+- 2026-09-27T19:57:44.620Z - task-depends-set: T11: dependsOn T6, T7, T8, T9, T10 (was empty) — wave A verification follows its five implementation tasks
+- 2026-09-27T19:57:55.349Z - task-added: T12: Failing tests for wave B: symlink backup, MCP config shape, limit 0, unauthenticated initialize
+- 2026-09-27T19:57:55.770Z - task-added: T13: Refuse a symlinked target or .bak path in skill-sync
+- 2026-09-27T19:57:56.155Z - task-added: T14: Validate the MCP config shape before rewriting it, and write temp-then-rename; reject limit 0
+- 2026-09-27T19:57:56.571Z - task-added: T15: Mint a per-room token at serve(), require it on the transport, send it from all four in-tree clients
+- 2026-09-27T19:57:56.980Z - task-added: T16: Write D-06b and SECURITY.md
+- 2026-09-27T19:57:57.342Z - task-added: T17: Verify wave B: a real serve + client + liveness-probe round trip, not only unit tests
+- 2026-09-27T19:57:57.724Z - task-added: T18: Benchmark harness plus tests that an unchanged log is not re-read and a changed one is
+- 2026-09-27T19:57:58.130Z - task-added: T19: Cache loadRoomLog by (mtimeMs,size); read the tail for nextSeq; skip the foldEdits sort with no edit kinds
+- 2026-09-27T19:57:58.554Z - task-added: T20: Record the before/after measurement for the cache in journal.md
+- 2026-09-27T19:57:59.040Z - task-added: T21: Fix the owner-prompt import, the installer .gitignore lock pattern, and both Math.max spreads
+- 2026-09-27T19:57:59.496Z - task-added: T22: Run scripts/soak.ts automatically in a GitHub workflow with a bounded budget
+- 2026-09-27T19:57:59.890Z - task-added: T23: Full gate: lint, typecheck, whole suite, wrap tripwire still failing-by-design
+- 2026-09-27T19:58:00.287Z - task-added: T24: review-orchestrator over the accumulated diff
+- 2026-09-27T19:58:00.685Z - task-added: T25: CHANGELOG, retire improvement-backlog, commit the audit report
+- 2026-09-27T19:59:10.898Z - frozen: 19 criteria; checksum recorded
+- 2026-09-27T19:59:11.058Z - started
+- 2026-09-27T19:59:18.150Z - task-done: T1: Collect remaining context
+- 2026-09-27T19:59:18.303Z - task-done: T2: Implement per plan
+- 2026-09-27T19:59:18.465Z - task-done: T3: Add/adjust tests and make them pass
+- 2026-09-27T19:59:18.623Z - task-done: T4: Self-review and prepare draft PR

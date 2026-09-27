@@ -1,0 +1,578 @@
+{
+  "schemaVersion": 2,
+  "gates": {
+    "tasks": true,
+    "review": true,
+    "owner": true
+  },
+  "id": "008",
+  "slug": "fix-the-2026-09-27-audit-the-writer-leas",
+  "title": "Fix the 2026-09-27 audit: the writer lease, the seq ceiling, and the full-log re-read",
+  "status": "in-progress",
+  "createdAt": "2026-09-27T19:54:55.641Z",
+  "updatedAt": "2026-09-27T19:59:18.623Z",
+  "source": {
+    "type": "description",
+    "ref": null
+  },
+  "acChecksum": "sha256:24adcff9525318cb514487e2e1f80debb9aca4d80c731c8f81d3d28d163077c6",
+  "acConfirmed": {},
+  "pr": {
+    "url": null
+  },
+  "baseBranch": "main",
+  "owner": {
+    "value": "MrCipherSmith",
+    "basis": "stated",
+    "source": "`--owner` flag on `flow init`"
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Collect remaining context",
+      "kind": "context",
+      "origin": "scaffold",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "completed"
+    },
+    {
+      "id": "T2",
+      "title": "Implement per plan",
+      "kind": "implement",
+      "origin": "scaffold",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "skipped",
+      "dispositionReason": "scaffold placeholder; superseded by the specific implementation tasks T6-T10, T13-T16, T19, T21-T22"
+    },
+    {
+      "id": "T3",
+      "title": "Add/adjust tests and make them pass",
+      "kind": "test",
+      "origin": "scaffold",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "skipped",
+      "dispositionReason": "scaffold placeholder; superseded by the specific test tasks T5, T12, T18"
+    },
+    {
+      "id": "T4",
+      "title": "Self-review and prepare draft PR",
+      "kind": "review",
+      "origin": "scaffold",
+      "status": "done",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {},
+      "disposition": "skipped",
+      "dispositionReason": "scaffold placeholder; superseded by T24 (review-orchestrator) and the Phase 4 completion choice"
+    },
+    {
+      "id": "T5",
+      "title": "Failing tests for the five P0 defects: lease ratchet, seq ceiling, lock deadline, owner-queue leak, shutdown exit",
+      "kind": "test",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T6",
+      "title": "Stop a one-shot append holding a writer lease; consult isPidAlive; keep takenOverFrom; split stale from displaced",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [
+        "T5"
+      ],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T7",
+      "title": "Bound seq in messageLineSchema and make nextSeq refuse an out-of-range recorded seq",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [
+        "T5"
+      ],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T8",
+      "title": "Make the lock wait deadline reach its own stale reclaim",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [
+        "T5"
+      ],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T9",
+      "title": "Settle the owner-queue entry when the handler throws",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [
+        "T5"
+      ],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T10",
+      "title": "Always exit on shutdown; exit non-zero when close() rejected",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [
+        "T5"
+      ],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T11",
+      "title": "Verify wave A: the five new tests fail before and pass after, suite green",
+      "kind": "verify",
+      "status": "todo",
+      "dependsOn": [
+        "T6",
+        "T7",
+        "T8",
+        "T9",
+        "T10"
+      ],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T12",
+      "title": "Failing tests for wave B: symlink backup, MCP config shape, limit 0, unauthenticated initialize",
+      "kind": "test",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T13",
+      "title": "Refuse a symlinked target or .bak path in skill-sync",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T14",
+      "title": "Validate the MCP config shape before rewriting it, and write temp-then-rename; reject limit 0",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T15",
+      "title": "Mint a per-room token at serve(), require it on the transport, send it from all four in-tree clients",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T16",
+      "title": "Write D-06b and SECURITY.md",
+      "kind": "docs",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T17",
+      "title": "Verify wave B: a real serve + client + liveness-probe round trip, not only unit tests",
+      "kind": "verify",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T18",
+      "title": "Benchmark harness plus tests that an unchanged log is not re-read and a changed one is",
+      "kind": "test",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T19",
+      "title": "Cache loadRoomLog by (mtimeMs,size); read the tail for nextSeq; skip the foldEdits sort with no edit kinds",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T20",
+      "title": "Record the before/after measurement for the cache in journal.md",
+      "kind": "verify",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T21",
+      "title": "Fix the owner-prompt import, the installer .gitignore lock pattern, and both Math.max spreads",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T22",
+      "title": "Run scripts/soak.ts automatically in a GitHub workflow with a bounded budget",
+      "kind": "implement",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T23",
+      "title": "Full gate: lint, typecheck, whole suite, wrap tripwire still failing-by-design",
+      "kind": "verify",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T24",
+      "title": "review-orchestrator over the accumulated diff",
+      "kind": "review",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    },
+    {
+      "id": "T25",
+      "title": "CHANGELOG, retire improvement-backlog, commit the audit report",
+      "kind": "docs",
+      "status": "todo",
+      "dependsOn": [],
+      "attempts": {
+        "count": 0,
+        "log": []
+      },
+      "acRefs": [],
+      "evidenceRefs": [],
+      "budget": {}
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-27T19:54:55.641Z",
+      "event": "created"
+    },
+    {
+      "at": "2026-09-27T19:57:25.152Z",
+      "event": "task-added",
+      "detail": "T5: Failing tests for the five P0 defects: lease ratchet, seq ceiling, lock deadline, owner-queue leak, shutdown exit"
+    },
+    {
+      "at": "2026-09-27T19:57:25.480Z",
+      "event": "task-added",
+      "detail": "T6: Stop a one-shot append holding a writer lease; consult isPidAlive; keep takenOverFrom; split stale from displaced"
+    },
+    {
+      "at": "2026-09-27T19:57:25.823Z",
+      "event": "task-added",
+      "detail": "T7: Bound seq in messageLineSchema and make nextSeq refuse an out-of-range recorded seq"
+    },
+    {
+      "at": "2026-09-27T19:57:26.158Z",
+      "event": "task-added",
+      "detail": "T8: Make the lock wait deadline reach its own stale reclaim"
+    },
+    {
+      "at": "2026-09-27T19:57:26.500Z",
+      "event": "task-added",
+      "detail": "T9: Settle the owner-queue entry when the handler throws"
+    },
+    {
+      "at": "2026-09-27T19:57:26.844Z",
+      "event": "task-added",
+      "detail": "T10: Always exit on shutdown; exit non-zero when close() rejected"
+    },
+    {
+      "at": "2026-09-27T19:57:27.176Z",
+      "event": "task-added",
+      "detail": "T11: Verify wave A: the five new tests fail before and pass after, suite green"
+    },
+    {
+      "at": "2026-09-27T19:57:42.655Z",
+      "event": "task-depends-set",
+      "detail": "T6: dependsOn T5 (was empty) — the scaffold T1 was a placeholder; the real precondition is the failing-test task T5"
+    },
+    {
+      "at": "2026-09-27T19:57:43.066Z",
+      "event": "task-depends-set",
+      "detail": "T7: dependsOn T5 (was empty) — the scaffold T1 was a placeholder; the real precondition is the failing-test task T5"
+    },
+    {
+      "at": "2026-09-27T19:57:43.502Z",
+      "event": "task-depends-set",
+      "detail": "T8: dependsOn T5 (was empty) — the scaffold T1 was a placeholder; the real precondition is the failing-test task T5"
+    },
+    {
+      "at": "2026-09-27T19:57:43.878Z",
+      "event": "task-depends-set",
+      "detail": "T9: dependsOn T5 (was empty) — the scaffold T1 was a placeholder; the real precondition is the failing-test task T5"
+    },
+    {
+      "at": "2026-09-27T19:57:44.225Z",
+      "event": "task-depends-set",
+      "detail": "T10: dependsOn T5 (was empty) — the scaffold T1 was a placeholder; the real precondition is the failing-test task T5"
+    },
+    {
+      "at": "2026-09-27T19:57:44.620Z",
+      "event": "task-depends-set",
+      "detail": "T11: dependsOn T6, T7, T8, T9, T10 (was empty) — wave A verification follows its five implementation tasks"
+    },
+    {
+      "at": "2026-09-27T19:57:55.349Z",
+      "event": "task-added",
+      "detail": "T12: Failing tests for wave B: symlink backup, MCP config shape, limit 0, unauthenticated initialize"
+    },
+    {
+      "at": "2026-09-27T19:57:55.770Z",
+      "event": "task-added",
+      "detail": "T13: Refuse a symlinked target or .bak path in skill-sync"
+    },
+    {
+      "at": "2026-09-27T19:57:56.155Z",
+      "event": "task-added",
+      "detail": "T14: Validate the MCP config shape before rewriting it, and write temp-then-rename; reject limit 0"
+    },
+    {
+      "at": "2026-09-27T19:57:56.571Z",
+      "event": "task-added",
+      "detail": "T15: Mint a per-room token at serve(), require it on the transport, send it from all four in-tree clients"
+    },
+    {
+      "at": "2026-09-27T19:57:56.980Z",
+      "event": "task-added",
+      "detail": "T16: Write D-06b and SECURITY.md"
+    },
+    {
+      "at": "2026-09-27T19:57:57.342Z",
+      "event": "task-added",
+      "detail": "T17: Verify wave B: a real serve + client + liveness-probe round trip, not only unit tests"
+    },
+    {
+      "at": "2026-09-27T19:57:57.724Z",
+      "event": "task-added",
+      "detail": "T18: Benchmark harness plus tests that an unchanged log is not re-read and a changed one is"
+    },
+    {
+      "at": "2026-09-27T19:57:58.130Z",
+      "event": "task-added",
+      "detail": "T19: Cache loadRoomLog by (mtimeMs,size); read the tail for nextSeq; skip the foldEdits sort with no edit kinds"
+    },
+    {
+      "at": "2026-09-27T19:57:58.554Z",
+      "event": "task-added",
+      "detail": "T20: Record the before/after measurement for the cache in journal.md"
+    },
+    {
+      "at": "2026-09-27T19:57:59.040Z",
+      "event": "task-added",
+      "detail": "T21: Fix the owner-prompt import, the installer .gitignore lock pattern, and both Math.max spreads"
+    },
+    {
+      "at": "2026-09-27T19:57:59.496Z",
+      "event": "task-added",
+      "detail": "T22: Run scripts/soak.ts automatically in a GitHub workflow with a bounded budget"
+    },
+    {
+      "at": "2026-09-27T19:57:59.890Z",
+      "event": "task-added",
+      "detail": "T23: Full gate: lint, typecheck, whole suite, wrap tripwire still failing-by-design"
+    },
+    {
+      "at": "2026-09-27T19:58:00.287Z",
+      "event": "task-added",
+      "detail": "T24: review-orchestrator over the accumulated diff"
+    },
+    {
+      "at": "2026-09-27T19:58:00.685Z",
+      "event": "task-added",
+      "detail": "T25: CHANGELOG, retire improvement-backlog, commit the audit report"
+    },
+    {
+      "at": "2026-09-27T19:59:10.898Z",
+      "event": "frozen",
+      "detail": "19 criteria; checksum recorded"
+    },
+    {
+      "at": "2026-09-27T19:59:11.058Z",
+      "event": "started"
+    },
+    {
+      "at": "2026-09-27T19:59:18.150Z",
+      "event": "task-done",
+      "detail": "T1: Collect remaining context"
+    },
+    {
+      "at": "2026-09-27T19:59:18.303Z",
+      "event": "task-done",
+      "detail": "T2: Implement per plan"
+    },
+    {
+      "at": "2026-09-27T19:59:18.465Z",
+      "event": "task-done",
+      "detail": "T3: Add/adjust tests and make them pass"
+    },
+    {
+      "at": "2026-09-27T19:59:18.623Z",
+      "event": "task-done",
+      "detail": "T4: Self-review and prepare draft PR"
+    }
+  ]
+}
