@@ -34,3 +34,95 @@
 - 2026-09-27T19:59:18.303Z - task-done: T2: Implement per plan
 - 2026-09-27T19:59:18.465Z - task-done: T3: Add/adjust tests and make them pass
 - 2026-09-27T19:59:18.623Z - task-done: T4: Self-review and prepare draft PR
+- 2026-09-27T19:59:36.948Z - task-attempt: T5: started (attempt 1) — 008-T5 first dispatch
+- 2026-09-27T20:08:26.083Z - task-done: T5: Failing tests for the five P0 defects: lease ratchet, seq ceiling, lock deadline, owner-queue leak, shutdown exit
+- 2026-09-27T20:08:26.236Z - ac-updated: AC5: "`messageLineSchema` carries an upper bound on `seq`, a line above that bound is refused at read, and `nextSeq` refuses to build on an out-of-range recorded value; a test that appends a crafted line fails if the room is unwritable afterwards." -> "`messageLineSchema` bounds `seq` on the WRITE path so roomyx itself cannot produce an out-of-range line, reading stays permissive so a hand-crafted line cannot make an existing log unreadable, and `nextSeq` ignores an out-of-range recorded value when allocating rather than building on it; a test that appends a crafted line at the safe-integer ceiling fails if the room is unwritable afterwards, and a companion test fails if that line stops the log being read." (As frozen, AC5 required a line above the bound to be 'refused at read'. The T5 author showed that turns an unwritable room into an unreadable one — the worse failure for an append-only log with no repair command, and the exact class D-08 exists to prevent. The criterion described a fix that trades a recoverable fault for an unrecoverable one. Corrected to bound the write path and keep reads tolerant. No confirmations existed to void.)
+- 2026-09-27T20:08:32.935Z - task-attempt: T6: started (attempt 1) — 008-T6 wave A parallel dispatch
+- 2026-09-27T20:08:33.084Z - task-attempt: T7: started (attempt 1) — 008-T7 wave A parallel dispatch
+- 2026-09-27T20:08:33.232Z - task-attempt: T8: started (attempt 1) — 008-T8 wave A parallel dispatch
+- 2026-09-27T20:08:33.384Z - task-attempt: T9: started (attempt 1) — 008-T9 wave A parallel dispatch
+- 2026-09-27T20:08:33.537Z - task-attempt: T10: started (attempt 1) — 008-T10 wave A parallel dispatch
+- 2026-09-27T20:11:14.236Z - task-done: T8: Make the lock wait deadline reach its own stale reclaim
+- 2026-09-27T20:11:26.572Z - task-done: T9: Settle the owner-queue entry when the handler throws
+- 2026-09-27T20:12:13.351Z - task-done: T10: Always exit on shutdown; exit non-zero when close() rejected
+- 2026-09-27T20:14:09.329Z - task-done: T7: Bound seq in messageLineSchema and make nextSeq refuse an out-of-range recorded seq
+- 2026-09-27T20:27:39.392Z - task-done: T6: Stop a one-shot append holding a writer lease; consult isPidAlive; keep takenOverFrom; split stale from displaced
+- 2026-09-27T20:27:45.677Z - task-attempt: T11: started (attempt 1) — orchestrator-run verification of wave A
+
+## Wave A complete — 2026-09-27
+
+`bun run check`: eslint clean, `tsc --noEmit` clean, **466 pass / 5 skip / 0
+fail**, 2224 assertions, 28.9 s across 62 files. Baseline at flow start was
+457 pass / 5 skip / 0 fail across 58 files — nine new tests, none weakened,
+none deleted.
+
+All five P0 defects flipped from failing to passing, each recorded with the
+failure it produced before its fix:
+
+| AC | Failed before with | Fixed by |
+|---|---|---|
+| AC1 | `A writer is live in … — pid 1545063` (an exited pid) | T6 |
+| AC5 | `seq: Too big: expected int to be <=9007199254740991` on every later append | T7 |
+| AC6 | `Timed out waiting for the lock` after 5002 ms on a 23 s-old lock | T8 |
+| AC7 | three throwing handlers left three entries pending | T9 |
+| AC8 | `registry is read-only` thrown inside `.finally()`, `exited` undefined | T10 |
+
+The two unhandled-rejection blocks the T5 author saw are gone. Three
+intentional stderr lines remain and are now commented as expected.
+
+### AC5 was corrected mid-flow
+
+As frozen it required an out-of-range line to be "refused at read". The T5
+author showed that converts an unwritable room into an unreadable one — the
+worse failure for an append-only log with no repair command, and the class D-08
+exists to prevent. Corrected through `keryx flow ac update` with the reason
+recorded: bound the write path, keep reads permissive, have `nextSeq` ignore
+what it cannot build on. The test file keeps a deliberately-passing case
+asserting the ceiling value is still accepted on read, so a later "fix" by low
+schema ceiling is caught.
+
+### Decisions taken by implementers, recorded rather than buried
+
+- **T6 chose a tombstone over release-on-exit.** An unlinked lease file is
+  ambiguous — absent cannot distinguish "never taken" from "deliberately
+  displaced" — and the displaced server's heartbeat needs that distinction for
+  AC4. The tombstone still replaces the token, which is the flow-003 defect it
+  exists to prevent.
+- **T8 computes the lock deadline once**, from the age of the first lock
+  observed, not per iteration. A lock changing hands mid-wait would push a
+  re-derived deadline out every time: a hang, not a fix.
+- **T9 chose ack-and-rethrow** over settling with a reason. Freeing the slot
+  silently would be the same defect in a new costume — the operator who posted
+  the veto would never learn it failed. It also reworded `OwnerQueueFullError`,
+  which asserted "Nothing is reading the queue" — false for the embedded-handler
+  consumer, which settles through the callback and never polls.
+- **T10 declined the audit's recommendation** to stop deregistering the room
+  when `close()` rejects, citing a pre-existing test that pins the opposite
+  order and the rationale already in `cli.ts` that "told to stop" is reason
+  enough. The audit had bundled a behaviour change with a genuine exit-code
+  defect; the defect is fixed and the decision left alone.
+
+### Concerns carried forward from T6 (returned DONE, not silently dropped)
+
+1. **`isLeaseHolderAlive` is a second copy** of `registry.ts:255`'s `isPidAlive`,
+   written rather than imported because `registry.ts` was outside T6's allocated
+   files and four siblings shared the checkout. Importing would add a
+   root → `installer/` dependency edge, which the audit's structural item 17
+   wants removed. Left for T24 (review) to rule on.
+2. **A deliberate asymmetry**: a *fresh* lease with a dead holder is written to
+   freely, while the *same lease 30 s later* is stale and demands `--take-over`.
+   Each rule is defensible alone; together they read oddly. roomyx no longer
+   produces fresh-dead leases, so this reaches only leases from 0.12.2 or a
+   crashed embedder.
+3. **`serve` now closes itself on displacement** — a behaviour change for
+   embedders that pass `writerLeasePath` (`roomyx serve` never does, so no CLI
+   impact). Verified by hand, covered by no test. Filed as its own task rather
+   than accepted on a hand-run.
+
+### Out of scope, unchanged, and not implied otherwise
+
+The `canWrite(...)` structural fix stays out (`description.md`). `cli.ts` still
+owns the single-writer decision, and nothing in the code comments suggests
+otherwise.
+- 2026-09-27T20:28:42.380Z - task-added: T26: Cover serve's self-close on writer-lease displacement with a test
+- 2026-09-27T20:28:42.526Z - task-done: T11: Verify wave A: the five new tests fail before and pass after, suite green
