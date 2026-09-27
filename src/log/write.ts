@@ -2,7 +2,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import { dirname } from "node:path";
 import type { z } from "zod";
 import { withLock } from "../lockfile";
-import { MESSAGE_KINDS, messageLineSchema } from "./schema";
+import { MAX_SEQ, MESSAGE_KINDS, writeMessageLineSchema } from "./schema";
 import type { GoalContract, MessageEnvelope, RosterEntry } from "./types";
 
 /**
@@ -67,14 +67,63 @@ export function createRoomLog(path: string, options: CreateRoomLogOptions): void
   writeFileSync(path, JSON.stringify({ type: "state", goal_contract: goalContract, roster: options.roster }) + "\n");
 }
 
+/**
+ * `JSON.parse`, with the one thing it never says: where.
+ *
+ * Same shape as `parseLine` in `store.ts` — not the same function, kept local
+ * here rather than imported, since the two modules read the log for different
+ * reasons and `store.ts` is not touched by this change. A damaged log used to
+ * make `nextSeq` throw a bare, unlocated `SyntaxError`; this names the file
+ * and the line instead, the way every other failure in this package does.
+ */
+function parseLogLine(text: string, describe: () => string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error(`${describe()}: not valid JSON — ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * A recorded line's `seq`, for allocation purposes only — not validation.
+ *
+ * A line with no numeric `seq` at all is not a value to skip quietly: it is a
+ * damaged log, and used to yield `Math.max(…, undefined) = NaN`, which then
+ * made the *next* append's `validate` fail and blamed the new message for a
+ * problem in an existing line. This raises a located error instead.
+ *
+ * A `seq` that parses fine but cannot be built on — because it is not a safe
+ * integer, or because it already sits at `MAX_SEQ` so `seq + 1` would not be
+ * — is different: that is a legally *recorded* value (the read schema stays
+ * permissive on purpose; see `schema.ts`), just not one to allocate from. This
+ * returns `undefined` for it rather than throwing, so `nextSeq` ignores it and
+ * builds on whatever else the log has instead.
+ */
+function recordedSeqForAllocation(line: string, describeLocation: () => string): number | undefined {
+  const parsed = parseLogLine(line, describeLocation);
+  if (typeof parsed !== "object" || parsed === null || !("seq" in parsed) || typeof parsed.seq !== "number") {
+    throw new Error(`${describeLocation()}: missing a numeric "seq"`);
+  }
+  const { seq } = parsed as { seq: number };
+  if (!Number.isSafeInteger(seq) || seq < 1 || seq >= MAX_SEQ) return undefined;
+  return seq;
+}
+
 /** The next `seq`, derived from the log rather than tracked separately. */
 export function nextSeq(path: string): number {
   if (!existsSync(path)) return 1;
   const lines = readFileSync(path, "utf8")
     .split("\n")
     .filter((line) => line.trim().length > 0);
-  const seqs = lines.slice(1).map((line) => (JSON.parse(line) as { seq: number }).seq);
-  return seqs.length > 0 ? Math.max(...seqs) + 1 : 1;
+  let max = 0;
+  // slice(1): the header line is not a message and carries no `seq`.
+  lines.slice(1).forEach((line, index) => {
+    // +2: 1-indexed lines, plus the header line already consumed — matches
+    // the numbering `store.ts` reports for the same lines.
+    const seq = recordedSeqForAllocation(line, () => `Invalid "message" line ${index + 2} in ${path}`);
+    if (seq !== undefined && seq > max) max = seq;
+  });
+  return max + 1;
 }
 
 /**
@@ -144,7 +193,7 @@ function buildMessage(seq: number, options: AppendMessageOptions): MessageEnvelo
 }
 
 function validate(message: MessageEnvelope & { type: "message" }): void {
-  const parsed = messageLineSchema.safeParse(message);
+  const parsed = writeMessageLineSchema.safeParse(message);
   if (!parsed.success) throw new LogWriteError(describeInvalid(parsed.error));
 }
 

@@ -75,6 +75,65 @@ export const messageChangeSchema = z.discriminatedUnion("type", [
 export type MessageChange = z.infer<typeof messageChangeSchema>;
 
 /**
+ * The largest `seq` this project will ever write.
+ *
+ * `Number.MAX_SAFE_INTEGER`: the point past which an integer no longer
+ * survives a JSON round-trip, which is the one property a `seq` cannot lose —
+ * it is compared, sorted, and used as a cursor everywhere in this package.
+ * Exported so `nextSeq` (in `write.ts`) can recognize a recorded value it
+ * cannot build a next `seq` from, without redeclaring the number or
+ * re-running it through a schema.
+ */
+export const MAX_SEQ = Number.MAX_SAFE_INTEGER;
+
+/** Shared by both the read and the write message schema below; neither redeclares it. */
+const messageLineShape = z.object({
+  type: z.literal("message"),
+  seq: z.number().int().min(1),
+  from: z.string().min(1),
+  in_reply_to: z.number().int().min(1).optional(),
+  kind: messageKindSchema.optional(),
+  body: z.string(),
+  change: messageChangeSchema.optional(),
+});
+
+/**
+ * Shape rules only — deliberately not "an edit kind must carry a change".
+ *
+ * That rule would make the message *invalid*, and an invalid line makes a room
+ * unreadable forever: the log is append-only with no repair command. So a
+ * `goal_edit` with no change is a **valid message that simply is not an
+ * edit**, and the fold ignores it. Whether an edit kind carries its change is
+ * a rule about *applying* a message, not about the message being well-formed,
+ * and conflating the two would have invented a new way for a log to die.
+ *
+ * Shared by the read and write schema below so the rule is checked once, not
+ * declared twice and left to drift.
+ */
+function changeShapeIssue(
+  message: Pick<z.infer<typeof messageLineShape>, "kind" | "change">,
+): { path: (string | number)[]; message: string } | undefined {
+  if (message.change === undefined) return undefined;
+
+  const expected = message.kind === undefined ? undefined : EDIT_KINDS[message.kind as EditKind];
+  if (expected === undefined) {
+    // A change on an ordinary message will never be applied by anything, so
+    // accepting it would let a writer believe it changed state it did not.
+    return {
+      path: ["change"],
+      message: `a "change" requires an edit kind (${Object.keys(EDIT_KINDS).join(", ")}), not "${message.kind ?? "none"}"`,
+    };
+  }
+  if (message.change.type !== expected) {
+    return {
+      path: ["change", "type"],
+      message: `kind "${message.kind}" carries a "${message.change.type}" change; it must be "${expected}"`,
+    };
+  }
+  return undefined;
+}
+
+/**
  * The log's message contract, and the one place the edit rule is expressed.
  *
  * D-08 is why the rule lives here rather than in the writer and the reader
@@ -84,44 +143,36 @@ export type MessageChange = z.infer<typeof messageChangeSchema>;
  *
  * `change` is optional, which is what keeps the format change additive: every
  * message written by every earlier version still validates.
+ *
+ * `seq` is deliberately unbounded above `1` here: this is the schema `store.ts`
+ * reads with, and reading has to stay permissive. A hand-crafted or merged-in
+ * line at the top of the safe-integer range is a line that already exists —
+ * refusing it on read would not un-write it, it would just turn an existing,
+ * merely-unwritable-to room into a permanently unreadable one, which is the
+ * worse failure (the log is append-only; there is no repair command). See
+ * `writeMessageLineSchema` for the bound roomyx itself writes under.
  */
-export const messageLineSchema = z
-  .object({
-    type: z.literal("message"),
-    seq: z.number().int().min(1),
-    from: z.string().min(1),
-    in_reply_to: z.number().int().min(1).optional(),
-    kind: messageKindSchema.optional(),
-    body: z.string(),
-    change: messageChangeSchema.optional(),
-  })
-  .superRefine((message, ctx) => {
-    // Shape rules only — deliberately not "an edit kind must carry a change".
-    //
-    // That rule would make the message *invalid*, and an invalid line makes a room
-    // unreadable forever: the log is append-only with no repair command. So a
-    // `goal_edit` with no change is a **valid message that simply is not an
-    // edit**, and the fold ignores it. Whether an edit kind carries its change is
-    // a rule about *applying* a message, not about the message being well-formed,
-    // and conflating the two would have invented a new way for a log to die.
-    if (message.change === undefined) return;
+export const messageLineSchema = messageLineShape.superRefine((message, ctx) => {
+  const issue = changeShapeIssue(message);
+  if (issue) ctx.addIssue({ code: "custom", ...issue });
+});
 
-    const expected = message.kind === undefined ? undefined : EDIT_KINDS[message.kind as EditKind];
-    if (expected === undefined) {
-      // A change on an ordinary message will never be applied by anything, so
-      // accepting it would let a writer believe it changed state it did not.
-      ctx.addIssue({
-        code: "custom",
-        path: ["change"],
-        message: `a "change" requires an edit kind (${Object.keys(EDIT_KINDS).join(", ")}), not "${message.kind ?? "none"}"`,
-      });
-      return;
-    }
-    if (message.change.type !== expected) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["change", "type"],
-        message: `kind "${message.kind}" carries a "${message.change.type}" change; it must be "${expected}"`,
-      });
-    }
+/**
+ * The schema `write.ts` validates a built message against before it is
+ * appended — same shape as `messageLineSchema`, `seq` additionally bounded at
+ * `MAX_SEQ`.
+ *
+ * This is "bound on write, permissive on read" stated as two schemas rather
+ * than one: collapsing them back into a single `messageLineSchema` would mean
+ * either the reader refusing a line it must accept (the failure D-08 exists to
+ * prevent), or the writer's safety depending on an accident of whatever this
+ * zod version's `.int()` happens to bound rather than on a stated contract.
+ * Both schemas still come from this one module and this one shape; neither
+ * redeclares it.
+ */
+export const writeMessageLineSchema = messageLineShape
+  .extend({ seq: z.number().int().min(1).max(MAX_SEQ) })
+  .superRefine((message, ctx) => {
+    const issue = changeShapeIssue(message);
+    if (issue) ctx.addIssue({ code: "custom", ...issue });
   });
