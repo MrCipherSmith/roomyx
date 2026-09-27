@@ -70,4 +70,44 @@ describe("the server's shutdown", () => {
     await new Promise((resolve) => setTimeout(resolve, 40));
     expect(order).toEqual(["cleanup", "exit"]);
   });
+
+  test("a cleanup that throws still reaches exit", async () => {
+    // `cleanup` is `deregisterRoom`, which writes a file under a lock: it throws
+    // on a read-only directory, a full disk, or a lock it could not take. Because
+    // it runs *inside* `.finally()`, its throw replaces the `exit()` that follows
+    // it — and the rejection is unhandled, so the process does not die, it keeps
+    // the port and keeps serving a room that has just been told to stop. A
+    // SIGTERM that leaves the server running is the one outcome shutdown may not
+    // have.
+    let exited: number | undefined;
+    const shutdown = createServerShutdown(
+      () => Promise.resolve(),
+      () => {
+        throw new Error("registry is read-only");
+      },
+      (code) => {
+        exited = code;
+      },
+    );
+    shutdown();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    expect(exited).toBeDefined();
+  });
+
+  test("a close that rejects exits non-zero", async () => {
+    // The exit code is the only thing a supervisor reads. `exit(0)` after a close
+    // that rejected reports a clean stop for a server that could not release its
+    // port, so whatever restarts it sees success and then an EADDRINUSE it has no
+    // reason to connect to the previous instance.
+    const codes: number[] = [];
+    const shutdown = createServerShutdown(
+      () => Promise.reject(new Error("port stuck")),
+      () => undefined,
+      (code) => codes.push(code),
+    );
+    shutdown();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    expect(codes).toHaveLength(1);
+    expect(codes[0]).not.toBe(0);
+  });
 });
