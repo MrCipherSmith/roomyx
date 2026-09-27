@@ -16,6 +16,24 @@
  *
  * Idempotence is the other half: a second signal arriving mid-teardown must not
  * start a second one.
+ *
+ * Two more properties, matching the server's `createServerShutdown`:
+ *
+ * - **A throwing `destroyRenderer` must not swallow `exit`.** It used to run
+ *   inside the same `.finally()` as `exit`, so a throw there replaced the
+ *   `exit()` call — and @opentui's `destroy()` is exactly the call that throws
+ *   when the renderer is already half torn down. The result was a TUI that was
+ *   asked to quit and did not: the terminal stuck in the alternate screen with
+ *   mouse tracking on. `destroyRenderer` now runs in its own try/catch that
+ *   logs and falls through to `exit` regardless.
+ * - **A rejected `stopClient` must not report the clean exit code it was
+ *   asked for.** The exit code is what a supervising dispatcher reads. A
+ *   client that could not stop its poller — the MCP session still open, the
+ *   room still has an attached reader — exiting 0 tells that dispatcher the
+ *   session closed cleanly when it did not. When `stopClient` rejects and the
+ *   caller asked for `0`, the process exits `1` instead; a non-zero code the
+ *   caller asked for is passed through unchanged, since it already reports
+ *   failure.
  */
 export interface ShutdownSteps {
   stopClient: () => Promise<void>;
@@ -28,12 +46,17 @@ export function createShutdown(steps: ShutdownSteps): (code: number) => void {
   return (code: number): void => {
     if (shuttingDown) return;
     shuttingDown = true;
-    void steps
-      .stopClient()
-      .catch(() => undefined)
-      .finally(() => {
+    const finish = (finalCode: number): void => {
+      try {
         steps.destroyRenderer();
-        steps.exit(code);
-      });
+      } catch (error: unknown) {
+        console.error(`renderer teardown failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      steps.exit(finalCode);
+    };
+    void steps.stopClient().then(
+      () => finish(code),
+      () => finish(code === 0 ? 1 : code),
+    );
   };
 }

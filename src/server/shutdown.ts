@@ -17,6 +17,25 @@
  *   meant a shutdown that hung — and it hung whenever a client was attached —
  *   removed the room from the registry while the process kept running and kept
  *   the port. The room became invisible while still being served.
+ *
+ * Two more properties, found by an audit rather than by observed failure —
+ * `cleanup` is `deregisterRoom`, which writes a file under a lock and can
+ * throw (a lock timeout, a corrupt registry):
+ *
+ * - **A throwing `cleanup` must not swallow `exit`.** The old code ran both
+ *   inside one `.finally()`, so a throw there replaced the `exit()` after it.
+ *   The rejection went unhandled, the process did not die, and a SIGTERM left
+ *   the server running — the one outcome shutdown may not have. `cleanup` is
+ *   now wrapped in its own try/catch that logs and falls through to `exit`
+ *   regardless.
+ * - **A rejected `close` must not exit 0.** The exit code is the only thing a
+ *   supervisor reads; reporting success for a shutdown that could not release
+ *   the port sends whatever restarts it straight into `EADDRINUSE` with
+ *   nothing in the registry left to explain it. `cleanup` still runs on this
+ *   path — the entry is removed the same as a clean shutdown, matching the
+ *   `SIGHUP`/`SIGTERM`/`SIGINT` handlers that already treat "told to stop" as
+ *   reason enough to deregister, whether or not the port actually let go.
+ *   Only the exit code now tells the difference.
  */
 export function createServerShutdown(
   close: () => Promise<void>,
@@ -27,13 +46,20 @@ export function createServerShutdown(
   return (): void => {
     if (shuttingDown) return;
     shuttingDown = true;
-    void close()
-      .catch((error: unknown) => {
-        console.error(`shutdown failed: ${error instanceof Error ? error.message : String(error)}`);
-      })
-      .finally(() => {
+    const finish = (code: number): void => {
+      try {
         cleanup();
-        exit(0);
-      });
+      } catch (error: unknown) {
+        console.error(`cleanup failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      exit(code);
+    };
+    void close().then(
+      () => finish(0),
+      (error: unknown) => {
+        console.error(`shutdown failed: ${error instanceof Error ? error.message : String(error)}`);
+        finish(1);
+      },
+    );
   };
 }

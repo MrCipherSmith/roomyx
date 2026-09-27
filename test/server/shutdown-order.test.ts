@@ -60,6 +60,9 @@ describe("the server's shutdown", () => {
   });
 
   test("a close that rejects still deregisters and still exits", async () => {
+    // Deliberately injects a rejecting `close`, so a passing run prints
+    // "shutdown failed: port stuck" to stderr — that line is expected here,
+    // not a sign the suite is broken.
     const order: string[] = [];
     const shutdown = createServerShutdown(
       () => Promise.reject(new Error("port stuck")),
