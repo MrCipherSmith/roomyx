@@ -51,7 +51,14 @@ export function releaseLockIfOwned(lockPath: string, token: string): void {
 export function withLock<T>(targetPath: string, fn: () => T): T {
   const lockPath = `${targetPath}.lock`;
   const token = `${process.pid}-${Math.random().toString(36).slice(2)}`;
-  const deadline = Date.now() + 5000;
+  // Computed once, from the age of whichever lock is first observed — not
+  // re-derived on every iteration. A waiter must survive long enough to reach
+  // the stale reclaim it is entitled to, which can take longer than the 5s
+  // default when the lock is young. Re-deriving from a fresh stat each loop
+  // would let a deadline that keeps extending as new holders arrive: if the
+  // lock changed hands mid-wait, the new holder's younger age would push the
+  // deadline out again, and again, which is a hang, not a fix.
+  let deadline: number | undefined;
   for (;;) {
     try {
       writeFileSync(lockPath, token, { flag: "wx" });
@@ -59,7 +66,11 @@ export function withLock<T>(targetPath: string, fn: () => T): T {
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
       try {
-        if (Date.now() - statSync(lockPath).mtimeMs > STALE_LOCK_MS) {
+        const lockAge = Date.now() - statSync(lockPath).mtimeMs;
+        if (deadline === undefined) {
+          deadline = Date.now() + Math.max(5000, STALE_LOCK_MS - lockAge);
+        }
+        if (lockAge > STALE_LOCK_MS) {
           try {
             unlinkSync(lockPath);
           } catch {
