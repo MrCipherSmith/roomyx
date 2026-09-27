@@ -82,7 +82,13 @@ export class OwnerQueueFullError extends Error {
   constructor(readonly waiting: number) {
     super(
       `The owner-command queue is full: ${waiting} command(s) have been posted and none has been acknowledged. ` +
-        `Nothing is reading the queue — a dispatcher reads it with \`room.get_pending_owner_commands\` and settles each one with \`room.ack_owner_command\`.`,
+        // Not "nothing is reading the queue": an embedded `onOwnerCommand`
+        // handler settles entries without ever calling
+        // `room.get_pending_owner_commands`, so a full queue with a handler
+        // attached means it isn't keeping up, not that it is absent. Either
+        // way the fix is the same — drain it.
+        `A dispatcher reads it with \`room.get_pending_owner_commands\` and settles each one with ` +
+        `\`room.ack_owner_command\`, or an embedded \`onOwnerCommand\` handler is falling behind.`,
     );
   }
 }
