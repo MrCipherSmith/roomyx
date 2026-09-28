@@ -192,3 +192,40 @@ and what changed. This is a breaking change to the wire contract for any
 external client, which is the D-13 version question for T25.
 - 2026-09-28T00:56:44.945Z - task-added: T27: Tighten the room registry file mode, with its own decision record
 - 2026-09-28T00:56:45.091Z - task-added: T28: RoomClient re-resolves the token from the registry on reconnect
+- 2026-09-28T04:07:22.768Z - task-attempt: T16: started (attempt 1) — orchestrator writes D-06b and SECURITY.md
+- 2026-09-28T04:08:22.863Z - task-done: T16: Write D-06b and SECURITY.md
+- 2026-09-28T04:08:36.131Z - task-attempt: T17: started (attempt 1) — orchestrator-run independent round trip
+- 2026-09-28T04:10:19.156Z - task-added: T29: MCP servers and clients announce version 0.1.0 while the package is 0.12.2
+
+## T17 — wave B verified independently, by the orchestrator
+
+Run against the working tree (`bun src/cli.ts`), not the installed 0.12.2, with
+real processes and real ports. The implementer does not self-accept, so this
+repeats T15's hand-run rather than trusting it.
+
+| Check | Result |
+|---|---|
+| `serve --port 0` stdout | prints the URL and the room id, **and neither the token nor any part of it** |
+| registry entry | carries `"token": "e63d…bfe2"`, 32 hex characters |
+| `rooms list` | reports the room — this is the liveness probe's own path, whose failure mode is a silent `unknown`, not a red test |
+| unauthenticated `initialize` (raw curl) | **401**, body names the header and where the token lives, and quotes neither the expected nor the presented value |
+| syntactically valid wrong token | **401** |
+| the real token | **200**, `serverInfo` returned |
+| anonymous `roomyx.rooms.list` on the management server | returns `id`, `port`, `logPath`, `pid`, `startedAt` — **no token**; grep for the token's value in the response: 0 matches |
+| SIGTERM | registry back to `rooms: []`, deregistered cleanly |
+
+The audit's own reproduction — plain `curl`, no credential, reading the
+transcript and queueing an owner command — is closed.
+
+### Two things this run found that no reviewer did
+
+1. **The registry file mode is `664`**, measured. This is exactly the limit T15
+   flagged and D-06b now documents: the token stops a caller who knows only the
+   port, and a browser outright, and does **not** stop a same-user process that
+   can read the registry. Confirmed rather than assumed. T27 owns tightening it.
+2. **Every MCP server and client announces `version: "0.1.0"`** while the
+   package is `0.12.2` — `server/index.ts:77`, `mcp-management/server.ts:39`,
+   `installer/registry.ts:318`, `installer/room-tool.ts:33`,
+   `client/mcp-client.ts:161`. An MCP host that logs `serverInfo.version` has
+   been recording a version this package has not been since its first release.
+   Filed as T29. Nine reviewers missed it; a round trip found it in one call.
