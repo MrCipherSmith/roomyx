@@ -1,5 +1,5 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { roomTransport } from "../room-token";
 
 /**
  * Calls one tool on a room's own MCP server and returns its parsed result.
@@ -18,7 +18,10 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
  * a session behind on the server.
  */
 export async function callRoomTool(
-  room: { port: number; host?: string },
+  // Shaped to accept a `RoomRegistryEntry` as-is, which is what every caller
+  // passes: `servingRoomFor` hands the whole entry over, so the token arrives
+  // with the port rather than having to be threaded separately and forgotten.
+  room: { port: number; host?: string; token?: string },
   name: string,
   args: Record<string, unknown> = {},
   timeoutMs = 10_000,
@@ -28,7 +31,7 @@ export async function callRoomTool(
   // push, and the finding is noise every time.
   const host = room.host ?? [127, 0, 0, 1].join(".");
   const client = new Client({ name: "roomyx-cli", version: "0.1.0" });
-  const transport = new StreamableHTTPClientTransport(new URL(`http://${host}:${room.port}/mcp`));
+  const transport = roomTransport(`http://${host}:${room.port}/mcp`, room.token);
   const timeout = new Promise<never>((_, reject) => {
     setTimeout(() => reject(new Error(`${name} timed out after ${timeoutMs}ms`)), timeoutMs);
   });

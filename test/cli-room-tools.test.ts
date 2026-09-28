@@ -53,7 +53,7 @@ function run(args: string[]): { code: number; out: string; err: string } {
 }
 
 /** A room with two participants, served, with `ann` having spoken twice. */
-async function liveRoom(): Promise<{ log: string; registry: string; port: number }> {
+async function liveRoom(): Promise<{ log: string; registry: string; port: number; token: string }> {
   dir = mkdtempSync(join(tmpdir(), "roomyx-room-tools-"));
   const log = join(dir, "room.jsonl");
   const registry = join(dir, "registry.json");
@@ -66,20 +66,29 @@ async function liveRoom(): Promise<{ log: string; registry: string; port: number
 
   const deadline = Date.now() + 8000;
   let port = 0;
+  // The token comes out of the same registry entry as the port, which is the
+  // dispatcher's own path: `roomyx serve` writes both there and prints neither,
+  // and a caller that read one without the other would resolve the room and then
+  // be refused by it.
+  let token = "";
   while (Date.now() < deadline && port === 0) {
     try {
-      const parsed = JSON.parse(readFileSync(registry, "utf8")) as { rooms?: { port: number }[] };
-      if (parsed.rooms?.[0]) port = parsed.rooms[0].port;
+      const parsed = JSON.parse(readFileSync(registry, "utf8")) as { rooms?: { port: number; token?: string }[] };
+      if (parsed.rooms?.[0]) {
+        port = parsed.rooms[0].port;
+        token = parsed.rooms[0].token ?? "";
+      }
     } catch {
       // not written yet
     }
     if (port === 0) await new Promise((r) => setTimeout(r, 50));
   }
   expect(port).toBeGreaterThan(0);
+  expect(token).toMatch(/^[0-9a-f]{32}$/);
 
   run(["room", "append", log, "--from", "ann", "--kind", "pitch", "--body", "first", "--registry", registry]);
   run(["room", "append", log, "--from", "ann", "--kind", "pitch", "--body", "second", "--registry", registry]);
-  return { log, registry, port };
+  return { log, registry, port, token };
 }
 
 describe.skipIf(!E2E)("roomyx room delta", () => {
@@ -130,12 +139,12 @@ describe.skipIf(!E2E)("roomyx room delta", () => {
 
 describe.skipIf(!E2E)("roomyx room commands / ack", () => {
   test("an owner command posted from the TUI surface is listed, then settled", async () => {
-    const { log, registry, port } = await liveRoom();
+    const { log, registry, port, token } = await liveRoom();
 
     // Posted the way the TUI posts it, so this exercises the real path rather
     // than a fixture: the owner presses `o`, the room queues it, and nothing
     // pushes it to the dispatcher.
-    const posted = (await callRoomTool({ port }, "room.post_owner_command", {
+    const posted = (await callRoomTool({ port, token }, "room.post_owner_command", {
       kind: "veto",
       body: "that thread is closed",
     })) as { id: string; status: string };

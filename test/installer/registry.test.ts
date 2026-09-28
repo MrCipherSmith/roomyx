@@ -20,8 +20,17 @@ import {
   listLiveRooms,
   releaseLockIfOwned,
 } from "../../src/installer/registry";
+import { mintRoomToken } from "../../src/room-token";
 
 const FIXTURE = join(import.meta.dir, "..", "fixtures", "sample-room.jsonl");
+
+/**
+ * A token for an entry nothing will successfully talk to — a bookkeeping case, a
+ * dead pid, or a port nothing listens on. Minted rather than hard-coded so these
+ * entries have the shape `registerRoom` actually produces; what they are for is
+ * unchanged.
+ */
+const unreachableToken = (): string => mintRoomToken();
 
 let dir: string;
 let registryPath: string;
@@ -41,25 +50,30 @@ afterEach(async () => {
 describe("registry", () => {
   test("registerRoom generates an id and persists the entry", () => {
     setup();
-    const entry = registerRoom(registryPath, { port: 12345, logPath: FIXTURE, pid: process.pid });
+    const entry = registerRoom(registryPath, { port: 12345, logPath: FIXTURE, pid: process.pid, token: unreachableToken() });
     expect(entry.id).toMatch(/^r-[a-z0-9]+$/);
     const rooms = listRooms(registryPath);
     expect(rooms).toHaveLength(1);
     expect(rooms[0]?.id).toBe(entry.id);
     expect(rooms[0]?.port).toBe(12345);
+    // The token is persisted beside the port, because that is how every client
+    // gets it: the entry is the only place a room's address is written down, and
+    // an entry with a port and no token resolves to a room nothing can talk to.
+    expect(rooms[0]?.token).toBe(entry.token);
+    expect(entry.token).toMatch(/^[0-9a-f]{32}$/);
   });
 
   test("registerRoom on a fresh path creates the file with schemaVersion", () => {
     setup();
-    registerRoom(registryPath, { port: 1, logPath: FIXTURE, pid: 1 });
+    registerRoom(registryPath, { port: 1, logPath: FIXTURE, pid: 1, token: unreachableToken() });
     const rooms = listRooms(registryPath);
     expect(rooms).toHaveLength(1);
   });
 
   test("deregisterRoom removes exactly that entry, leaves others", () => {
     setup();
-    const a = registerRoom(registryPath, { port: 1, logPath: FIXTURE, pid: 1 });
-    const b = registerRoom(registryPath, { port: 2, logPath: FIXTURE, pid: 2 });
+    const a = registerRoom(registryPath, { port: 1, logPath: FIXTURE, pid: 1, token: unreachableToken() });
+    const b = registerRoom(registryPath, { port: 2, logPath: FIXTURE, pid: 2, token: unreachableToken() });
     deregisterRoom(registryPath, a.id);
     const rooms = listRooms(registryPath);
     expect(rooms).toHaveLength(1);
@@ -102,7 +116,7 @@ describe("registry", () => {
     test("registerRoom creates the directory it needs and registers", () => {
       setup();
       const uninitialized = join(dir, ".roomyx", "rooms", "registry.json");
-      const entry = registerRoom(uninitialized, { port: 1, logPath: FIXTURE, pid: 1 });
+      const entry = registerRoom(uninitialized, { port: 1, logPath: FIXTURE, pid: 1, token: unreachableToken() });
       expect(listRooms(uninitialized).map((r) => r.id)).toEqual([entry.id]);
     });
   });
@@ -110,9 +124,9 @@ describe("registry", () => {
   test("listLiveRooms performs a real liveness check: a real serve() instance is live, a dead port is pruned", async () => {
     setup();
     activeHandle = await serve(FIXTURE, { port: 0 });
-    const live = registerRoom(registryPath, { port: activeHandle.port, logPath: FIXTURE, pid: process.pid });
+    const live = registerRoom(registryPath, { port: activeHandle.port, logPath: FIXTURE, pid: process.pid, token: activeHandle.token });
     // Register a second entry pointing at a port nothing is listening on.
-    const dead = registerRoom(registryPath, { port: 1, logPath: FIXTURE, pid: 999999 });
+    const dead = registerRoom(registryPath, { port: 1, logPath: FIXTURE, pid: 999999, token: unreachableToken() });
 
     const result = await listLiveRooms(registryPath);
     expect(result.map((r) => r.id)).toEqual([live.id]);
@@ -131,7 +145,8 @@ describe("registry", () => {
       workerScript,
       `
       import { registerRoom } from ${JSON.stringify(join(import.meta.dir, "..", "..", "src", "installer", "registry.ts"))};
-      registerRoom(${JSON.stringify(registryPath)}, { port: 1, logPath: ${JSON.stringify(FIXTURE)}, pid: process.pid });
+      import { mintRoomToken } from ${JSON.stringify(join(import.meta.dir, "..", "..", "src", "room-token.ts"))};
+      registerRoom(${JSON.stringify(registryPath)}, { port: 1, logPath: ${JSON.stringify(FIXTURE)}, pid: process.pid, token: mintRoomToken() });
       `,
     );
 
@@ -157,7 +172,7 @@ describe("registry", () => {
     utimesSync(lockPath, old, old);
 
     const start = Date.now();
-    const entry = registerRoom(registryPath, { port: 1, logPath: FIXTURE, pid: 1 });
+    const entry = registerRoom(registryPath, { port: 1, logPath: FIXTURE, pid: 1, token: unreachableToken() });
     const elapsed = Date.now() - start;
 
     // Reclaimed quickly, not stuck out to the 5s wait-for-lock deadline.
@@ -204,12 +219,13 @@ describe("liveness is about this room, not about that port", () => {
       // The live entry names the log the server is actually serving, because
       // liveness now asks the server which room it is rather than only whether
       // it answers.
-      const alive = registerRoom(registryPath, { port: handle.port, logPath: FIXTURE, pid: process.pid });
+      const alive = registerRoom(registryPath, { port: handle.port, logPath: FIXTURE, pid: process.pid, token: handle.token });
       // Same port, a pid that cannot exist.
       const deadPid = registerRoom(registryPath, {
         port: handle.port,
         logPath: FIXTURE,
         pid: 0x7ffffff0,
+        token: handle.token,
       });
       // Same port, a live pid, but a different room — the port-reuse case that
       // the pid check alone could not catch.
@@ -217,6 +233,10 @@ describe("liveness is about this room, not about that port", () => {
         port: handle.port,
         logPath: "/rooms/some-other-room.jsonl",
         pid: process.pid,
+        // The answering server's real token: the port-reuse case is only
+        // observable through an answer, so a refused probe would report `unknown`
+        // and this assertion would hold for the wrong reason.
+        token: handle.token,
       });
 
       const live = await listLiveRooms(registryPath);

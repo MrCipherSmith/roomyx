@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { join } from "node:path";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { connectToRoom } from "../helpers/room-client";
 import { serve } from "../../src/server/serve";
 import type { ServeHandle } from "../../src/server/serve";
 
@@ -14,9 +13,8 @@ afterEach(async () => {
   handle = undefined;
 });
 
-async function stateFrom(url: string): Promise<Record<string, unknown>> {
-  const client = new Client({ name: "dispatcher-attached-test", version: "0.0.0" });
-  await client.connect(new StreamableHTTPClientTransport(new URL(url)));
+async function stateFrom(room: { url: string; token: string }): Promise<Record<string, unknown>> {
+  const client = await connectToRoom(room, "dispatcher-attached-test");
   const result = await client.callTool({ name: "room.get_state", arguments: {} });
   const text = (result.content as Array<{ text: string }>)[0]?.text ?? "{}";
   await client.close();
@@ -35,11 +33,11 @@ async function stateFrom(url: string): Promise<Record<string, unknown>> {
 describe("room.get_state reports whether a dispatcher is attached", () => {
   test("a bare `roomyx serve` says false", async () => {
     handle = await serve(FIXTURE, { port: 0 });
-    expect(await stateFrom(handle.url)).toHaveProperty("dispatcherAttached", false);
+    expect(await stateFrom(handle)).toHaveProperty("dispatcherAttached", false);
   });
 
   test("a server embedded by a dispatching host says true", async () => {
     handle = await serve(FIXTURE, { port: 0, onOwnerCommand: () => ({ status: "accepted" as const }) });
-    expect(await stateFrom(handle.url)).toHaveProperty("dispatcherAttached", true);
+    expect(await stateFrom(handle)).toHaveProperty("dispatcherAttached", true);
   });
 });

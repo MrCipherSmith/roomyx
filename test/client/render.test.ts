@@ -35,7 +35,7 @@ async function setUpChatView() {
   renderer.root.add(chatView.node);
 
   activeClient = new RoomClient(
-    { url: activeHandle.url, stateIntervalMs: 20, transcriptIntervalMs: 20 },
+    { url: activeHandle.url, token: activeHandle.token, stateIntervalMs: 20, transcriptIntervalMs: 20 },
     {
       onStateUpdate: (state) => {
         chatView.setGoalContract(state.goal_contract);

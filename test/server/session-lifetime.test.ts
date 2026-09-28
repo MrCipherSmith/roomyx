@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { roomTokenHeaders, roomTransport } from "../../src/room-token";
 import { serve } from "../../src/server/serve";
 import { RoomClient } from "../../src/client/mcp-client";
 import type { ServeHandle } from "../../src/server/serve";
@@ -29,9 +29,13 @@ afterEach(async () => {
   handle = undefined;
 });
 
-async function connectAndClose(url: string): Promise<string> {
+async function connectAndClose(room: { url: string; token: string }): Promise<string> {
   const client = new Client({ name: "session-test", version: "0.1.0" });
-  const transport = new StreamableHTTPClientTransport(new URL(url));
+  // Through `roomTransport`, like every other in-tree caller. The token has to
+  // reach the DELETE as well as the POST — a `terminateSession()` refused with 401
+  // would leave the session on the server and make every assertion below pass for
+  // the wrong reason.
+  const transport = roomTransport(room.url, room.token);
   await client.connect(transport);
   const sessionId = transport.sessionId ?? "";
   await transport.terminateSession().catch(() => undefined);
@@ -39,14 +43,23 @@ async function connectAndClose(url: string): Promise<string> {
   return sessionId;
 }
 
-/** A raw POST replaying a session id, bypassing the SDK entirely. */
-async function replay(url: string, sessionId: string): Promise<number> {
-  const response = await fetch(url, {
+/**
+ * A raw POST replaying a session id, bypassing the SDK entirely.
+ *
+ * It carries the room's token, because 404 is the answer being asserted and a
+ * credential-less request is now refused with 401 before the session id is even
+ * looked at. Without the token every case here would "pass" while proving only
+ * that the token gate works — and the property under test, that a released
+ * session id stops being a routable handle to the room, would go unchecked.
+ */
+async function replay(room: { url: string; token: string }, sessionId: string): Promise<number> {
+  const response = await fetch(room.url, {
     method: "POST",
     headers: {
       "content-type": "application/json",
       accept: "application/json, text/event-stream",
       "mcp-session-id": sessionId,
+      ...roomTokenHeaders(room.token),
     },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
   });
@@ -57,11 +70,11 @@ async function replay(url: string, sessionId: string): Promise<number> {
 describe("session lifetime", () => {
   test("a closed session stops being routable", async () => {
     handle = await serve(FIXTURE, { port: 0 });
-    const sessionId = await connectAndClose(handle.url);
+    const sessionId = await connectAndClose(handle);
     expect(sessionId).not.toBe("");
 
     // It used to answer 200 with a full tools/list.
-    expect(await replay(handle.url, sessionId)).toBe(404);
+    expect(await replay(handle, sessionId)).toBe(404);
   }, 20000);
 
   test("an unknown session id is refused rather than granted a new transport", async () => {
@@ -69,22 +82,22 @@ describe("session lifetime", () => {
     // never entered the map, so it could not be closed even on shutdown — a
     // leak reachable by anyone sending a random header.
     handle = await serve(FIXTURE, { port: 0 });
-    expect(await replay(handle.url, "not-a-session-that-ever-existed")).toBe(404);
+    expect(await replay(handle, "not-a-session-that-ever-existed")).toBe(404);
   }, 20000);
 
   test("repeated connect-and-close cycles do not accumulate live sessions", async () => {
     handle = await serve(FIXTURE, { port: 0 });
     const ids: string[] = [];
-    for (let i = 0; i < 8; i += 1) ids.push(await connectAndClose(handle.url));
+    for (let i = 0; i < 8; i += 1) ids.push(await connectAndClose(handle));
 
-    const statuses = await Promise.all(ids.map((id) => replay(handle!.url, id)));
+    const statuses = await Promise.all(ids.map((id) => replay(handle!, id)));
     expect(statuses.every((status) => status === 404)).toBe(true);
   }, 30000);
 
   test("a live session still works — the release did not break the ordinary path", async () => {
     handle = await serve(FIXTURE, { port: 0 });
     const client = new Client({ name: "session-test", version: "0.1.0" });
-    const transport = new StreamableHTTPClientTransport(new URL(handle.url));
+    const transport = roomTransport(handle.url, handle.token);
     await client.connect(transport);
     try {
       const result = await client.callTool({ name: "room.get_state", arguments: {} });
@@ -113,6 +126,7 @@ describe("the client's own session release", () => {
   test("stop() ends the session on the server, not only locally", async () => {
     handle = await serve(FIXTURE, { port: 0 });
     const upstream = handle.url;
+    const token = handle.token;
 
     const seen = new Set<string>();
     const proxy = Bun.serve({
@@ -138,7 +152,7 @@ describe("the client's own session release", () => {
 
     try {
       const client = new RoomClient(
-        { url: `http://127.0.0.1:${proxy.port}/mcp`, stateIntervalMs: 50, transcriptIntervalMs: 50 },
+        { url: `http://127.0.0.1:${proxy.port}/mcp`, token, stateIntervalMs: 50, transcriptIntervalMs: 50 },
         {},
       );
       client.start();
@@ -151,7 +165,7 @@ describe("the client's own session release", () => {
       // Every session the client opened is gone from the server, so replaying
       // its id gets the 404 an unknown session gets.
       for (const id of seen) {
-        expect(await replay(upstream, id)).toBe(404);
+        expect(await replay({ url: upstream, token }, id)).toBe(404);
       }
     } finally {
       proxy.stop(true);

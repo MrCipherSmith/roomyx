@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { connectToRoom } from "../helpers/room-client";
 import { serve } from "../../src/server/serve";
 import type { ServeHandle } from "../../src/server/serve";
 
@@ -51,8 +51,7 @@ async function transcript(
 describe("room.get_transcript's limit", () => {
   test("limit: 0 is refused by the input schema", async () => {
     handle = await serve(FIXTURE, { port: 0 });
-    client = new Client({ name: "roomyx-limit-test", version: "0.0.0" });
-    await client.connect(new StreamableHTTPClientTransport(new URL(handle.url)));
+    client = await connectToRoom(handle, "roomyx-limit-test");
 
     const zero = await transcript({ since_seq: 0, limit: 0 });
 
@@ -66,8 +65,7 @@ describe("room.get_transcript's limit", () => {
     // fix: `limit: 1` is a legal page and pages of one are how a slow consumer
     // drains a long room.
     handle = await serve(FIXTURE, { port: 0 });
-    client = new Client({ name: "roomyx-limit-test", version: "0.0.0" });
-    await client.connect(new StreamableHTTPClientTransport(new URL(handle.url)));
+    client = await connectToRoom(handle, "roomyx-limit-test");
 
     const one = await transcript({ since_seq: 0, limit: 1 });
 

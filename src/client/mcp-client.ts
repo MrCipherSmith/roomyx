@@ -1,5 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import type { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { roomTransport } from "../room-token";
 import type { MessageEnvelope, RoomState } from "../log/types";
 import type { TranscriptPage } from "../server/tools/get-transcript";
 import type { OwnerCommandResult } from "../server/index";
@@ -8,6 +9,19 @@ export type ConnectionStatus = "connecting" | "connected" | "disconnected";
 
 export interface RoomClientOptions {
   url: string;
+  /**
+   * The room's per-room token, from the registry entry the URL was resolved
+   * from. Presented on every request — including the DELETE that ends the
+   * session, without which a close would be refused and leak a session server
+   * side.
+   *
+   * Optional only because `--connect <url>` can name a room this machine never
+   * registered. A room that refuses the connection reports `disconnected` and the
+   * client keeps retrying with backoff, so a missing token looks like a room that
+   * is not there — which is why the CLI says so out loud rather than leaving the
+   * reader to infer it from a spinner.
+   */
+  token?: string;
   /** How often to poll room.get_state. Roster/goal contract change rarely. */
   stateIntervalMs?: number;
   /** How often to poll room.get_transcript. */
@@ -63,6 +77,7 @@ async function endSession(
  */
 export class RoomClient {
   private readonly url: string;
+  private readonly token: string | undefined;
   private readonly stateIntervalMs: number;
   private readonly transcriptIntervalMs: number;
   private readonly events: RoomClientEvents;
@@ -92,6 +107,7 @@ export class RoomClient {
 
   constructor(options: RoomClientOptions, events: RoomClientEvents) {
     this.url = options.url;
+    this.token = options.token;
     this.stateIntervalMs = options.stateIntervalMs ?? 3000;
     this.transcriptIntervalMs = options.transcriptIntervalMs ?? 1000;
     this.backoffMs = this.transcriptIntervalMs;
@@ -143,7 +159,7 @@ export class RoomClient {
     this.setStatus("connecting");
     try {
       const client = new Client({ name: "roomyx-client", version: "0.1.0" });
-      const transport = new StreamableHTTPClientTransport(new URL(this.url));
+      const transport = roomTransport(this.url, this.token);
       await client.connect(transport);
       if (this.stopped) {
         // stop() ran while this connection was in flight; this.client was

@@ -13,8 +13,21 @@ import {
   registerRoom,
 } from "../../src/installer/registry";
 import { defaultHistoryPath, readHistory } from "../../src/installer/history";
+import { mintRoomToken } from "../../src/room-token";
 
 const FIXTURE = join(import.meta.dir, "..", "fixtures", "sample-room.jsonl");
+
+/**
+ * The token for an entry that exists in order NOT to be reached.
+ *
+ * Minted for real rather than written as a constant: `registerRoom` requires a
+ * token precisely so nothing can register a room no client can talk to, and a
+ * test that sidestepped that would be exercising a shape the product cannot
+ * produce. What these entries are for is unchanged — a live pid on a port nothing
+ * answers, and a pid that is not running — and neither one gets as far as
+ * presenting a credential.
+ */
+const unreachableToken = (): string => mintRoomToken();
 
 /**
  * R7's rule, as tests: **identity mismatch is the one case where deleting is
@@ -53,22 +66,32 @@ describe("a room that cannot be reached is unknown, not gone", () => {
   test("the three answers are three values", async () => {
     const { logPath } = setup();
     // A port nothing listens on, with a pid that is definitely running.
-    const unreachable = { id: "r-quiet", port: 1, logPath, pid: process.pid, startedAt: "s" };
+    const unreachable = {
+      id: "r-quiet",
+      port: 1,
+      logPath,
+      pid: process.pid,
+      startedAt: "s",
+      token: unreachableToken(),
+    };
     expect(await checkRoomLiveness(unreachable)).toBe("unknown");
 
     // A pid that is not running: the process is gone, whatever the port says.
     const deadPid = { ...unreachable, pid: 4_194_303 };
     expect(await checkRoomLiveness(deadPid)).toBe("gone");
 
-    // A server that answers and names the log it is serving.
+    // A server that answers and names the log it is serving — with that server's
+    // own token, because the probe is a real round trip and the room now refuses
+    // one without it. An entry carrying the wrong token would come back
+    // `unknown`, which is the silent degradation this whole file is about.
     handle = await serve(logPath, { port: 0 });
-    const live = { ...unreachable, port: handle.port };
+    const live = { ...unreachable, port: handle.port, token: handle.token };
     expect(await checkRoomLiveness(live)).toBe("live");
   }, 20000);
 
   test("it is NOT removed from the registry file", async () => {
     const { logPath } = setup();
-    const entry = registerRoom(registryPath, { port: 1, logPath, pid: process.pid });
+    const entry = registerRoom(registryPath, { port: 1, logPath, pid: process.pid, token: unreachableToken() });
 
     const result = await listLiveRooms(registryPath);
     // Not confirmed live, so not offered as one...
@@ -79,7 +102,7 @@ describe("a room that cannot be reached is unknown, not gone", () => {
 
   test("it writes no history record", async () => {
     const { logPath } = setup();
-    registerRoom(registryPath, { port: 1, logPath, pid: process.pid });
+    registerRoom(registryPath, { port: 1, logPath, pid: process.pid, token: unreachableToken() });
 
     await listLiveRooms(registryPath);
 
@@ -90,7 +113,7 @@ describe("a room that cannot be reached is unknown, not gone", () => {
 
   test("and it is reported as unconfirmed rather than dropped", async () => {
     const { logPath } = setup();
-    const entry = registerRoom(registryPath, { port: 1, logPath, pid: process.pid });
+    const entry = registerRoom(registryPath, { port: 1, logPath, pid: process.pid, token: unreachableToken() });
 
     const { live, unconfirmed } = await listRoomsWithLiveness(registryPath);
     expect(live).toHaveLength(0);
@@ -107,6 +130,11 @@ describe("confirmed gone still prunes, and still archives", () => {
       port: handle.port,
       logPath: join(dir, "another-room.jsonl"),
       pid: process.pid,
+      // The real token: the mismatch this asserts is an *identity* mismatch, and
+      // it can only be observed by a probe that gets an answer. With a wrong
+      // token the probe would be refused, the answer would be `unknown`, and
+      // nothing would be pruned — a pass for the wrong reason.
+      token: handle.token,
     });
 
     await listLiveRooms(registryPath);
@@ -117,7 +145,7 @@ describe("confirmed gone still prunes, and still archives", () => {
 
   test("a registered pid that is not running", async () => {
     const { logPath } = setup();
-    const crashed = registerRoom(registryPath, { port: 1, logPath, pid: 4_194_303 });
+    const crashed = registerRoom(registryPath, { port: 1, logPath, pid: 4_194_303, token: unreachableToken() });
 
     await listLiveRooms(registryPath);
 
@@ -127,7 +155,7 @@ describe("confirmed gone still prunes, and still archives", () => {
 
   test("prune: false neither prunes nor archives anything", async () => {
     const { logPath } = setup();
-    const crashed = registerRoom(registryPath, { port: 1, logPath, pid: 4_194_303 });
+    const crashed = registerRoom(registryPath, { port: 1, logPath, pid: 4_194_303, token: unreachableToken() });
 
     await listLiveRooms(registryPath, { prune: false });
 
@@ -140,8 +168,8 @@ describe("the unconfirmed set is not the live set", () => {
   test("a live room and an unconfirmed one are reported apart", async () => {
     const { logPath } = setup();
     handle = await serve(logPath, { port: 0 });
-    const live = registerRoom(registryPath, { port: handle.port, logPath, pid: process.pid });
-    const quiet = registerRoom(registryPath, { port: 1, logPath, pid: process.pid });
+    const live = registerRoom(registryPath, { port: handle.port, logPath, pid: process.pid, token: handle.token });
+    const quiet = registerRoom(registryPath, { port: 1, logPath, pid: process.pid, token: unreachableToken() });
 
     const { live: liveRooms, unconfirmed } = await listRoomsWithLiveness(registryPath);
     expect(liveRooms.map((r) => r.id)).toEqual([live.id]);
@@ -154,7 +182,7 @@ describe("the unconfirmed set is not the live set", () => {
 describe("rooms list says what it knows", () => {
   test("a registered room that did not answer is shown, not dropped", async () => {
     const { logPath } = setup();
-    const quiet = registerRoom(registryPath, { port: 1, logPath, pid: process.pid });
+    const quiet = registerRoom(registryPath, { port: 1, logPath, pid: process.pid, token: unreachableToken() });
 
     const listed = Bun.spawnSync(["bun", join(import.meta.dir, "..", "..", "src", "cli.ts"), "rooms", "list", "--registry", registryPath]);
     const out = listed.stdout.toString();
@@ -179,9 +207,9 @@ describe("end to end: all three states in one registry", () => {
     // so a test that demands `live` at 500 ms would be testing the machine.
     const { logPath } = setup();
     handle = await serve(logPath, { port: 0 });
-    const live = registerRoom(registryPath, { port: handle.port, logPath, pid: process.pid });
-    const quiet = registerRoom(registryPath, { port: 1, logPath, pid: process.pid });
-    const crashed = registerRoom(registryPath, { port: 1, logPath, pid: 4_194_303 });
+    const live = registerRoom(registryPath, { port: handle.port, logPath, pid: process.pid, token: handle.token });
+    const quiet = registerRoom(registryPath, { port: 1, logPath, pid: process.pid, token: unreachableToken() });
+    const crashed = registerRoom(registryPath, { port: 1, logPath, pid: 4_194_303, token: unreachableToken() });
 
     const { live: liveRooms, unconfirmed } = await listRoomsWithLiveness(registryPath, { timeoutMs: 5000 });
     expect(liveRooms.map((r) => r.id)).toEqual([live.id]);
@@ -194,9 +222,9 @@ describe("end to end: all three states in one registry", () => {
   test("rooms list never silently drops a room it could not confirm", async () => {
     const { logPath } = setup();
     handle = await serve(logPath, { port: 0 });
-    const live = registerRoom(registryPath, { port: handle.port, logPath, pid: process.pid });
-    const quiet = registerRoom(registryPath, { port: 1, logPath, pid: process.pid });
-    const crashed = registerRoom(registryPath, { port: 1, logPath, pid: 4_194_303 });
+    const live = registerRoom(registryPath, { port: handle.port, logPath, pid: process.pid, token: handle.token });
+    const quiet = registerRoom(registryPath, { port: 1, logPath, pid: process.pid, token: unreachableToken() });
+    const crashed = registerRoom(registryPath, { port: 1, logPath, pid: 4_194_303, token: unreachableToken() });
 
     const listed = Bun.spawnSync(["bun", join(import.meta.dir, "..", "..", "src", "cli.ts"), "rooms", "list", "--registry", registryPath]);
     const out = listed.stdout.toString();
@@ -224,7 +252,7 @@ describe("finding the entry that serves a log", () => {
     // make that lookup come back empty — a slow machine is not a statement
     // about whether anyone is writing.
     const { logPath } = setup();
-    const quiet = registerRoom(registryPath, { port: 1, logPath, pid: process.pid });
+    const quiet = registerRoom(registryPath, { port: 1, logPath, pid: process.pid, token: unreachableToken() });
 
     const lists = await listRoomsWithLiveness(registryPath);
     expect(lists.live).toHaveLength(0);
@@ -233,7 +261,7 @@ describe("finding the entry that serves a log", () => {
 
   test("a log nobody serves has no entry, in either list", async () => {
     const { logPath } = setup();
-    registerRoom(registryPath, { port: 1, logPath, pid: process.pid });
+    registerRoom(registryPath, { port: 1, logPath, pid: process.pid, token: unreachableToken() });
     const lists = await listRoomsWithLiveness(registryPath);
     expect(findRoomServing(join(dir, "other.jsonl"), lists)).toBeUndefined();
   }, 20000);

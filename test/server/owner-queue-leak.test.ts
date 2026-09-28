@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { join } from "node:path";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { connectToRoom } from "../helpers/room-client";
 import { serve } from "../../src/server/serve";
 import type { ServeHandle } from "../../src/server/serve";
 import type { QueuedOwnerCommand } from "../../src/server/owner-queue";
@@ -44,8 +43,7 @@ describe("a throwing onOwnerCommand", () => {
         throw new Error("the dispatcher fell over");
       },
     });
-    const client = new Client({ name: "owner-queue-leak-test", version: "0.0.0" });
-    await client.connect(new StreamableHTTPClientTransport(new URL(handle.url)));
+    const client = await connectToRoom(handle, "owner-queue-leak-test");
 
     const posts = 3;
     for (let i = 0; i < posts; i += 1) {

@@ -4,6 +4,7 @@ import type { RoomMcpServerOptions } from "./index";
 import { serveMcpOverHttp } from "./http-transport";
 import type { McpHttpTransportHandle } from "./http-transport";
 import { loadRoomLog } from "../log/store";
+import { mintRoomToken } from "../room-token";
 import {
   LEASE_HEARTBEAT_MS,
   acquireWriterLease,
@@ -29,7 +30,23 @@ export interface ServeOptions extends RoomMcpServerOptions {
   writerLeasePath?: string;
 }
 
-export type ServeHandle = McpHttpTransportHandle;
+export interface ServeHandle extends McpHttpTransportHandle {
+  /**
+   * The per-room token this server will answer to, minted here.
+   *
+   * On the handle as well as in the registry because the two have different
+   * jobs. The registry entry is how a *separate process* — the TUI, the CLI's
+   * room commands, the liveness probe — learns the token, and it is written by
+   * whoever registered the room. This field is how the caller that just started
+   * the server knows what to write there, and how an embedder that never
+   * registers anything can still reach its own room.
+   *
+   * Per room and per process start: a restart mints a new one, so a token
+   * recorded by something that outlived the server it belonged to is worth
+   * nothing.
+   */
+  token: string;
+}
 
 /**
  * Serves one room log over the shared loopback HTTP transport. Everything about
@@ -57,6 +74,13 @@ export async function serve(logPath: string, options: ServeOptions): Promise<Ser
   // the difference between a feature and a feature that passes its tests.
   const ownerQueue = new OwnerCommandQueue();
 
+  // Minted before the port is bound, so there is no window in which the room
+  // answers and has no credential. Not an option the caller may supply: a token
+  // that can be passed in is a token that can be passed in as a constant, and
+  // "per room, per process start" is the property that makes a stale one
+  // worthless.
+  const token = mintRoomToken();
+
   const handle = await serveMcpOverHttp({
     createMcpServer: () =>
       createRoomMcpServer(logPath, { onOwnerCommand: options.onOwnerCommand, ownerQueue }),
@@ -65,12 +89,15 @@ export async function serve(logPath: string, options: ServeOptions): Promise<Ser
     port: options.port,
     host: options.host,
     acknowledgeNonLoopback: options.acknowledgeNonLoopback,
+    requiredToken: token,
   });
 
   // The lease is held by the process that has a dispatcher, which is this one —
   // a server with no dispatcher is an observer, and holding a lease would claim
   // a pen it never picks up.
-  if (options.onOwnerCommand === undefined || options.writerLeasePath === undefined) return handle;
+  if (options.onOwnerCommand === undefined || options.writerLeasePath === undefined) {
+    return { ...handle, token };
+  }
 
   const leasePath = options.writerLeasePath;
   let lease: WriterLease;
@@ -150,5 +177,5 @@ export async function serve(logPath: string, options: ServeOptions): Promise<Ser
   }, LEASE_HEARTBEAT_MS);
   heartbeat.unref();
 
-  return { ...handle, close: closeOnce };
+  return { ...handle, token, close: closeOnce };
 }

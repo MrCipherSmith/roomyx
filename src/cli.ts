@@ -644,8 +644,17 @@ const COMMANDS: Record<string, Command> = {
         port: handle.port,
         logPath: absoluteLogPath,
         pid: process.pid,
+        // The token goes where the port goes. Anything that can find this room
+        // can find its credential, and nothing else has to be told — which is the
+        // whole of how `roomyx-client`, `rooms list` and the room commands keep
+        // working without a new argument between them.
+        token: handle.token,
       });
 
+      // Deliberately NOT printed. The port and the room id are the two things a
+      // person needs and the two things they paste into a terminal, an issue or a
+      // chat; the token is a credential, and stdout is a scrollback, a CI log and
+      // a `tee`. Whoever needs it reads the registry entry.
       console.log(`roomyx serving ${absoluteLogPath} at ${handle.url}`);
       console.log(`room ID: ${entry.id} — attach with \`roomyx-client --room ${entry.id}\``);
 

@@ -48,7 +48,7 @@ describe("a room with a live dispatcher, across processes", () => {
       onOwnerCommand: () => ({ status: "accepted" as const }),
       writerLeasePath: writerLeasePathFor(registryPath, log),
     });
-    const entry = registerRoom(registryPath, { port: handle.port, logPath: log, pid: process.pid });
+    const entry = registerRoom(registryPath, { port: handle.port, logPath: log, pid: process.pid, token: handle.token });
 
     const before = readFileSync(log, "utf8");
     const refused = await run(["room", "append", log, "--from", "yuki", "--body", "typed by hand", "--registry", registryPath]);
@@ -78,7 +78,7 @@ describe("a room with a live dispatcher, across processes", () => {
       onOwnerCommand: () => ({ status: "accepted" as const }),
       writerLeasePath: leasePath,
     });
-    const entry = registerRoom(registryPath, { port: handle.port, logPath: log, pid: process.pid });
+    const entry = registerRoom(registryPath, { port: handle.port, logPath: log, pid: process.pid, token: handle.token });
 
     // The server is stopped and the lease it held is left behind, unrefreshed,
     // until it goes stale. That is the case --take-over exists for: the writer

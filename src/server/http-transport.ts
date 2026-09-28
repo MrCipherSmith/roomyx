@@ -2,6 +2,7 @@ import { createServer as createHttpServer } from "node:http";
 import type { IncomingMessage } from "node:http";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { roomTokenRejection } from "../room-token";
 
 /**
  * The loopback HTTP transport both roomyx servers bind to.
@@ -31,6 +32,19 @@ export interface McpHttpTransportOptions {
   port?: number;
   host?: string;
   acknowledgeNonLoopback?: boolean;
+  /**
+   * When set, every request must present this token as `Authorization: Bearer
+   * <token>`; anything else is 401 before the MCP layer sees it.
+   *
+   * An **option**, not a property of the transport, and that is D-07's doing:
+   * one module serves both MCP servers, and only the per-room one has a token.
+   * `roomyx serve` passes it, `roomyx mcp` does not — the management server has a
+   * different surface, no owner-command queue, and D-11 already closed its one
+   * dangerous path by removing `yes` from `skills.sync`. Leaving it unset keeps
+   * that server exactly as it was rather than forcing a second decision into this
+   * one's change.
+   */
+  requiredToken?: string;
 }
 
 export interface McpHttpTransportHandle {
@@ -200,6 +214,35 @@ export async function serveMcpOverHttp(
   }
 
   const httpServer = createHttpServer((req, res) => {
+    // FIRST, before the session lookup and before any transport exists.
+    //
+    // Every other branch below is downstream of this one on purpose. An
+    // uncredentialled request must not be able to create a session, continue
+    // one, learn whether a session id exists, or reach `handleRequest` — which
+    // is where the SDK's own Host/Origin guard lives, so a request refused here
+    // is refused before the MCP layer sees it at all.
+    //
+    // The consequence for the rebinding guard is deliberate and worth naming: a
+    // request with a forged `Host` and no token now gets 401 rather than the
+    // SDK's 403. The guard is not weaker for it — a credentialled request with a
+    // forged Host still gets its 403, which is what the rebinding tests assert,
+    // now of a request that got past the credential. The two guards answer
+    // different questions and the cheaper, more total one goes first.
+    if (options.requiredToken !== undefined) {
+      const rejection = roomTokenRejection(options.requiredToken, req.headers);
+      if (rejection !== null) {
+        res.writeHead(401, {
+          "content-type": "application/json",
+          // `Bearer` with no realm and no `resource_metadata`: a 401 without a
+          // challenge violates RFC 9110, and a challenge that advertised OAuth
+          // metadata would invite a discovery flow this server does not have.
+          "www-authenticate": "Bearer",
+        });
+        res.end(JSON.stringify({ error: rejection }));
+        return;
+      }
+    }
+
     const sessionIdHeader = req.headers["mcp-session-id"];
     const sessionId = typeof sessionIdHeader === "string" ? sessionIdHeader : undefined;
     const existing = sessionId ? sessions.get(sessionId) : undefined;

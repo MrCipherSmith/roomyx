@@ -47,6 +47,7 @@ export async function runClient(flags: FlagValues): Promise<void> {
   const resolved = await resolveConnectionUrl({
     connect: typeof flags.connect === "string" ? flags.connect : undefined,
     room: typeof flags.room === "string" ? flags.room : undefined,
+    token: typeof flags.token === "string" ? flags.token : undefined,
     registryPath,
   });
 
@@ -68,11 +69,23 @@ export async function runClient(flags: FlagValues): Promise<void> {
     process.exit(1);
   }
 
-  await runLive(resolved.url);
+  // Said out loud rather than left to a spinner. Without a token the room
+  // answers 401, the client reports `disconnected` and retries with backoff —
+  // which is indistinguishable, on screen, from a room that is not running. The
+  // one way to reach this is `--connect` against a room this registry does not
+  // know, so the sentence names the flag that fixes it.
+  if (resolved.token === undefined) {
+    console.error(
+      "No room token found for this address. A roomyx room requires the per-room token recorded in its " +
+        "registry entry; pass it with --token <token>, or attach by --room <id> so it is looked up for you.",
+    );
+  }
+
+  await runLive(resolved.url, resolved.token);
 }
 
 /** Attached to a room that is still running: polling, owner commands, liveness. */
-async function runLive(url: string): Promise<void> {
+async function runLive(url: string, token: string | undefined): Promise<void> {
   const renderer = await createCliRenderer({ targetFps: 30 });
 
   let messageCount = 0;
@@ -127,7 +140,7 @@ async function runLive(url: string): Promise<void> {
   }
 
   const roomClient = new RoomClient(
-    { url },
+    { url, ...(token === undefined ? {} : { token }) },
     {
       onConnectionChange: (status) => {
         const previous = connection;

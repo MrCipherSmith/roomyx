@@ -90,7 +90,14 @@ describe("a persistent fault does not accelerate the client", () => {
     appendFileSync(logPath, `${JSON.stringify({ type: "message", seq: 1, from: "", body: "broken" })}\n`);
     const proxy = countingProxy(handle.url);
     try {
-      client = new RoomClient({ url: proxy.url, stateIntervalMs: 100, transcriptIntervalMs: 100 }, {});
+      // The room's token, forwarded by the proxy along with every other header.
+      // Without it the client would be refused before it ever reached the tool
+      // error this measures, and the rate assertions would hold while testing a
+      // reconnect loop against a 401 instead of against a failing tool.
+      client = new RoomClient(
+        { url: proxy.url, token: handle.token, stateIntervalMs: 100, transcriptIntervalMs: 100 },
+        {},
+      );
       client.start();
       await new Promise((resolve) => setTimeout(resolve, 800));
 
