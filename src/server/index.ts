@@ -110,7 +110,7 @@ export function createRoomMcpServer(logPath: string, options: RoomMcpServerOptio
         "pass next_seq back as since_seq to continue.",
       inputSchema: {
         since_seq: z.number().int().min(0),
-        limit: z.number().int().min(0).optional(),
+        limit: z.number().int().min(1).optional(),
       },
     },
     async ({ since_seq, limit }) => ({

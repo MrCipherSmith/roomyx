@@ -1,6 +1,7 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { join } from "node:path";
+import { z } from "zod";
 import { syncSkillBundle } from "./skill-sync";
 import { installPersonas } from "./personas";
 import type { PlanItem } from "./init-plan";
@@ -108,9 +109,20 @@ function ensureGitignore(cwd: string): string {
   return `added ${missing.length} line(s)`;
 }
 
-interface McpConfig {
-  mcpServers?: Record<string, unknown>;
-}
+/**
+ * A plain object, optionally with an `mcpServers` object of its own. Not an
+ * array, not `null`, not a config whose `mcpServers` is some other shape —
+ * `z.object` already rejects anything whose parsed type isn't "object" (that
+ * covers arrays and `null`), and `.catchall(z.unknown())` keeps whatever other
+ * top-level keys the operator's file has instead of discarding them.
+ */
+const mcpConfigSchema = z
+  .object({
+    mcpServers: z.record(z.string(), z.unknown()).optional(),
+  })
+  .catchall(z.unknown());
+
+type McpConfig = z.infer<typeof mcpConfigSchema>;
 
 /**
  * Adds a `roomyx` entry to an MCP config, merging rather than replacing.
@@ -132,8 +144,9 @@ function ensureMcpServer(path: string, createDir: boolean): string {
   if (existsSync(path)) {
     const text = readFileSync(path, "utf8").trim();
     if (text !== "") {
+      let parsed: unknown;
       try {
-        config = JSON.parse(text) as McpConfig;
+        parsed = JSON.parse(text);
       } catch (error) {
         // Refused rather than overwritten. A file we cannot parse may still be
         // a file someone is relying on.
@@ -141,6 +154,17 @@ function ensureMcpServer(path: string, createDir: boolean): string {
           `${path} is not valid JSON — ${error instanceof Error ? error.message : String(error)}. Left untouched.`,
         );
       }
+      const shape = mcpConfigSchema.safeParse(parsed);
+      if (!shape.success) {
+        // Same courtesy as the unparseable-JSON case above, for JSON that
+        // parses but isn't the shape this function assumes: an array, `null`,
+        // or an `mcpServers` that isn't itself an object. Reported, not
+        // guessed at and overwritten.
+        throw new Error(
+          `${path} is not a valid MCP config — ${shape.error.issues.map((issue) => issue.message).join("; ")}. Left untouched.`,
+        );
+      }
+      config = shape.data;
     }
   }
 
@@ -148,6 +172,13 @@ function ensureMcpServer(path: string, createDir: boolean): string {
   if (servers.roomyx !== undefined) return "already registered — left as it is";
 
   config.mcpServers = { ...servers, roomyx: { command: "roomyx", args: ["mcp", "--stdio"] } };
-  writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+  writeConfigFile(path, config);
   return "registered";
+}
+
+/** Write-to-temp-then-rename, matching `registry.ts`: a reader never observes a partially-written file. */
+function writeConfigFile(path: string, config: McpConfig): void {
+  const tmpPath = `${path}.tmp-${process.pid}-${Math.random().toString(36).slice(2)}`;
+  writeFileSync(tmpPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+  renameSync(tmpPath, path);
 }
