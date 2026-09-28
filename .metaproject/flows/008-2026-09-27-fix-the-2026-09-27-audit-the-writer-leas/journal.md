@@ -126,3 +126,69 @@ owns the single-writer decision, and nothing in the code comments suggests
 otherwise.
 - 2026-09-27T20:28:42.380Z - task-added: T26: Cover serve's self-close on writer-lease displacement with a test
 - 2026-09-27T20:28:42.526Z - task-done: T11: Verify wave A: the five new tests fail before and pass after, suite green
+- 2026-09-27T23:46:29.888Z - task-attempt: T12: started (attempt 1) — 008-T12 wave B tests
+- 2026-09-28T00:02:27.761Z - task-done: T12: Failing tests for wave B: symlink backup, MCP config shape, limit 0, unauthenticated initialize
+- 2026-09-28T00:02:33.086Z - task-attempt: T13: started (attempt 1) — 008-T13 wave B parallel
+- 2026-09-28T00:02:33.427Z - task-attempt: T14: started (attempt 1) — 008-T14 wave B parallel
+- 2026-09-28T00:05:04.615Z - task-done: T14: Validate the MCP config shape before rewriting it, and write temp-then-rename; reject limit 0
+- 2026-09-28T00:07:27.363Z - task-done: T13: Refuse a symlinked target or .bak path in skill-sync
+- 2026-09-28T00:07:27.513Z - task-attempt: T15: started (attempt 1) — 008-T15 per-room token
+- 2026-09-28T00:56:44.787Z - task-done: T15: Mint a per-room token at serve(), require it on the transport, send it from all four in-tree clients
+
+## T15 — the per-room token, and what it does not do
+
+Landed at 481 pass / 5 skip / 0 fail, lint and typecheck clean, plus a
+hand-driven round trip through real processes: `serve --port 0` → registry
+entry carries the token and stdout prints neither → `rooms list` reports the
+room **live** (the probe's own path, whose failure mode is a silent `unknown`)
+→ `room commands` and `room delta` answer → `roomyx client` in a pty reached
+`[connected]` with the roster rendered. The audit's own `curl` now returns 401,
+naming the header and where the token lives and quoting neither value.
+
+### A hole found beyond the brief and fixed
+
+`roomyx.rooms.list` on the **unauthenticated** management server serialised
+whole registry entries. It would therefore have handed every room's token to
+exactly the caller the token exists to bound — the uncredentialled loopback
+`curl` the audit used. Nobody would have had to ask for it. Now an explicit
+field allow-list, pinned by a test, written so a field added later does not
+appear by default.
+
+The general lesson is worth more than the fix: **any future field on
+`RoomRegistryEntry` is one `listLiveRooms` call away from that port.**
+
+### Three concerns carried, and what happens to each
+
+1. **The registry file mode bounds how far the token reaches.**
+   `writeRegistryUnlocked` uses `writeFileSync`'s default, typically `0644`. So
+   the token stops a caller that knows only the port, and stops a browser page
+   outright — but it does **not** stop a same-user local process that can read
+   the registry. This is a real improvement on the audit's finding and it is
+   weaker than "authentication". **D-06b must say so plainly**, in D-06a's
+   shape, or the token will be read as more than it is. Tightening the registry
+   to `0600` is a one-line change that deserves its own decision rather than a
+   silent ride-along — filed as T27.
+2. **A `serve` restart now permanently strands an attached TUI.** A new process
+   mints a new token; `RoomClient` holds the one it was built with and retries
+   against 401 forever instead of reconnecting. Judged correct — a restarted
+   room is a different room with a different id and entry, and silently
+   accepting a stale credential is the property that must not hold — but an
+   operator can hit it and the client says only `disconnected`. The friendlier
+   fix is for `RoomClient` to re-resolve from the registry on reconnect, not to
+   relax the gate. Filed as T28.
+3. **The management server stays unauthenticated, deliberately.** No
+   owner-command queue, its two tools report rather than act, D-11 already
+   removed the `yes` that made `skills.sync` dangerous, and it is the surface
+   documented for Claude Code / Codex / keryx to attach to, where a credential
+   has nowhere to come from. What it does need is the allow-listing discipline
+   above applied as a rule rather than as one fix.
+
+### Contract change, stated
+
+`serve.test.ts` previously connected with no credential and was named for that
+working. It now presents the token and carries a docstring saying
+`room-token.test.ts` asserts its negation, that the two are not in conflict,
+and what changed. This is a breaking change to the wire contract for any
+external client, which is the D-13 version question for T25.
+- 2026-09-28T00:56:44.945Z - task-added: T27: Tighten the room registry file mode, with its own decision record
+- 2026-09-28T00:56:45.091Z - task-added: T28: RoomClient re-resolves the token from the registry on reconnect
