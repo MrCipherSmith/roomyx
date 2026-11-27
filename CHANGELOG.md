@@ -53,6 +53,10 @@ releases that followed it are in
   refactor with no behaviour change: `src/cli.ts` keeps the dispatcher, the version
   and the help, and every command's flags, output and exit codes are as before.
 
+- **The project wiki now records why the writer lease, `seq` allocation and the
+  per-room token work the way they do,** and its `src/cli` page reflects the split.
+  Internal documentation under `.metaproject/wiki/`; nothing shipped changes.
+
 ## [0.12.2] — 2026-09-12
 
 A documentation patch, and the defect it fixes was on the first screen anyone

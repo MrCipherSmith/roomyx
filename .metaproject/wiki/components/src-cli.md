@@ -14,7 +14,7 @@ The `src/cli` module provides a single, declarative argument parser for all room
 
 ## How it works
 
-Two files: **args.ts** defines `parseArgs`, which takes argv, a flag spec, and returns positionals, typed flag values, and a help flag. It validates that all flags match the spec, converts values to the right type, detects unknown flags and suggests corrections via Levenshtein distance, and throws `ArgError` for invalid input; **specs.ts** defines the flag specs for different commands (e.g., `CLIENT_FLAGS` for the client). The parser rejects unknown flags outright and ensures every flag has the type (string, number, or boolean) the command expects, preventing silent misinterpretation.
+Since the 2026-11 split, `src/cli.ts` is only the dispatcher (command table, `version()`, help, `main()`); each command's flags and handler live in a sibling module of this directory (`serve`, `room`, `room-append`, `init`, `rooms`, `personas`, `client`, `mcp`, `skills`), with shared defaults and `runUntilSignal` in `shared.ts`. The parser itself is two files: **args.ts** defines `parseArgs`, which takes argv, a flag spec, and returns positionals, typed flag values, and a help flag. It validates that all flags match the spec, converts values to the right type, detects unknown flags and suggests corrections via Levenshtein distance, and throws `ArgError` for invalid input; **specs.ts** defines the flag specs for different commands (e.g., `CLIENT_FLAGS` for the client). The parser rejects unknown flags outright and ensures every flag has the type (string, number, or boolean) the command expects, preventing silent misinterpretation.
 
 ## Key concepts
 
