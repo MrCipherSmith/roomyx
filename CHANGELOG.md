@@ -41,6 +41,11 @@ releases that followed it are in
   typescript-eslint. `@opentui/core` 0.9 and TypeScript 7 are major jumps and are
   deliberately left out.
 
+- **A test now pins the unauthenticated management endpoint to its two reporting
+  tools,** and checks that `roomyx.skills.sync` over it leaves every target exactly
+  as it was. The endpoint takes no credential, which holds only while nothing on it
+  acts; a new tool, or a `yes` flag, now fails a test instead of passing silently.
+
 ## [0.12.2] — 2026-09-12
 
 A documentation patch, and the defect it fixes was on the first screen anyone
