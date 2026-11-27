@@ -58,8 +58,12 @@ describe("the bundled skill and the room server", () => {
     // command this package does not ship is the same defect wearing different
     // clothes.
     const cli = readFileSync(join(import.meta.dir, "..", "src", "cli.ts"), "utf8");
+    // A row of the COMMANDS table (`"room delta": roomDelta,`), not a bare
+    // mention: the handlers now live in src/cli/*.ts, so the table row is what
+    // wires a command name to one, and a comment or string naming the command
+    // must not satisfy this.
     for (const command of ["room delta", "room commands", "room ack"]) {
-      expect(cli).toContain(`"${command}":`);
+      expect(cli).toMatch(new RegExp(`^\\s+"${command}":\\s*\\w+,?\\s*$`, "m"));
     }
   });
 

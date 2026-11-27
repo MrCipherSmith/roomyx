@@ -157,7 +157,7 @@ describe("applying a plan", () => {
     expect(readFileSync(join(root, ".gitignore"), "utf8")).toBe(once);
   });
 
-  test("the logs step says the room logs are committed, and still ignores nothing", () => {
+  test("the logs step says the room logs are committed, and does not create a .gitignore", () => {
     const root = tempDir();
     const configPath = withConfig(root);
     const item = buildPlan({ cwd: root }).find((i) => i.kind === "logs")!;

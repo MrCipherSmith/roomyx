@@ -87,7 +87,7 @@ describe("the bin launchers", () => {
     expect(stderr).not.toMatch(/downloading|installing bun|fetching/i);
   });
 
-  // PKG-4(b). `cli.ts`'s `client` subcommand does `await import("./client/index")`,
+  // PKG-4(b). the `client` subcommand (src/cli/client.ts) does `await import("../client/index")`,
   // and that module only calls runClient() when `import.meta.main` is true. A
   // launcher pointed at the wrong entry, or one that re-execs, runs the client
   // twice. The observable is the message it prints when no room is live.

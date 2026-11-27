@@ -23,7 +23,7 @@ export function bundledPersonasPath(): string {
 export const REGISTRY_FLAG = { type: "string", describe: "Registry file (default .roomyx/rooms/registry.json)" } as const;
 
 /**
- * Wires the signals. The shutdown itself lives in `./server/shutdown`, where a
+ * Wires the signals. The shutdown itself lives in `../server/shutdown`, where a
  * test can reach it — this module runs its entry point on import.
  *
  * Written once because there were three copies and they had drifted: the two
