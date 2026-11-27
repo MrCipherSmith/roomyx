@@ -41,10 +41,11 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 /**
  * 32 hex characters — 128 bits out of `node:crypto`.
  *
- * `randomBytes`, not `Math.random()`: the registry is world-readable on a
- * typical umask, so the token's job is not to be unguessable *to the operator's
- * own user* — it is to be unguessable to anything that has only the port. A
- * predictable value would hand that back.
+ * `randomBytes`, not `Math.random()`: the registry is written 0600, so the
+ * token's job is not to be unguessable *to the operator's own user* — it is to
+ * be unguessable to anything that has only the port. (A registry written by an
+ * older version stays world-readable until its next write.) A predictable value
+ * would hand that back.
  */
 export function mintRoomToken(): string {
   return randomBytes(16).toString("hex");

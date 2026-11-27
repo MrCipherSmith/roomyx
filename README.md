@@ -566,7 +566,7 @@ a whole. It is documented here because the tests in this package assume it.
 
 ```bash
 bun install
-bun run check      # lint + typecheck + test
+bun run check      # lint + typecheck + changelog entry + test
 ```
 
 Releases are cut by pushing a `v*` tag whose version matches `package.json`; the
