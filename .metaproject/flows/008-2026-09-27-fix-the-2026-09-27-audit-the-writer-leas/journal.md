@@ -229,3 +229,4 @@ transcript and queueing an owner command — is closed.
    `client/mcp-client.ts:161`. An MCP host that logs `serverInfo.version` has
    been recording a version this package has not been since its first release.
    Filed as T29. Nine reviewers missed it; a round trip found it in one call.
+- 2026-09-28T04:10:19.604Z - task-done: T17: Verify wave B: a real serve + client + liveness-probe round trip, not only unit tests
