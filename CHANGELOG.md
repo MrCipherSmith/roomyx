@@ -25,6 +25,9 @@ releases that followed it are in
 
 ### Changed
 
+- **CI and the stress workflow declare `permissions: contents: read`.** They ran PR code
+  with whatever the repository's default token scope was; the release workflow already
+  asked only for what it needs.
 - **CI and the release workflow pin Bun instead of tracking `latest`.** `.bun-version`
   names the Bun the project is developed with; CI also runs the lowest supported
   Bun, so a Bun release can no longer break a tagged release with no code change.

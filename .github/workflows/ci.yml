@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     # `pinned` is .bun-version, the Bun the project is developed with; `floor`
