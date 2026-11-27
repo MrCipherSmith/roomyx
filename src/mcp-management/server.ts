@@ -19,6 +19,12 @@ export interface ManagementOptions {
    * the exception.
    */
   cwd?: string;
+  /**
+   * The home directory user-scoped targets resolve against. Defaults to the
+   * process's. A parameter because `os.homedir()` is fixed when the process
+   * starts, so a test cannot redirect it by setting `HOME`.
+   */
+  home?: string;
 }
 
 export interface ManagementServeOptions {
@@ -94,7 +100,7 @@ export function createManagementMcpServer(options: ManagementOptions): McpServer
     // CLI, where `--yes` means a person decided. Same reasoning that removed
     // `targetPath` from this schema.
     async ({ target }) => {
-      const targets = resolveTargets(target, options.cwd);
+      const targets = resolveTargets(target, options.cwd, options.home);
       const results = targets.map(({ name, path }) => ({
         target: name,
         path,

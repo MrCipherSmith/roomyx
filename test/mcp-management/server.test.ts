@@ -81,17 +81,28 @@ describe("MCP management server", () => {
   test("roomyx.skills.sync over the endpoint leaves every target exactly as it was", async () => {
     setup();
     const cwd = mkdtempSync(join(tmpdir(), "roomyx-mgmt-cwd-"));
+    const home = mkdtempSync(join(tmpdir(), "roomyx-mgmt-home-"));
+    // Global targets resolve under the home directory. If the dry-run gate ever
+    // regressed, this test would be what wrote to a developer's real ~/.claude,
+    // ~/.codex, ~/.cursor and ~/.grok before its own assertion failed, so the
+    // home it can reach is a throwaway one. (Setting `HOME` does not do it:
+    // `os.homedir()` is fixed when the process starts.)
     try {
-      // Global targets resolve under the real home directory, so a path may
-      // legitimately exist already. What must hold is that the call changes nothing.
-      const paths = resolveTargets("all", cwd).map((t) => t.path);
-      const before = paths.map(fingerprint);
-      managementHandle = await serveManagement({ registryPath, bundledSkillPath: BUNDLED_SKILL, configPath, cwd }, { port: 0 });
+      const paths = resolveTargets("all", cwd, home).map((t) => t.path);
+      expect(paths.length).toBeGreaterThan(0);
+      for (const path of paths) expect(path.startsWith(home) || path.startsWith(cwd)).toBe(true);
+
+      const before = [home, cwd].map(fingerprint);
+      managementHandle = await serveManagement({ registryPath, bundledSkillPath: BUNDLED_SKILL, configPath, cwd, home }, { port: 0 });
       const client = await connectClient(managementHandle.url);
       const result = await client.callTool({ name: "roomyx.skills.sync", arguments: { target: "all" } });
-      expect(JSON.parse((result.content as Array<{ text: string }>)[0]?.text ?? "[]").length).toBe(paths.length);
-      expect(paths.map(fingerprint)).toEqual(before);
+      const reports = JSON.parse((result.content as Array<{ text: string }>)[0]?.text ?? "[]");
+      expect(reports).toHaveLength(paths.length);
+      for (const report of reports) expect(report.written).toBe(false);
+      expect([home, cwd].map(fingerprint)).toEqual(before);
+      await client.close();
     } finally {
+      rmSync(home, { recursive: true, force: true });
       rmSync(cwd, { recursive: true, force: true });
     }
   });

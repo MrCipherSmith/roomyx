@@ -121,11 +121,15 @@ export function pathForNamedTarget(target: string, cwd: string = process.cwd()):
  * does without the caller asking, so it ships in the minor position (D-13),
  * not quietly in a patch.
  */
-export function resolveTargets(target: string, cwd: string = process.cwd()): { name: string; path: string }[] {
+export function resolveTargets(
+  target: string,
+  cwd: string = process.cwd(),
+  home?: string,
+): { name: string; path: string }[] {
   if (target === "all") {
-    return SKILL_RUNTIMES.map((runtime) => ({ name: runtime.name, path: runtime.path(cwd) }));
+    return SKILL_RUNTIMES.map((runtime) => ({ name: runtime.name, path: runtime.path(cwd, home) }));
   }
   const runtime = runtimeByName(target);
-  if (runtime) return [{ name: runtime.name, path: runtime.path(cwd) }];
+  if (runtime) return [{ name: runtime.name, path: runtime.path(cwd, home) }];
   return [{ name: target, path: target }];
 }
