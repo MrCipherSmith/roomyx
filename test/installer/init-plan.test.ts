@@ -157,6 +157,17 @@ describe("applying a plan", () => {
     expect(readFileSync(join(root, ".gitignore"), "utf8")).toBe(once);
   });
 
+  test("the logs step says the room logs are committed, and does not create a .gitignore", () => {
+    const root = tempDir();
+    const configPath = withConfig(root);
+    const item = buildPlan({ cwd: root }).find((i) => i.kind === "logs")!;
+
+    const [result] = applyPlan([item], { cwd: root, bundledSkillPath: BUNDLED, bundledPersonasPath: PERSONAS, configPath });
+    expect(result?.ok).toBe(true);
+    expect(result?.message).toContain("committed with the repo");
+    expect(existsSync(join(root, ".gitignore"))).toBe(false);
+  });
+
   test("registering the MCP server keeps every server already in the file", () => {
     const root = tempDir();
     const configPath = withConfig(root);

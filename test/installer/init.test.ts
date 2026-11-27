@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { init } from "../../src/installer/init";
@@ -23,6 +23,22 @@ describe("init", () => {
 
     const registry = JSON.parse(readFileSync(join(dir, ".roomyx", "rooms", "registry.json"), "utf8"));
     expect(registry).toEqual({ schemaVersion: 1, rooms: [] });
+  });
+
+  // The registry carries each room's bearer token. `registerRoom` makes it
+  // private; `init` is where it is first created in the normal flow, so it has
+  // to match. The umask is pinned to a permissive one so the test fails when the
+  // mode option is missing instead of passing on a developer's umask 077.
+  test.skipIf(process.platform === "win32")("creates the registry directory 0700 and the registry file 0600", () => {
+    dir = mkdtempSync(join(tmpdir(), "roomyx-init-test-"));
+    const previous = process.umask(0o022);
+    try {
+      init({ cwd: dir, bundledSkillPath: BUNDLED_SKILL });
+    } finally {
+      process.umask(previous);
+    }
+    expect(statSync(join(dir, ".roomyx", "rooms")).mode & 0o777).toBe(0o700);
+    expect(statSync(join(dir, ".roomyx", "rooms", "registry.json")).mode & 0o777).toBe(0o600);
   });
 
   test("stages a copy of the bundled skill", () => {

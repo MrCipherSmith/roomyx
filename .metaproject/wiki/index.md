@@ -41,7 +41,7 @@ keryx wiki index
 ## Pages
 
 <!-- keryx:wiki-index:begin -->
-<!-- generated: 2026-11-08T17:24:42.781Z | pages: 17 -->
+<!-- generated: 2026-11-27T23:27:05.496Z | pages: 20 -->
 
 ### Architecture
 
@@ -54,7 +54,7 @@ _No pages yet._
 
 ### Business Rule
 
-_No pages yet._
+- [Seq allocation](business-rules/seq-allocation.md) (draft) - Every message in a room log gets a `seq` allocated from the log itself at append time, under the log's lockfile, as one more than the highest valid `seq` already recorded. Batches are allocated and validated as a set before any byte is written.
 
 ### User Scenario
 
@@ -88,5 +88,6 @@ _No pages yet._
 
 ### Decision
 
-_No pages yet._
+- [Per-room token](decisions/room-token.md) (draft) - Each room's MCP endpoint requires `Authorization: Bearer <token>`. The token is 128 random bits minted per room and recorded in the room's registry entry. It bounds which local processes can drive a room to those that can read the registry. It is not authentication of a person.
+- [Writer lease](decisions/writer-lease.md) (draft) - A room log has exactly one writer while a room is live. The writer lease is the on-disk fact that says who that is: held by a server with a dispatcher attached, refreshed by heartbeat, and expiring by itself if the holder dies. One-shot CLI writers never hold one; they leave a tombstone.
 <!-- keryx:wiki-index:end -->

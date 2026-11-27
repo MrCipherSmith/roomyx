@@ -69,16 +69,13 @@ function readRegistryUnlocked(path: string): { schemaVersion: 1; rooms: RoomRegi
 /**
  * Write-to-temp-then-rename: a reader never observes a partially-written file.
  *
- * The file mode is left exactly as it was when this file held only ports —
- * `writeFileSync`'s default, so `0666 & ~umask`. That is a deliberate
- * non-change, not an oversight: the per-room token now lives here, and
- * tightening the mode in the same change that introduced it would be a second,
- * undiscussed decision riding along. It is recorded as a follow-up instead,
- * because it bears directly on how far the token reaches — see D-06b.
+ * The temp file is created 0600, and rename keeps that mode, so the per-room
+ * token in here is readable only by the owning user. A registry written by an
+ * older version stays 0666 until its next write replaces it with a new file.
  */
 function writeRegistryUnlocked(path: string, rooms: RoomRegistryEntry[]): void {
   const tmpPath = `${path}.tmp-${process.pid}-${Math.random().toString(36).slice(2)}`;
-  writeFileSync(tmpPath, JSON.stringify({ schemaVersion: 1, rooms }, null, 2));
+  writeFileSync(tmpPath, JSON.stringify({ schemaVersion: 1, rooms }, null, 2), { mode: 0o600 });
   renameSync(tmpPath, path);
 }
 
@@ -103,7 +100,7 @@ export function registerRoom(
   // type error at the one call site that can make it.
   info: { port: number; logPath: string; pid: number; token: string },
 ): RoomRegistryEntry {
-  mkdirSync(dirname(registryPath), { recursive: true });
+  mkdirSync(dirname(registryPath), { recursive: true, mode: 0o700 });
   return withLock(registryPath, () => {
     const registry = readRegistryUnlocked(registryPath);
     const entry: RoomRegistryEntry = {

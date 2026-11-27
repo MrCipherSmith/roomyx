@@ -38,23 +38,24 @@
     "test:e2e": "ROOMYX_E2E=1 bun test test/cli-room-tools.test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src test",
-    "check": "bun run lint && bun run typecheck && bun test",
+    "check:changelog": "bun scripts/check-changelog.ts",
+    "check": "bun run lint && bun run typecheck && bun test && bun run check:changelog",
     "soak": "bun scripts/soak.ts",
     "fuzz": "bun scripts/fuzz-log.ts",
     "replay": "bun scripts/replay.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.0",
-    "@opentui/core": "^0.5.11",
-    "zod": "^4.5.4"
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "@opentui/core": "^0.5.17",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.2",
-    "eslint": "^10.10.0",
-    "typescript": "^5.6.0",
-    "typescript-eslint": "^8.0.0"
+    "@types/bun": "^1.4.5",
+    "eslint": "^10.16.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.74.0"
   },
   "engines": {
-    "bun": ">=1.1.0"
+    "bun": ">=1.2.15"
   }
 }

@@ -40,9 +40,10 @@ operator has open from driving the server.
 **The room endpoint requires a per-room token** (decision D-06b). It is minted
 at `serve()`, stored in the room's registry entry, and sent as an
 `Authorization: Bearer` header. **This is not authentication of a person.** The
-registry file is written with default permissions, so the token bounds which
-local processes can drive a room to those that were told the room exists — it
-does not stop a process running as the same user that can read the registry.
+registry file is written 0600 (and its directory, when roomyx creates it, 0700),
+so the token bounds which local processes can drive a room to those running as the
+same user that can read the registry. A registry written by an older version stays
+world-readable until its next write replaces it.
 
 **The management endpoint (`roomyx mcp`) is deliberately unauthenticated.** It
 has no owner-command queue, both of its tools report rather than act, and it is

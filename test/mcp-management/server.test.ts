@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -9,9 +9,19 @@ import { serve } from "../../src/server/serve";
 import type { ServeHandle } from "../../src/server/serve";
 import type { ManagementHandle } from "../../src/mcp-management/server";
 import { registerRoom } from "../../src/installer/registry";
+import { resolveTargets } from "../../src/installer/skill-targets";
 
 const FIXTURE = join(import.meta.dir, "..", "fixtures", "sample-room.jsonl");
 const BUNDLED_SKILL = join(import.meta.dir, "..", "fixtures", "bundled-skill.md");
+
+/** Existence, size and mtime of a path and, for a directory, of everything under it. */
+function fingerprint(path: string): string {
+  if (!existsSync(path)) return `${path}: absent`;
+  const stat = statSync(path);
+  if (!stat.isDirectory()) return `${path}: ${stat.size}@${stat.mtimeMs}`;
+  const entries = readdirSync(path).sort().map((name) => fingerprint(join(path, name)));
+  return `${path}/: ${stat.mtimeMs}\n${entries.join("\n")}`;
+}
 
 let dir: string;
 let configPath: string;
@@ -51,6 +61,52 @@ async function connectClient(url: string): Promise<Client> {
 }
 
 describe("MCP management server", () => {
+  // The endpoint takes no credential (SECURITY.md), which is only defensible while
+  // everything on it reports and nothing acts. This pins both halves: the exact
+  // tool set, so a new tool cannot arrive without this test being edited and
+  // read, and the behaviour of the one that sounds like it writes.
+  test("the unauthenticated endpoint exposes exactly the two reporting tools, with no way to ask for a write", async () => {
+    setup();
+    managementHandle = await serveManagement({ registryPath, bundledSkillPath: BUNDLED_SKILL, configPath }, { port: 0 });
+    const client = await connectClient(managementHandle.url);
+
+    const { tools } = await client.listTools();
+    expect(tools.map((t) => t.name).sort()).toEqual(["roomyx.rooms.list", "roomyx.skills.sync"]);
+
+    const sync = tools.find((t) => t.name === "roomyx.skills.sync");
+    const properties = Object.keys((sync?.inputSchema as { properties?: object }).properties ?? {});
+    expect(properties).toEqual(["target"]);
+  });
+
+  test("roomyx.skills.sync over the endpoint leaves every target exactly as it was", async () => {
+    setup();
+    const cwd = mkdtempSync(join(tmpdir(), "roomyx-mgmt-cwd-"));
+    const home = mkdtempSync(join(tmpdir(), "roomyx-mgmt-home-"));
+    // Global targets resolve under the home directory. If the dry-run gate ever
+    // regressed, this test would be what wrote to a developer's real ~/.claude,
+    // ~/.codex, ~/.cursor and ~/.grok before its own assertion failed, so the
+    // home it can reach is a throwaway one. (Setting `HOME` does not do it:
+    // `os.homedir()` is fixed when the process starts.)
+    try {
+      const paths = resolveTargets("all", cwd, home).map((t) => t.path);
+      expect(paths.length).toBeGreaterThan(0);
+      for (const path of paths) expect(path.startsWith(home) || path.startsWith(cwd)).toBe(true);
+
+      const before = [home, cwd].map(fingerprint);
+      managementHandle = await serveManagement({ registryPath, bundledSkillPath: BUNDLED_SKILL, configPath, cwd, home }, { port: 0 });
+      const client = await connectClient(managementHandle.url);
+      const result = await client.callTool({ name: "roomyx.skills.sync", arguments: { target: "all" } });
+      const reports = JSON.parse((result.content as Array<{ text: string }>)[0]?.text ?? "[]");
+      expect(reports).toHaveLength(paths.length);
+      for (const report of reports) expect(report.written).toBe(false);
+      expect([home, cwd].map(fingerprint)).toEqual(before);
+      await client.close();
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
   test("roomyx.rooms.list returns live rooms via a real MCP round-trip (AC5)", async () => {
     setup();
     roomHandle = await serve(FIXTURE, { port: 0 });

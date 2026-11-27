@@ -13,6 +13,57 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [Unreleased]
+
+### Security
+
+- **The room registry, which holds each room's token, is now written 0600.** It was
+  written with `writeFileSync`'s default (`0666 & ~umask`), so on a shared host
+  any local user could read the token and drive the room. The directory is 0700
+  when roomyx creates it, whether through `roomyx init` or by registering a room. A registry written by an older version stays loose until
+  its next write replaces it; `chmod 600` it by hand to close the window sooner.
+
+### Changed
+
+- **CI and the stress workflow declare `permissions: contents: read`.** They ran PR code
+  with whatever the repository's default token scope was; the release workflow already
+  asked only for what it needs.
+- **CI and the release workflow pin Bun instead of tracking `latest`.** `.bun-version`
+  names the Bun the project is developed with; CI also runs the lowest supported
+  Bun, so a Bun release can no longer break a tagged release with no code change.
+- **`engines.bun` is now `>=1.2.15`, not `>=1.1.0`.** The old floor was never tested;
+  1.2.0 and below fail the launcher tests. The range is advisory (npm does not enforce
+  it for Bun), and the launcher's missing-Bun message states the same floor.
+
+- **CI now runs the log fuzzer and replays every archived room log on each PR,**
+  and the fuzzer again nightly on a fresh seed. They existed in `scripts/` but ran
+  nowhere.
+
+- **Dependencies moved to the newest versions their ranges allow:** the MCP SDK
+  (1.30.0 to 1.32.2), zod (4.6.7), `@opentui/core` (0.5.17), eslint and
+  typescript-eslint. `@opentui/core` 0.9 and TypeScript 7 are major jumps and are
+  deliberately left out.
+
+- **A test now pins the unauthenticated management endpoint to its two reporting
+  tools,** and checks that `roomyx.skills.sync` over it leaves every target exactly
+  as it was. The endpoint takes no credential, which holds only while nothing on it
+  acts; a new tool, or a `yes` flag, now fails a test instead of passing silently.
+
+- **`bun run check` and CI fail when `CHANGELOG.md` has no entry for the version in
+  `package.json`,** so a version bump cannot ship without its notes.
+
+- **`src/cli.ts` is split into one module per command under `src/cli/`.** An internal
+  refactor with no behaviour change: `src/cli.ts` keeps the dispatcher, the version
+  and the help, and every command's flags, output and exit codes are as before.
+
+- **The project wiki now records why the writer lease, `seq` allocation and the
+  per-room token work the way they do,** and its `src/cli` page reflects the split.
+  Internal documentation under `.metaproject/wiki/`; nothing shipped changes.
+
+- **`roomyx init` now says that room logs are committed with the repository,** when it
+  creates the logs directory, and how to keep them out. It still ignores only the
+  registry and lockfiles; the transcript is deliberately kept.
+
 ## [0.12.2] — 2026-09-12
 
 A documentation patch, and the defect it fixes was on the first screen anyone
