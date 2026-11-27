@@ -46,6 +46,9 @@ releases that followed it are in
   as it was. The endpoint takes no credential, which holds only while nothing on it
   acts; a new tool, or a `yes` flag, now fails a test instead of passing silently.
 
+- **`bun run check` and CI fail when `CHANGELOG.md` has no entry for the version in
+  `package.json`,** so a version bump cannot ship without its notes.
+
 ## [0.12.2] — 2026-09-12
 
 A documentation patch, and the defect it fixes was on the first screen anyone
