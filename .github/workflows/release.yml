@@ -23,7 +23,7 @@ jobs:
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: .bun-version
 
       # npm (not bun) publishes, because provenance attestation is an npm CLI
       # feature. Trusted publishing needs npm >= 11.5.1 and Node >= 22.14.0;

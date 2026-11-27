@@ -23,6 +23,15 @@ releases that followed it are in
   when roomyx creates it. A registry written by an older version stays loose until
   its next write replaces it; `chmod 600` it by hand to close the window sooner.
 
+### Changed
+
+- **CI and the release workflow pin Bun instead of tracking `latest`.** `.bun-version`
+  names the Bun the project is developed with; CI also runs the lowest supported
+  Bun, so a Bun release can no longer break a tagged release with no code change.
+- **`engines.bun` is now `>=1.2.15`, not `>=1.1.0`.** The old floor was never tested;
+  1.2.0 and below fail the launcher tests. The range is advisory (npm does not enforce
+  it for Bun), and the launcher's missing-Bun message states the same floor.
+
 ## [0.12.2] — 2026-09-12
 
 A documentation patch, and the defect it fixes was on the first screen anyone

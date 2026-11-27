@@ -24,7 +24,7 @@ import { fileURLToPath } from "node:url";
  * exactly the install-time network fetch that installer D-01 exists to refuse.
  */
 
-const MISSING_BUN = `roomyx needs Bun 1.1+ on your PATH.
+const MISSING_BUN = `roomyx needs Bun 1.2.15+ on your PATH.
 
 It ships TypeScript and runs it directly — there is no build step, so Bun is
 the interpreter rather than a build-time dependency.
