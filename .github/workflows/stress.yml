@@ -1,0 +1,41 @@
+name: Stress
+
+# The single-writer log and its lease are where this project's worst defects
+# lived, and `scripts/` holds the tools built for them. None of them ran in CI,
+# so a regression would surface in production first.
+#
+# Every PR runs the cheap, deterministic half: the fuzzer at a fixed seed (a
+# failing case replays with the same --seed) and the replay of every archived
+# room log through the real TUI. The nightly run repeats the fuzzer on a fresh
+# seed. The soak is not wired in: it did not finish in over an hour locally.
+
+on:
+  pull_request:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  fuzz-and-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+      - run: bun scripts/fuzz-log.ts --cases 20000 --seed 1
+      - name: Fuzz with a fresh seed on the schedule
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "seed=${{ github.run_number }}"
+          bun scripts/fuzz-log.ts --cases 20000 --seed "${{ github.run_number }}"
+      - name: Replay archived room logs
+        run: |
+          set -e
+          bun scripts/replay.ts test/fixtures/sample-room.jsonl
+          for log in docs/roomyx/rooms/*/room.jsonl; do
+            bun scripts/replay.ts "$log"
+          done
+

@@ -32,6 +32,10 @@ releases that followed it are in
   1.2.0 and below fail the launcher tests. The range is advisory (npm does not enforce
   it for Bun), and the launcher's missing-Bun message states the same floor.
 
+- **CI now runs the log fuzzer and replays every archived room log on each PR,**
+  and the fuzzer again nightly on a fresh seed. They existed in `scripts/` but ran
+  nowhere.
+
 ## [0.12.2] — 2026-09-12
 
 A documentation patch, and the defect it fixes was on the first screen anyone
