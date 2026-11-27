@@ -20,7 +20,7 @@ releases that followed it are in
 - **The room registry, which holds each room's token, is now written 0600.** It was
   written with `writeFileSync`'s default (`0666 & ~umask`), so on a shared host
   any local user could read the token and drive the room. The directory is 0700
-  when roomyx creates it. A registry written by an older version stays loose until
+  when roomyx creates it, whether through `roomyx init` or by registering a room. A registry written by an older version stays loose until
   its next write replaces it; `chmod 600` it by hand to close the window sooner.
 
 ### Changed

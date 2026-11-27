@@ -52,17 +52,29 @@ afterEach(async () => {
 describe("registry", () => {
   test.skipIf(process.platform === "win32")("registry file is owner-only, and a loose old one is tightened on the next write", () => {
     setup();
-    registerRoom(registryPath, { port: 1, logPath: FIXTURE, pid: 1, token: unreachableToken() });
-    expect(statSync(registryPath).mode & 0o777).toBe(0o600);
-    chmodSync(registryPath, 0o666);
-    registerRoom(registryPath, { port: 2, logPath: FIXTURE, pid: 1, token: unreachableToken() });
-    expect(statSync(registryPath).mode & 0o777).toBe(0o600);
+    // A permissive umask, so this fails when the `mode` option is missing
+    // instead of passing on a developer's umask 077.
+    const previous = process.umask(0o022);
+    try {
+      registerRoom(registryPath, { port: 1, logPath: FIXTURE, pid: 1, token: unreachableToken() });
+      expect(statSync(registryPath).mode & 0o777).toBe(0o600);
+      chmodSync(registryPath, 0o666);
+      registerRoom(registryPath, { port: 2, logPath: FIXTURE, pid: 1, token: unreachableToken() });
+      expect(statSync(registryPath).mode & 0o777).toBe(0o600);
+    } finally {
+      process.umask(previous);
+    }
   });
 
   test.skipIf(process.platform === "win32")("a registry directory roomyx creates is owner-only", () => {
     setup();
     const nested = join(dir, "fresh", "registry.json");
-    registerRoom(nested, { port: 1, logPath: FIXTURE, pid: 1, token: unreachableToken() });
+    const previous = process.umask(0o022);
+    try {
+      registerRoom(nested, { port: 1, logPath: FIXTURE, pid: 1, token: unreachableToken() });
+    } finally {
+      process.umask(previous);
+    }
     expect(statSync(join(dir, "fresh")).mode & 0o777).toBe(0o700);
   });
 

@@ -39,7 +39,10 @@ export function init(options: InitOptions): InitResult {
   const configPath = join(roomyxDir, "config.json");
   const skillDir = join(roomyxDir, "skills", "startup-room");
 
-  mkdirSync(join(roomyxDir, "rooms"), { recursive: true });
+  mkdirSync(roomyxDir, { recursive: true });
+  // The registry holds each room's bearer token, so its directory and file are
+  // private from the moment `init` creates them, as `registerRoom` makes them.
+  mkdirSync(join(roomyxDir, "rooms"), { recursive: true, mode: 0o700 });
   mkdirSync(skillDir, { recursive: true });
 
   const registryAlreadyHasRooms =
@@ -49,7 +52,7 @@ export function init(options: InitOptions): InitResult {
     writeFileSync(configPath, JSON.stringify(DEFAULT_CONFIG, null, 2));
   }
   if (!existsSync(registryPath)) {
-    writeFileSync(registryPath, JSON.stringify({ schemaVersion: 1, rooms: [] }, null, 2));
+    writeFileSync(registryPath, JSON.stringify({ schemaVersion: 1, rooms: [] }, null, 2), { mode: 0o600 });
   }
   // Staged through `syncSkill`, not copied.
   //
