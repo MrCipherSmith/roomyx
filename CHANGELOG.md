@@ -36,6 +36,11 @@ releases that followed it are in
   and the fuzzer again nightly on a fresh seed. They existed in `scripts/` but ran
   nowhere.
 
+- **Dependencies moved to the newest versions their ranges allow:** the MCP SDK
+  (1.30.0 to 1.32.2), zod (4.6.7), `@opentui/core` (0.5.17), eslint and
+  typescript-eslint. `@opentui/core` 0.9 and TypeScript 7 are major jumps and are
+  deliberately left out.
+
 ## [0.12.2] — 2026-09-12
 
 A documentation patch, and the defect it fixes was on the first screen anyone
