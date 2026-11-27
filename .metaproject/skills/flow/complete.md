@@ -8,14 +8,40 @@ whose status is `implemented`.
 1. Re-verify the package: description matches the result; plan followed or
    deviations journaled; all tasks done.
 2. Confirm every acceptance criterion after actually checking it:
-   `keryx flow ac confirm <id> ACn --note "<evidence>"`.
+   `keryx flow ac confirm <id> ACn --note "<evidence>"`. This appends a
+   signature (who, when, what was confirmed); pass `--signed-by "<name>"` to
+   name the signer explicitly - otherwise it falls back to `KERYX_ACTOR`, then
+   local git identity, and is recorded with that weaker basis.
 3. Verify that the PR was merged into the base branch recorded for the flow,
-   then run `keryx flow complete <id>`. Gates: AC confirmed + checksum intact;
-   merged PR exists with green checks; code-health gate passes.
+   then run `keryx flow complete <id> [--signed-by "<name>"]`. Gates: AC
+   confirmed + checksum intact; merged PR exists with green checks; code-health
+   gate passes; and, for a flow that opted in (`flow init --owner` set the
+   flag), an owner recorded - fails naming
+   `keryx flow owner set <id> --owner "<name>" --reason "<why>"` if not; and,
+   for a flow created from 0.3.53 on, the flow folder committed (the
+   `folder-committed` gate fails until `git add .metaproject/flows/<dir> &&
+   git commit` has run; the gate checks only that `flow.json` is in `HEAD`). The
+   flow folder is committed in the same PR as the code; the commit at closing
+   is a rule to follow, not one the gate checks. A
+   flow created with `--require-confirmation` needs one more gate: get
+   a token first: in keryx shell call the `flow_confirm` tool (the operator
+   answers it as a card; never send the operator to a terminal), outside it run
+   `keryx flow confirm <id>` in a terminal (a typed challenge). The token is
+   short-lived and single-use; it proves an interactive step ran, not that a
+   human did. Then pass it as
+   `--confirm-token <token>`. On pass this also appends a completion
+   signature.
 4. Gates fail -> flow auto-returns to in-progress with fix notes:
    - small fixes: run a fix agent, then re-run the review/fix loop from step 2;
+     the next review round is just `keryx review start` on the new head - it
+     detects the round and reviews the delta (fix changes with a small roster
+     and the prior findings, new changes as round 1); never pass a whole-branch
+     range or `--all` per round;
    - large fixes: describe what is wrong in the journal and relaunch the
      implementor/orchestrator against the updated plan.
+   - a flow left stuck in `completing` (a crash or an interrupted attempt,
+     never a normal gate failure) is moved back with
+     `keryx flow recover <id> --reason "<why>"`.
 5. Gates pass -> flow is done:
    - source was an issue: `keryx flow complete <id> --comment` posts a
      short, factual summary comment to the issue;

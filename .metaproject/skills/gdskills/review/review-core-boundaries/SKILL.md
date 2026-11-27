@@ -6,13 +6,17 @@ description: |
   direction, feature-boundary leakage, abstraction stability, composition,
   and blast-radius risks. Dispatched by review-orchestrator for
   --core-boundaries, --project-conventions, --all, or src/core/** changes.
+  NOT for: logic correctness in code that happens to live in core (review-logic),
+  naming and readability (review-style), or SOLID and layering inside a feature
+  module (review-architecture).
 triggers:
+  - "core review"
+  - "shared boundary"
+  - "public surface"
   - "review core boundaries"
-  - "review --core-boundaries"
-  - dispatched by review-orchestrator
 metadata:
   author: "MrCipherSmith"
-  version: "1.0.0"
+  version: "1.1.0"
   category: "review"
 license: "MIT"
 ---
@@ -20,7 +24,7 @@ license: "MIT"
 # Review — Core Boundaries
 
 Reviewer for shared infrastructure modules. A core module should provide stable foundations
-used by feature modules; it should not accumulate feature-specific behaviour.
+used by feature modules; it should not accumulate feature-specific behaviour. Its inputs are the reviewer payload only; session memory and earlier conversation are not inputs. It runs no command unless its payload's `allowed_tools` says `run-tests`, except the read-only `git log`, `git blame` and `git show` where its host gives a read-only child git (keryx shell does not: there the payload supplies the history).
 
 ---
 
@@ -54,15 +58,10 @@ If a more specific module reviewer also applies, run both.
 
 ### Shared laws (every reviewer)
 
-1. **A claim of runtime harm with no reproducible path is `info`.** If you cannot
-   name the input, call, or condition that reaches the code, you have an
-   observation, not a finding. Report it as `info` and say what would settle it.
-2. **Never flag the theoretical.** The path you describe must exist in the code
-   under review. Do not report a safe API because it could be misused, or a
-   pattern because it is often wrong elsewhere.
-3. **One finding per class, not one per occurrence.** When the same shape appears
-   at several sites, report it once and list every site. Ten findings that are one
-   finding hide the other nine problems.
+1. **A claim of runtime harm with no reproducible path is `info`.** If you cannot name the input, call, or condition that reaches the code, you have an observation, not a finding. Report it as `info` and say what would settle it.
+2. **Never flag the theoretical.** The path you describe must exist in the code under review. Do not report a safe API because it could be misused, or a pattern because it is often wrong elsewhere.
+3. **One finding per class, not one per occurrence.** When the same shape appears at several sites, report it once and list every site. Ten findings that are one finding hide the other nine problems.
+4. **A deliberate choice is not a defect until its reason is read and shown wrong.** An explicit override, suppression or exemption, a comment or commit giving a reason, or a sibling doing the same is a decision: read its reason (the comment, `git log -L` or `git blame`, the sibling) before you report it, and report it only when you can show that reason wrong. A project rule is checked against accepted platform practice and its known exceptions before a deviation from it is reported.
 
 Severity levels are defined once, in `review-orchestrator/SKILL.md` →
 **Severity (canonical)**. This reviewer does not restate them: `blocker` is the
@@ -73,7 +72,7 @@ boundary is the trigger-and-outcome test.
 
 ## Orchestrated Review Contract
 
-When dispatched by `review-orchestrator`, follow the provided `reviewer-input.schema.json` payload. Return a `REVIEW_RESULT` object compatible with `skills/review/review-orchestrator/reviewer-finding.schema.json`, then a concise markdown summary. Keep findings evidence-based, include concrete `suggested_fix` for every blocker/major, and return `NEEDS_CONTEXT` instead of guessing when required context is missing.
+When dispatched by `review-orchestrator`, follow the provided `reviewer-input.schema.json` payload. Return a `REVIEW_RESULT` object compatible with `.metaproject/skills/gdskills/review/review-orchestrator/reviewer-finding.schema.json`, then a concise markdown summary. Keep findings evidence-based, include concrete `suggested_fix` for every blocker/major, and return `NEEDS_CONTEXT` instead of guessing when required context is missing.
 
 ---
 
@@ -121,9 +120,39 @@ conditions land under that rubric.
 | Condition | Severity | Why, under the canonical rubric |
 |---|---|---|
 | A core API change that breaks a named consumer at runtime | `blocker` | Crash at a named call site |
-| Importing feature code into core; adding feature-specific public API to core; inverted dependency | `major` | Named trigger (the import) and named outcome (the cycle or the leak), but structural — not one of the four shapes |
+| Importing feature code into core; adding feature-specific public API to core; inverted dependency | `minor` — `major` only when a concrete defect it causes is named (trigger and outcome) or a stated project rule makes it one | A layer violation. Identical to `review-architecture` for the same condition |
 | A generic helper whose names or types lean on one feature's language | `minor` | Works today; the cost is to the next module that needs it |
 | A blast-radius concern with no named consumer | `info` | Shared law 1 |
 
 "Broad blast radius" is not by itself a `blocker`. Name the consumer that breaks.
+
+---
+
+## Red Flags
+
+| Rationalization | Why it is wrong |
+|----------------|-----------------|
+| "It is generic enough to live in core." | Generic enough is not shared. Name the second consumer that needs it today; one feature's helper parked in core is exactly the leak this lane exists to catch, whatever the file is called. |
+| "Core has broad blast radius, so this is a `blocker`." | Blast radius is a property of the module, not of the change. Name the consumer that breaks and what breaks in it, or it is `info` under shared law 1. |
+| "It is only a type import, so core does not really depend on the feature." | The import is in the source and in the build graph. Delete the feature module and core stops compiling — direction is decided by what core names, not by what survives type erasure. |
+| "The new export has one consumer today, so the surface is still stable." | A public core export is a contract with every module that installs it. One consumer is the argument for keeping the helper internal, not for exporting it. |
+| "I cannot enumerate every consumer of a core symbol, so I will anchor the finding at the file the diff touched." | Consumers of a core export are precisely what a search enumerates. A `class_scope` with no `enumeration_method` is the one-site fix that leaves the siblings for the next round. |
+| "The move into core is temporary — it gets extracted properly later." | Nothing downstream records that intent, and a core import is load-bearing the moment it ships. Rate the code in the diff, not the plan described beside it. |
+
+---
+
+## Verification
+
+Report done only once all of these hold:
+
+- Every finding names `file:line` and the evidence that settles it — the import,
+  the export, or the consumer — quoted from the tree rather than described.
+- Every `blocker` and `major` carries `class_scope` with `sites` and an
+  `enumeration_method` naming the search that produced them.
+- No finding invents a severity: each lands under **Severity (canonical)** in
+  `review-orchestrator/SKILL.md`.
+- Every blast-radius claim names the consumer that breaks. Unnamed ones are
+  `info`, and say what would settle them.
+- The reply is the `REVIEW_RESULT` the Orchestrated Review Contract asks for, or
+  `NEEDS_CONTEXT` naming the context that was missing — never a guess in its place.
 

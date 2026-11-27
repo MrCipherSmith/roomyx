@@ -20,14 +20,12 @@ Resolution order:
 - User asks which project skill applies to a file/task: run `keryx skills route <query-or-target>` before reading broad files.
 - User asks whether a project skill is still valid: run `keryx skills verify <skill-or-target>`.
 - User asks to create/update a Metaproject requirements package, PRD/spec package, or `docs/requirements/<name>` documentation: load `gdskills/planning/docpack-orchestrator/SKILL.md`; use `autodoc-orchestrator` instead only for reverse-engineering documentation from the current codebase.
+- Orchestrators: The orchestrators (`review-orchestrator`, `flow-orchestrator`, `job-orchestrator`, `autodoc-orchestrator`) run in the main session: the main agent reads the SKILL.md and runs it inline, and never hands a whole orchestrator to a subagent, because a subagent cannot spawn the reviewers and workers the orchestrator dispatches.
 
 | Skill | Category | Purpose | Entry |
 |---|---|---|---|
-| context-router | core | Choose between gdgraph, gdctx, gdwiki, memory, health, and project-skills before raw file reads. | gdskills/core/context-router/SKILL.md |
 | entity-skill-creator | core | Create canonical project-skills from a path, symbol, wiki page, module, component, store, service, or domain entity. | gdskills/core/entity-skill-creator/SKILL.md |
-| entity-skill-learner | core | Update project-skills from review findings, test failures, health reports, memory entries, and verifier reports. | gdskills/core/entity-skill-learner/SKILL.md |
-| entity-skill-router | core | Select relevant project-skills for known modules, components, stores, services, and domain entities. | gdskills/core/entity-skill-router/SKILL.md |
-| entity-skill-verifier | core | Verify project-skills against current code, graph, wiki, health, memory, tests, and review lessons. | gdskills/core/entity-skill-verifier/SKILL.md |
+| entity-skill-verifier | core | Run `keryx skills verify` to check a project-skill's required files, SKILL.md metadata, manifest registration, target-path existence, and evidence artifacts (gdgraph, gdctx, validated gdwiki, Code Health, canonical accepted memory), then classify it as fresh, needs-review, stale, or blocked. The command does not read the skill's prose or compare it against current code — that comparison is a manual agent step. | gdskills/core/entity-skill-verifier/SKILL.md |
 | metaproject-router | core | Choose which Metaproject module, working skill, or project-skill should be used for a user request. | gdskills/core/metaproject-router/SKILL.md |
 | reviewer-skill-creator | core | Create a project-local reviewer for review-orchestrator from a rules file, review profile, or written team standard. | gdskills/core/reviewer-skill-creator/SKILL.md |
 | code-verifier | orchestration | Run and summarize verification gates: typecheck, lint, tests, build, imports, and changed-scope checks. | gdskills/orchestration/code-verifier/SKILL.md |
@@ -35,7 +33,6 @@ Resolution order:
 | feature-analyzer | orchestration | Analyze a feature, module, branch, or migration area and produce an implementation map. | gdskills/orchestration/feature-analyzer/SKILL.md |
 | flow-orchestrator | orchestration | Run Task Manager-backed implementation flows through keryx flow state, frozen acceptance criteria, an explicit completion choice, review, and Code Health. | gdskills/orchestration/flow-orchestrator/SKILL.md |
 | issue-analyzer | orchestration | Convert GitHub or local issues into atomic implementation tasks with acceptance criteria. | gdskills/orchestration/issue-analyzer/SKILL.md |
-| job-documenter | orchestration | Create and maintain persistent job documentation for orchestrated analysis, implementation, and review work. | gdskills/orchestration/job-documenter/SKILL.md |
 | job-orchestrator | orchestration | Run full task pipelines: clarify, collect context, plan, implement, verify, review, and summarize. | gdskills/orchestration/job-orchestrator/SKILL.md |
 | task-implementer | orchestration | Implement one atomic task end to end using local project context and verification. | gdskills/orchestration/task-implementer/SKILL.md |
 | brainstorm | planning | Explore architecture, product, or implementation options with trade-offs and recommendation. | gdskills/planning/brainstorm/SKILL.md |
@@ -44,16 +41,21 @@ Resolution order:
 | interview | planning | Clarify implementation ambiguities after context is collected and the goal is known (job-orchestrator 0.3, implement intent); to scope the request itself, use interviewer. | gdskills/planning/interview/SKILL.md |
 | interviewer | planning | Scope a vague or expensive request before any context is collected (job-orchestrator 0.1.5, custom intent); for implementation specifics after context exists, use interview. | gdskills/planning/interviewer/SKILL.md |
 | prd-creator | planning | Convert vague requests into structured PRD and acceptance criteria. | gdskills/planning/prd-creator/SKILL.md |
+| ui-direction | planning | Choose a distinctive visual concept before UI code and persist it as DESIGN.md. | gdskills/planning/ui-direction/SKILL.md |
 | agent-entrypoint-distiller | platform | Split large AGENTS.md/CLAUDE.md files into high-priority Metaproject rules and project-specific skills. | gdskills/platform/agent-entrypoint-distiller/SKILL.md |
 | agent-entrypoint-manager | platform | Maintain AGENTS.md, CLAUDE.md, and local-first Metaproject references. | gdskills/platform/agent-entrypoint-manager/SKILL.md |
-| hook-manager | platform | Create and verify lightweight git hooks for graph, health, and skill verification. | gdskills/platform/hook-manager/SKILL.md |
-| skill-catalog-manager | platform | Generate `.metaproject/skills/catalog.md` and machine-readable skill registry. | gdskills/platform/skill-catalog-manager/SKILL.md |
+| scheduled-tasks | platform | Propose operator-confirmed scheduled background agent tasks with schedule_create. | gdskills/platform/scheduled-tasks/SKILL.md |
+| api-truth | quality | Write dependency calls against the version installed here, and mark the ones that went out unchecked. | gdskills/quality/api-truth/SKILL.md |
+| deprecation-path | quality | Retire a spelling this project publishes without breaking the callers nobody can enumerate. | gdskills/quality/deprecation-path/SKILL.md |
+| fresh-eyes | quality | Doubt work still in flight from a reader who was never told why it works. | gdskills/quality/fresh-eyes/SKILL.md |
 | metaproject-security | quality | Check Metaproject Security policies for prompts, external content, memory/wiki/report writes, PII, secrets, prompt injection, and data exfiltration. | gdskills/quality/metaproject-security/SKILL.md |
 | perf-check | quality | Run or summarize performance, bundle, and complexity checks. | gdskills/quality/perf-check/SKILL.md |
 | pr-issue-documenter | quality | Create PR descriptions and linked issue documentation from branch changes. | gdskills/quality/pr-issue-documenter/SKILL.md |
+| root-cause | quality | Find the mechanism behind a reported defect, repair it, and leave a guard that fails without the repair. | gdskills/quality/root-cause/SKILL.md |
 | security-audit | quality | Run dependency and secret/security checks and normalize findings. | gdskills/quality/security-audit/SKILL.md |
 | test-gen | quality | Generate tests for a file or module using local patterns and existing test stack. | gdskills/quality/test-gen/SKILL.md |
 | tests-creator | quality | Create test scenarios before implementation from acceptance criteria and project patterns. | gdskills/quality/tests-creator/SKILL.md |
+| ui-craft | quality | Build or restyle UI from DESIGN.md: tokens first, every state, purposeful motion, WCAG 2.2 AA, verified in a browser. | gdskills/quality/ui-craft/SKILL.md |
 | review-architecture | review | Review boundaries, dependency direction, layering, and abstraction stability. | gdskills/review/review-architecture/SKILL.md |
 | review-backend | review | Review backend services, API contracts, DTOs, validation, persistence, and integration boundaries. | gdskills/review/review-backend/SKILL.md |
 | review-clean-code | review | Review function and class maintainability, SOLID issues, cohesion, naming, and complexity. | gdskills/review/review-clean-code/SKILL.md |
@@ -62,12 +64,21 @@ Resolution order:
 | review-frontend | review | Review frontend components, state boundaries, rendering behavior, and UI integration patterns. | gdskills/review/review-frontend/SKILL.md |
 | review-frontend-conventions | review | Review frontend code against repository-local frontend conventions and agent entrypoints. | gdskills/review/review-frontend-conventions/SKILL.md |
 | review-highload | review | Review concurrency, retries, queues, idempotency, resource pools, and high-traffic risks. | gdskills/review/review-highload/SKILL.md |
+| review-jev-comments | review | Check whether open PR review comments were addressed, scored by Jev. | gdskills/review/review-jev-comments/SKILL.md |
+| review-jev-contract | review | Check a PR description's own claims, and a linked flow's frozen acceptance criteria, against the diff, scored by Jev. | gdskills/review/review-jev-contract/SKILL.md |
+| review-jev-docs | review | Find documentation sections that went stale because of a diff, scored by Jev. | gdskills/review/review-jev-docs/SKILL.md |
+| review-jev-risk | review | Risk map of a diff's hunks — deterministic facts plus one Jev noul per risk dimension, ranked, with a routing hint for security/concurrency. | gdskills/review/review-jev-risk/SKILL.md |
+| review-jev-rules | review | Check every changed hunk against every applicable project rule clause, scored by Jev, findings written deterministically by keryx. | gdskills/review/review-jev-rules/SKILL.md |
+| review-jev-scenarios | review | Functional review — which user scenarios a diff likely changes, from gdwiki/PRD/README sources plus one Jev noul per touched scenario. | gdskills/review/review-jev-scenarios/SKILL.md |
 | review-layout | review | Review rendered layout: flex/grid sizing, collapse and overflow, box model, logical properties and RTL, and locale-driven geometry. | gdskills/review/review-layout/SKILL.md |
 | review-logic | review | Review logic correctness, contracts, edge cases, nullability, and async behavior. | gdskills/review/review-logic/SKILL.md |
 | review-orchestrator | review | Route review requests to specialized reviewers and consolidate findings. | gdskills/review/review-orchestrator/SKILL.md |
 | review-performance | review | Review hot paths, unnecessary work, bundle/perf regressions, blocking operations, and memory risk. | gdskills/review/review-performance/SKILL.md |
+| review-pr-contract | review | Compare what the PR body claims (checklist boxes, stated changes) with the diff, and look for documentation outside the diff that the change made stale. | gdskills/review/review-pr-contract/SKILL.md |
+| review-premise | review | Judge each finding's premise — intent, accepted practice, consistency, fix soundness — before anyone acts on it; delete-only. | gdskills/review/review-premise/SKILL.md |
 | review-regression | review | Review the blast radius of a change — the code it can break — rather than the change itself. Scope B of a deep round. | gdskills/review/review-regression/SKILL.md |
 | review-security-code | review | Review code-level security risks, injections, authorization gaps, unsafe secrets, and data exposure. | gdskills/review/review-security-code/SKILL.md |
 | review-style | review | Review naming, readability, duplication, dead code, and maintainability. | gdskills/review/review-style/SKILL.md |
 | review-testing-practices | review | Review test structure, coverage quality, determinism, and repository test conventions. | gdskills/review/review-testing-practices/SKILL.md |
+| review-ui-ux | review | Review UI/UX quality and AI-slop: usability heuristics, system states, forms, hierarchy, WCAG 2.2 AA floor, and a slop score. | gdskills/review/review-ui-ux/SKILL.md |
 | review-verifier | review | Verify reported findings by executing a check that fails if the finding is real; delete-only. | gdskills/review/review-verifier/SKILL.md |

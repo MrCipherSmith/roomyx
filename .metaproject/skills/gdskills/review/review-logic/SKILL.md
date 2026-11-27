@@ -9,15 +9,15 @@ description: |
   NOT for: security vulnerabilities, performance profiling, style/naming preferences,
   or architectural pattern concerns — those belong in their respective specialized reviewers.
 triggers:
-  - "review logic"
+  - "logic review"
+  - "bug review"
+  - "correctness"
   - "check correctness"
   - "are there any bugs"
   - "check this for bugs"
-  - "logic review"
-  - "dispatched by review-orchestrator"
 metadata:
   author: "MrCipherSmith"
-  version: "1.0.0"
+  version: "1.1.0"
   category: "review"
   compatible_harnesses: "cursor,codex,zed,opencode,claude"
 license: "MIT"
@@ -26,13 +26,19 @@ license: "MIT"
 # Review Logic
 
 Specialized reviewer for **logic correctness and algorithmic soundness**.
-Inherits from the original `code-ai-review` + `code-learned-review` correctness phases
-and unifies them into a single focused pass.
+Inherits from the correctness phases of two earlier profiles (the strict AI review one, since removed, and `code-learned-review`)
+and unifies them into a single focused pass. Its inputs are the reviewer payload only; session memory and earlier conversation are not inputs. It runs no command unless its payload's `allowed_tools` says `run-tests`, except the read-only `git log`, `git blame` and `git show` where its host gives a read-only child git (keryx shell does not: there the payload supplies the history).
 
 This reviewer does not care about formatting, naming, or architecture opinions.
 Every finding must describe an observable, reproducible defect or a spec gap.
 
 ---
+
+## The standard
+
+Read both rules before the diff; where this file and a rule disagree, the rule wins.
+- `.metaproject/rules/core/async-patterns.mdc` — parallel awaits, timeouts, bounded fan-out, event-loop blocking, **Review severities**.
+- `.metaproject/rules/core/error-handling.mdc` — failure signalling, silent catches, unhandled rejections, **Review severities**.
 
 ## Workflow
 
@@ -64,23 +70,16 @@ Logic Review Progress:
 
 ## Scope Detection
 
-See shared script: `skills/shared/git-merge-base.md`
-
-Run the script to determine `BASE_SHA`, then collect the diff:
-
-```bash
-# Committed + local changes (default mode)
-git diff --name-status "${BASE_SHA}"
-git diff "${BASE_SHA}"
-git ls-files --others --exclude-standard
-
-# Committed only (explicit range mode)
-git diff --name-status <FROM>..<TO>
-git diff <FROM>..<TO>
-```
+See shared script: `.metaproject/skills/gdskills/shared/git-merge-base.md`
 
 Review scope: **changes introduced in the current branch since merge-base only**.
 Do not review unrelated files.
+
+**Supplied text first.** When the payload carries `slices`, `context_files`, `diff` or `file_contents`, review exactly that text and never rebuild the diff. A choice's history (law 4) is read with `git log`, `git blame` and `git show` only where the host gives a read-only child git; on keryx shell a read-only child has no shell and no git tool, so read the `git log -L`/`git blame` excerpts the payload supplies, or say the history was not read. Only with none supplied, collect it:
+```bash
+git diff --name-status "${BASE_SHA}" && git diff "${BASE_SHA}" && git ls-files --others --exclude-standard
+# explicit range: <FROM_SHA>..<TO_SHA> in place of "${BASE_SHA}"
+```
 
 ---
 
@@ -144,17 +143,12 @@ earlier review round, because there the finding is recorded as closed and is not
 ### Async / Concurrency
 
 - [ ] Missing `await` on async call — result is a `Promise`, not the value
-- [ ] `await` inside a non-async function (syntax error or no-op)
 - [ ] Parallel async calls that should be sequential (shared mutable state)
-- [ ] Sequential `await` calls that could be `Promise.all` (performance is a secondary concern here; flag when correctness is affected by ordering assumption)
 - [ ] Race conditions: state updated in one branch before a concurrent operation resolves
-- [ ] Unhandled promise rejection (no `.catch`, no `try/catch`, no `Promise.allSettled`)
 - [ ] `setTimeout`/`setInterval` with shared state and no cleanup
 
 ### Error Handling
 
-- [ ] Swallowed `catch` blocks (catches error, does nothing)
-- [ ] Error rethrown as generic string, losing stack trace
 - [ ] Missing error boundary in UI component tree
 - [ ] HTTP errors not checked (`response.ok` ignored)
 - [ ] Partial success treated as full success (only first item processed, error on rest silently dropped)
@@ -194,13 +188,13 @@ earlier review round, because there the finding is recorded as closed and is not
 | Performance profiling (bundle size, query cost, render cycles) | NO | `review-performance` |
 | Style, naming, import organization | NO | `review-style` |
 | Layer violations, SOLID, module coupling | NO | `review-architecture` |
-| React/MobX-specific store patterns | NO | `code-mobx-store-review` |
+| React/MobX-specific store patterns | NO | `review-frontend` |
 
 ---
 
 ## Orchestrated Review Contract
 
-When dispatched by `review-orchestrator`, follow the provided `reviewer-input.schema.json` payload. Return a `REVIEW_RESULT` object compatible with `skills/review/review-orchestrator/reviewer-finding.schema.json`, then a concise markdown summary. Keep findings evidence-based, include concrete `suggested_fix` for every blocker/major, and return `NEEDS_CONTEXT` instead of guessing when required context is missing.
+When dispatched by `review-orchestrator`, follow the provided `reviewer-input.schema.json` payload. Return a `REVIEW_RESULT` object compatible with `.metaproject/skills/gdskills/review/review-orchestrator/reviewer-finding.schema.json`, then a concise markdown summary. Keep findings evidence-based, include concrete `suggested_fix` for every blocker/major, and return `NEEDS_CONTEXT` instead of guessing when required context is missing. On a FIX slice, also return `prior_dispositions: [{id, disposition}]` for every attached finding id.
 
 ---
 
@@ -252,30 +246,24 @@ conditions land under that rubric, not a second rubric.
 
 | Condition | Severity | Why, under the canonical rubric |
 |---|---|---|
-| Unhandled promise rejection reaching the process | `blocker` | Crash |
+| Unhandled rejection; swallowed error; sequential independent awaits, no timeout, unbounded fan-out, event-loop blocking | per `error-handling.mdc` / `async-patterns.mdc` **Review severities** | One table for writers and every reviewer |
 | Corrupted or lost persisted/returned data | `blocker` | Data loss or corruption |
 | Unimplemented acceptance criterion | `blocker` | Named shape 4 |
 | Race condition on shared mutable state | `blocker` **if** the interleaving can corrupt or lose data; otherwise `major` | The outcome decides, not the word "race" |
 | Silent wrong result on a named input | `major` | Trigger and outcome are both named |
-| Swallowed error that hides a failed operation | `major` — `blocker` only if the caller then persists or returns wrong data | Silent failure is wrong behaviour; corruption is a different shape |
 | Type contract broken (declared type is not what is returned) | `major` | Callers observe the wrong value |
 | Edge case not handled, no input that reaches it named | `minor` | No trigger; the cost is to the next editor |
-| Non-null assertion without a comment | `minor` | Behaves correctly today; the cost is to the reader |
+| Non-null assertion (`!`) | the `!` row of `code-style-patterns.mdc` Review severities | That table owns the rating; do not restate it here |
 | "Could be more defensive", no observable defect | `info` | Neither trigger nor maintenance cost named |
 
 ## Iron Laws
 
 ### Shared laws (every reviewer)
 
-1. **A claim of runtime harm with no reproducible path is `info`.** If you cannot
-   name the input, call, or condition that reaches the code, you have an
-   observation, not a finding. Report it as `info` and say what would settle it.
-2. **Never flag the theoretical.** The path you describe must exist in the code
-   under review. Do not report a safe API because it could be misused, or a
-   pattern because it is often wrong elsewhere.
-3. **One finding per class, not one per occurrence.** When the same shape appears
-   at several sites, report it once and list every site. Ten findings that are one
-   finding hide the other nine problems.
+1. **A claim of runtime harm with no reproducible path is `info`.** If you cannot name the input, call, or condition that reaches the code, you have an observation, not a finding. Report it as `info` and say what would settle it.
+2. **Never flag the theoretical.** The path you describe must exist in the code under review. Do not report a safe API because it could be misused, or a pattern because it is often wrong elsewhere.
+3. **One finding per class, not one per occurrence.** When the same shape appears at several sites, report it once and list every site. Ten findings that are one finding hide the other nine problems.
+4. **A deliberate choice is not a defect until its reason is read and shown wrong.** An explicit override, suppression or exemption, a comment or commit giving a reason, or a sibling doing the same is a decision: read its reason (the comment, `git log -L` or `git blame`, the sibling) before you report it, and report it only when you can show that reason wrong. A project rule is checked against accepted platform practice and its known exceptions before a deviation from it is reported.
 
 Severity levels are defined once, in `review-orchestrator/SKILL.md` →
 **Severity (canonical)**. This reviewer does not restate them: `blocker` is the
@@ -348,20 +336,7 @@ STATUS: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
 
 ## Job Context Awareness
 
-When dispatched by `review-orchestrator` or `job-orchestrator`, the prompt MAY include:
-
-```
-JOB_NAME:     <job-name>
-CONTEXT_PATH: .metaproject/jobs/<job-name>/ai/context.md
-```
-
-If provided and the file exists, read the context document **before** the spec compliance gate.
-Use it to:
-- Understand intentional design decisions (do not flag correct library usage)
-- Identify acceptance criteria if no `issue_url` is provided
-- Calibrate severity for edge cases the team has explicitly accepted
-
-If absent, proceed normally — context is optional and non-blocking.
+When dispatched by `review-orchestrator` or `job-orchestrator`, the prompt MAY carry `JOB_NAME` and `CONTEXT_PATH: .metaproject/jobs/<job-name>/ai/context.md`. If given and the file exists, read it before you start; use it for intentional design decisions (do not flag correct library usage), acceptance criteria when there is no `issue_url`, and the severity of edge cases the team accepted. If absent, proceed normally: context is optional and non-blocking.
 
 ---
 
@@ -373,5 +348,17 @@ If absent, proceed normally — context is optional and non-blocking.
 | "I see a potential security issue" | Security belongs in `review-security-code`; note it as info and defer |
 | "The spec is unclear so I'll skip the gate" | Unclear spec → `NEEDS_CONTEXT` status + ask for clarification |
 | "I'll mark everything blocker to be safe" | Overstated severity makes reports unactionable; calibrate per the severity guide |
-| "Async performance is slow, so that's a logic bug" | Performance lives in `review-performance` unless incorrect ordering changes the result |
 | "I didn't reproduce the bug so I won't report it" | Every blocker needs a scenario, not a repro — describe the failing code path |
+
+<!-- keryx:layers-block:start -->
+## Project layers: graph, tests, wiki, memory
+
+Your payload may carry a `layers` block for your files: the files the graph says are affected, symbol neighbours, related tests, the wiki pages that describe the files and the memory entries for their module. It is bounded, and `truncated` names what was cut and the command that fetches the rest. When the diff alone does not settle a question, ask the project. Each command below is read-only and calls no model.
+
+- `keryx gdgraph affected <file>`: who depends on the file. Use it before you call a change contained, and whenever a changed export, signature or behaviour may have callers outside your files.
+- `keryx test related <file>`: the tests that cover the file. Use it before you say a behaviour is untested, and to judge whether a test would fail if the code broke.
+- `keryx wiki ask "<q>"`: what the project wiki says a module is for and which rules bind it. Use it when the intent of the code is unclear and the diff does not state it.
+- `keryx memory search "<q>"`: recorded lessons, decisions and known mistakes. Use it before you report a pattern the project may already have decided on, and when a failure looks like one it has seen.
+
+In a review package, `keryx gdgraph affected <file> --data-dir <package>/layers/graph` reads the graph built at the PR head; the tracked graph may be from another commit. A finding still rests on the code you read: what a layer says is a lead, not evidence. If a layer is empty or a command fails, say so in the report instead of guessing.
+<!-- keryx:layers-block:end -->

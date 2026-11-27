@@ -9,14 +9,13 @@ description: |
   (use review-security-code for XSS/injection/auth-bypass), or performance profiling
   (use review-performance).
 triggers:
-  - "review backend"
   - "backend review"
-  - "review API"
+  - "api review"
+  - "service review"
   - "review NestJS"
-  - "review --backend"
 metadata:
   author: "MrCipherSmith"
-  version: "1.0.0"
+  version: "1.3.0"
   category: "review"
   compatible_harnesses: "cursor,codex,zed,opencode,claude"
   stack_requires: "nestjs,prisma"
@@ -27,7 +26,7 @@ license: "MIT"
 
 Focused backend reviewer covering NestJS patterns, REST API design, database access patterns,
 and TypeScript correctness for service-layer code. This skill does NOT duplicate security or
-performance checks — those belong to `review-security-code` and `review-performance`.
+performance checks — those belong to `review-security-code` and `review-performance`. Its inputs are the reviewer payload only; session memory and earlier conversation are not inputs. It runs no command unless its payload's `allowed_tools` says `run-tests`, except the read-only `git log`, `git blame` and `git show` where its host gives a read-only child git (keryx shell does not: there the payload supplies the history).
 
 ---
 
@@ -36,13 +35,12 @@ performance checks — those belong to `review-security-code` and `review-perfor
 ```
 review-backend Progress:
 - [ ] Step 1: Read Job Context (if CONTEXT_PATH provided)
-- [ ] Step 2: Determine git scope (merge-base) — see skills/shared/git-merge-base.md
+- [ ] Step 2: Determine git scope (merge-base) — see .metaproject/skills/gdskills/shared/git-merge-base.md
 - [ ] Step 3: Collect diff and changed file list
 - [ ] Step 4: NestJS patterns check
-- [ ] Step 5: API design check
-- [ ] Step 6: Database patterns check
-- [ ] Step 7: TypeScript correctness check
-- [ ] Step 8: Emit findings in unified format, sorted by severity
+- [ ] Step 5: API, DTO and database rules check (section 2)
+- [ ] Step 6: TypeScript correctness check
+- [ ] Step 7: Emit findings in unified format, sorted by severity
 ```
 
 ---
@@ -60,21 +58,17 @@ review-backend Progress:
 
 ## Scope Detection
 
-See shared script: `skills/shared/git-merge-base.md`
+See shared script: `.metaproject/skills/gdskills/shared/git-merge-base.md`
 
 Run that script to determine `BASE_SHA` before collecting the diff.
 
-```bash
-# Default mode — all changes from merge-base to working tree
-git diff --name-only "${BASE_SHA}"
-git diff "${BASE_SHA}"
-
-# Explicit range mode
-git diff --name-only <FROM_SHA>..<TO_SHA>
-git diff <FROM_SHA>..<TO_SHA>
-```
-
 Only review files changed in scope. Do not comment on legacy code outside the diff.
+
+**Supplied text first.** When the payload carries `slices`, `context_files`, `diff` or `file_contents`, review exactly that text and never rebuild the diff. A choice's history (law 4) is read with `git log`, `git blame` and `git show` only where the host gives a read-only child git; on keryx shell a read-only child has no shell and no git tool, so read the `git log -L`/`git blame` excerpts the payload supplies, or say the history was not read. Only with none supplied, collect it:
+```bash
+git diff --name-status "${BASE_SHA}" && git diff "${BASE_SHA}" && git ls-files --others --exclude-standard
+# explicit range: <FROM_SHA>..<TO_SHA> in place of "${BASE_SHA}"
+```
 
 ---
 
@@ -84,7 +78,7 @@ Only review files changed in scope. Do not comment on legacy code outside the di
 
 **Module structure**
 - `@Module()` declaration present; providers, imports, exports are correctly listed
-- Circular dependency risk: two modules importing each other — flag as `major` if detected; suggest `forwardRef()`
+- Circular dependency risk: two modules importing each other — defer the cycle to `review-architecture`; suggest `forwardRef()`
 - Feature modules do not import `AppModule`
 
 **Provider scope**
@@ -92,22 +86,14 @@ Only review files changed in scope. Do not comment on legacy code outside the di
 - `REQUEST`-scoped provider injected into a `Singleton` provider is a **blocker** (creates hidden state sharing)
 - `TRANSIENT` scope used unnecessarily when singleton would suffice — flag as `minor`
 
-**DTO validation**
-- All controller methods accepting user input (body, query, param) have a DTO class decorated with `class-validator` decorators
-- Required fields: `@IsString()`, `@IsNumber()`, `@IsEmail()`, etc. present and accurate
-- `@IsOptional()` used only on truly optional fields; non-optional fields must not have `@IsOptional()`
-- `ValidationPipe` applied globally (in `main.ts`) or explicitly via `@UsePipes(ValidationPipe)` — **blocker** if missing on any endpoint accepting user input
-- `@Transform()` used where input coercion is needed (e.g., string → number from query params)
-
 **Guards and roles**
 - Protected endpoints have `@UseGuards(...)` with appropriate guard(s)
-- Role-based access uses `@Roles(...)` decorator with a roles guard — missing guard on an endpoint that should be protected is a **blocker**
+- Role-based access uses `@Roles(...)` decorator with a roles guard — a missing guard on an endpoint that should be protected is rated by the auth-guard row of the conditions table
 - Public endpoints explicitly marked with `@Public()` or equivalent decorator, not just left unguarded
 
 **Controller responsibilities**
-- Controllers are thin: no business logic, no direct ORM calls, no computation
-- Controller methods do: parse input → delegate to service → return response
-- If business logic is in a controller method, flag as `major` ("move to service layer")
+- Controllers are thin: no business logic, no direct ORM calls, no computation; a method does parse input → delegate to service → return response
+- If business logic is in a controller method, flag it per the controller row of the conditions table (`minor`: "move to service layer")
 
 **Service layer**
 - Business logic lives in services
@@ -117,62 +103,24 @@ Only review files changed in scope. Do not comment on legacy code outside the di
 
 ---
 
-### 2. API Design
+### 2. API, DTOs and database: the standard
 
-**HTTP method conventions**
-- `GET` requests carry no body (flag as `major` if present)
-- `POST` used for resource creation
-- `PUT` for full replacement, `PATCH` for partial update — mixed usage without clear reason flagged as `minor`
-- `DELETE` on correct resource path
+These project rules hold what to check and how to rate it. Read each one that applies to the change and rate by its **Review severities** table; this lens does not restate them.
 
-**Response shape consistency**
-- All endpoints in a controller return the same envelope shape (e.g., `{ data, meta }`) — inconsistency (sometimes object, sometimes raw array) flagged as `major`
-- HTTP status codes match semantics: `201` for create, `200` for read/update, `204` for no-content delete, `404` for not found, `422` for validation failure
+- `.metaproject/rules/core/api-contracts.mdc`: spec first, versioning, error envelope (validation failure is `400`), idempotency keys, list envelopes and pagination.
+- `.metaproject/rules/core/nestjs-dto.mdc`: DTO classes, validators, nested and query transforms, Swagger decorators.
+- `.metaproject/rules/core/database-patterns.mdc`: queries in loops, indexes, migration safety, transactions, `SELECT *`, soft deletes.
+- `.metaproject/rules/core/security-baseline.mdc`: parameterized queries (string interpolation in raw SQL).
 
-**Pagination**
-- List endpoints that could return unbounded datasets must have pagination (`limit`/`offset` or `cursor`)
-- Missing pagination on a list endpoint flagged as `major` when no obvious bound exists
-
-**Error handling**
-- Async controller methods must have error handling: either `try/catch` or a global exception filter
-- Unhandled promise rejections (async method without try/catch, no global filter) — **blocker**
-- Exception messages must not leak internal details (stack traces, ORM error strings) to the HTTP response — leaking is a **blocker**
-- NestJS built-in exceptions (`NotFoundException`, `BadRequestException`, etc.) preferred over generic `Error`
+Beyond them: a `GET` with a body is `major`; `PUT` for full replacement and `PATCH` for partial; NestJS built-in exceptions over a generic `Error`; unhandled rejections are rated by `.metaproject/rules/core/error-handling.mdc` (a rejection Nest's exception layer answers with an error response is not a crash: rate that response).
 
 ---
 
-### 3. Database Patterns (ORM)
-
-**N+1 queries**
-- Relation loaded inside a loop without eager loading (`relations`, `leftJoinAndSelect`) or a DataLoader — **always major**
-- Example: `for (const user of users) { user.orders = await orderRepo.find(...) }` — flag with concrete suggestion to use `relations: ['orders']` or batch query
-
-**Transactions**
-- Multi-step operations that must be atomic (e.g., create + update + delete across tables) must use a transaction
-- Missing transaction on a multi-step mutation is a **major** finding
-- NestJS TypeORM: use `dataSource.transaction(async (manager) => { ... })` or `@Transaction()` decorator pattern
-
-**Raw query safety**
-- String interpolation in raw queries is a **blocker** (SQL injection risk)
-- Use parameterized queries: `query('SELECT * FROM users WHERE id = $1', [id])`
-- Flag `createQueryBuilder().where('id = ' + id)` as blocker
-
-**Soft deletes**
-- If the project schema uses `deletedAt` / `@DeleteDateColumn()`, deletions must use `.softRemove()` / `.softDelete()`, not `.remove()` / `.delete()`
-- Hard delete on a soft-delete entity flagged as `major`
-
-**Migration safety**
-- Column removed in migration — check that no application code still references it
-- Dropping a column without a deprecation period in a live system flagged as `major`
-- `NOT NULL` column added without a default value to a populated table — **blocker**
-
----
-
-### 4. TypeScript Correctness
+### 3. TypeScript Correctness
 
 - No `any` in new code — suggest `unknown` with type guards, or correct typed return
 - Public service methods must have explicit return types (`Promise<UserDto>`, not inferred)
-- Service contracts expressed as interfaces (`IUserService`), not just class implementations
+- Interfaces only at an I/O or substitution boundary, named without an `I` prefix (`solid-principles.mdc`, D)
 - No `as any` or unsafe casts (`as unknown as T`) without a comment explaining why
 - `@ts-ignore` / `@ts-expect-error` without explanation comment — flag as `minor`
 
@@ -192,15 +140,10 @@ Only review files changed in scope. Do not comment on legacy code outside the di
 
 ### Shared laws (every reviewer)
 
-1. **A claim of runtime harm with no reproducible path is `info`.** If you cannot
-   name the input, call, or condition that reaches the code, you have an
-   observation, not a finding. Report it as `info` and say what would settle it.
-2. **Never flag the theoretical.** The path you describe must exist in the code
-   under review. Do not report a safe API because it could be misused, or a
-   pattern because it is often wrong elsewhere.
-3. **One finding per class, not one per occurrence.** When the same shape appears
-   at several sites, report it once and list every site. Ten findings that are one
-   finding hide the other nine problems.
+1. **A claim of runtime harm with no reproducible path is `info`.** If you cannot name the input, call, or condition that reaches the code, you have an observation, not a finding. Report it as `info` and say what would settle it.
+2. **Never flag the theoretical.** The path you describe must exist in the code under review. Do not report a safe API because it could be misused, or a pattern because it is often wrong elsewhere.
+3. **One finding per class, not one per occurrence.** When the same shape appears at several sites, report it once and list every site. Ten findings that are one finding hide the other nine problems.
+4. **A deliberate choice is not a defect until its reason is read and shown wrong.** An explicit override, suppression or exemption, a comment or commit giving a reason, or a sibling doing the same is a decision: read its reason (the comment, `git log -L` or `git blame`, the sibling) before you report it, and report it only when you can show that reason wrong. A project rule is checked against accepted platform practice and its known exceptions before a deviation from it is reported.
 
 Severity levels are defined once, in `review-orchestrator/SKILL.md` →
 **Severity (canonical)**. This reviewer does not restate them: `blocker` is the
@@ -215,22 +158,17 @@ is, and a condition that cannot name one is not a `blocker`.
 
 | Condition | Severity | Shape |
 |---|---|---|
-| Missing DTO validation on an endpoint accepting user input | `blocker` | Exploitable vulnerability |
-| String interpolation in raw SQL query | `blocker` | Exploitable vulnerability |
-| Leaking stack trace / raw ORM error to API response | `blocker` | Exploitable vulnerability (information disclosure) |
+| Leaking stack trace / raw ORM error to API response | `blocker` with an attack vector stated (what is disclosed, to whom, through which entry point); `major` when the leak is shown reaching a response; else `info` | Exploitable vulnerability only when the vector is shown; a shown leak is a wrong outcome |
+| Missing auth guard on an endpoint that should be protected | `blocker` with an attack vector stated (caller, entry point, impact); `major` with a named caller and the wrong outcome it gets; else `info` | Exploitable vulnerability only when the vector is shown |
 | `REQUEST`-scoped provider injected into a `Singleton` | `blocker` | Data corruption — one request's state is served to another |
-| Unhandled promise rejection in a controller method | `blocker` | Crash |
-| `NOT NULL` column added without a default to a populated table | `blocker` | Data loss — the migration fails or truncates |
-| N+1 query (relation loaded in a loop) | `major` (minimum) | Named trigger and outcome; degradation, not an outage. Same rating as `review-highload` |
-| Missing transaction on a multi-step atomic mutation | `major` — `blocker` where a partial write corrupts persisted state | The outcome decides |
-| Business logic in a controller | `major` | Layer violation. Same rating as `review-architecture` |
-| Missing pagination on an unbounded list endpoint | `major` — `blocker` where an attacker-reachable request exhausts memory | Degradation vs. crash/DoS |
+| DTO, API contract, query, migration and transaction conditions | per the rule's **Review severities** table (section 2) | The rule's row names the shape |
+| Business logic in a controller | `minor` — `major` only with a concrete defect it causes (trigger and outcome) | Layer violation. Same rating as `review-architecture` |
 
 ---
 
 ## Orchestrated Review Contract
 
-When dispatched by `review-orchestrator`, follow the provided `reviewer-input.schema.json` payload. Return a `REVIEW_RESULT` object compatible with `skills/review/review-orchestrator/reviewer-finding.schema.json`, then a concise markdown summary. Keep findings evidence-based, include concrete `suggested_fix` for every blocker/major, and return `NEEDS_CONTEXT` instead of guessing when required context is missing.
+When dispatched by `review-orchestrator`, follow the provided `reviewer-input.schema.json` payload. Return a `REVIEW_RESULT` object compatible with `.metaproject/skills/gdskills/review/review-orchestrator/reviewer-finding.schema.json`, then a concise markdown summary. Keep findings evidence-based, include concrete `suggested_fix` for every blocker/major, and return `NEEDS_CONTEXT` instead of guessing when required context is missing.
 
 ---
 
@@ -292,7 +230,7 @@ STATUS: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
 ```markdown
 # Backend Review Report
 
-## Verdict: APPROVE | APPROVE_WITH_SUGGESTIONS | REQUEST_CHANGES
+<!-- No merge verdict: the orchestrator owns it. A standalone run summarizes findings only. -->
 
 ## Summary
 <2-4 sentences covering what changed, overall backend health, key concerns.>
@@ -343,20 +281,7 @@ STATUS: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
 
 ## Job Context Awareness
 
-When dispatched by `job-orchestrator` or called with an explicit context path, the prompt MAY include:
-
-```
-JOB_NAME:     <job-name>
-CONTEXT_PATH: <JOBS_ROOT>/<job-name>/ai/context.md
-```
-
-If provided and the file exists, read the context document **before** running scope detection.
-Use it to understand:
-- Which ORM, validation library, or guard strategy was intentionally chosen
-- Project-level architectural decisions (e.g., no repository pattern by design)
-- Acceptance criteria to verify spec compliance
-
-If absent, proceed normally — context is optional and non-blocking.
+When dispatched by `review-orchestrator` or `job-orchestrator`, the prompt MAY carry `JOB_NAME` and `CONTEXT_PATH: .metaproject/jobs/<job-name>/ai/context.md`. If given and the file exists, read it before you start; use it for intentional design decisions (do not flag correct library usage), acceptance criteria when there is no `issue_url`, and the severity of edge cases the team accepted. If absent, proceed normally: context is optional and non-blocking.
 
 ---
 
@@ -365,7 +290,18 @@ If absent, proceed normally — context is optional and non-blocking.
 | Rationalization | Why it is wrong |
 |----------------|-----------------|
 | "ValidationPipe is probably configured somewhere" | Always verify it is applied; assumption lets injection reach service layer |
-| "The N+1 only runs on small datasets now" | Data grows; flag it now with a clear fix, not after the incident |
-| "The controller has some logic but it's minor" | The line is binary — logic in controller = untestable without HTTP stack |
-| "Stack trace in response only shows in dev" | Config can be wrong in prod; treat it as blocker always |
-| "I'll skip the migration check — it's just a column rename" | Column renames without fallback break zero-downtime deploys |
+| "The controller has some logic but it's minor" | Logic in a controller is `minor` unless a defect is named; say which, do not rate by feeling |
+| "Stack trace in response only shows in dev" | Config can be wrong in prod; report it per the stack-trace row; blocker needs a shown vector |
+
+<!-- keryx:layers-block:start -->
+## Project layers: graph, tests, wiki, memory
+
+Your payload may carry a `layers` block for your files: the files the graph says are affected, symbol neighbours, related tests, the wiki pages that describe the files and the memory entries for their module. It is bounded, and `truncated` names what was cut and the command that fetches the rest. When the diff alone does not settle a question, ask the project. Each command below is read-only and calls no model.
+
+- `keryx gdgraph affected <file>`: who depends on the file. Use it before you call a change contained, and whenever a changed export, signature or behaviour may have callers outside your files.
+- `keryx test related <file>`: the tests that cover the file. Use it before you say a behaviour is untested, and to judge whether a test would fail if the code broke.
+- `keryx wiki ask "<q>"`: what the project wiki says a module is for and which rules bind it. Use it when the intent of the code is unclear and the diff does not state it.
+- `keryx memory search "<q>"`: recorded lessons, decisions and known mistakes. Use it before you report a pattern the project may already have decided on, and when a failure looks like one it has seen.
+
+In a review package, `keryx gdgraph affected <file> --data-dir <package>/layers/graph` reads the graph built at the PR head; the tracked graph may be from another commit. A finding still rests on the code you read: what a layer says is a lead, not evidence. If a layer is empty or a command fails, say so in the report instead of guessing.
+<!-- keryx:layers-block:end -->

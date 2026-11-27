@@ -41,7 +41,52 @@ keryx wiki index
 ## Pages
 
 <!-- keryx:wiki-index:begin -->
-<!-- generated: never | pages: 0 -->
+<!-- generated: 2026-11-08T17:24:42.781Z | pages: 17 -->
 
-_No pages yet. Run `keryx wiki index` after creating pages._
+### Architecture
+
+- [Project Map](architecture/project-map.md) (accepted) - Deterministic map of 112 code files, 0 assets, and 210 import edges across 20 top-level modules. See component module pages for enriched documentation.
+- [Testing Map](architecture/testing-map.md) (accepted) - generatedAt: 2026-09-09T18:24:04.579Z
+
+### Domain Model
+
+_No pages yet._
+
+### Business Rule
+
+_No pages yet._
+
+### User Scenario
+
+_No pages yet._
+
+### Component
+
+- [scripts](components/scripts.md) (accepted)
+- [src](components/src.md) (accepted)
+- [src/cli](components/src-cli.md) (accepted)
+- [src/client](components/src-client.md) (accepted)
+  - [src/client/components](components/src-client-components.md) (accepted)
+  - [src/client/screens](components/src-client-screens.md) (accepted)
+- [src/installer](components/src-installer.md) (accepted)
+- [src/log](components/src-log.md) (accepted)
+- [src/server](components/src-server.md) (accepted)
+  - [src/server/tools](components/src-server-tools.md) (accepted)
+- [test](components/test.md) (accepted)
+- [test/client](components/test-client.md) (accepted)
+- [test/installer](components/test-installer.md) (accepted)
+- [test/log](components/test-log.md) (accepted)
+- [test/server](components/test-server.md) (accepted)
+
+### Service
+
+_No pages yet._
+
+### Integration
+
+_No pages yet._
+
+### Decision
+
+_No pages yet._
 <!-- keryx:wiki-index:end -->

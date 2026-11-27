@@ -2,20 +2,20 @@
 name: review-style
 model_tier: light
 description: |
-  Use when: reviewing code for style, naming conventions, readability, and DRY violations —
+  Use when: reviewing code for names, naming conventions and readability —
   without touching logic, architecture, security, or performance. Dispatched by
   review-orchestrator with the --style flag.
   NOT for: logic bugs, architectural violations, security vulnerabilities, performance
   anti-patterns, or any finding that could cause a functional regression.
 triggers:
-  - "review style"
   - "style review"
+  - "readability"
+  - "clean up"
   - "check naming"
   - "check readability"
-  - "review --style"
 metadata:
   author: "MrCipherSmith"
-  version: "1.0.0"
+  version: "1.3.0"
   category: "review"
   compatible_harnesses: "cursor,codex,zed,opencode,claude"
 license: "MIT"
@@ -23,9 +23,23 @@ license: "MIT"
 
 # Review — Style, Naming & Readability
 
-Focused style reviewer. Covers naming conventions, dead code, readability, DRY violations,
-import organization, comment quality, file length, cyclomatic complexity, and console noise.
-Never touches logic correctness, architecture, security, or performance.
+Focused style reviewer. Covers names, naming conventions, readability, file length,
+cyclomatic complexity, barrel and re-export hygiene, and console noise.
+Never touches logic correctness, architecture, security, or performance. Its inputs are the reviewer payload only; session memory and earlier conversation are not inputs. It runs no command unless its payload's `allowed_tools` says `run-tests`, except the read-only `git log`, `git blame` and `git show` where its host gives a read-only child git (keryx shell does not: there the payload supplies the history).
+
+## The standard
+
+Read `.metaproject/rules/core/solid-principles.mdc` before the diff: it is the
+file the code was written against. Its **Readability thresholds** table is this
+lens's thresholds and default severities; under a threshold, report nothing.
+
+Names are rated by the `solid-principles.mdc` **Review severities** Name row. Not
+this lens's: duplication, magic literals, comments and lookup-map or branch-chain
+findings (`review-clean-code`); circular imports (`review-architecture`); unused
+imports and variables and import order (the linter).
+
+A threshold counts only when this change crosses it: one more line in a file
+already past a length limit is not a finding.
 
 ---
 
@@ -34,16 +48,14 @@ Never touches logic correctness, architecture, security, or performance.
 ```
 review-style Progress:
 - [ ] Step 1: Read Job Context (if CONTEXT_PATH provided)
-- [ ] Step 2: Determine git scope (merge-base) — see skills/shared/git-merge-base.md
+- [ ] Step 2: Determine git scope (merge-base) — see .metaproject/skills/gdskills/shared/git-merge-base.md
 - [ ] Step 3: Collect diff and changed file list
 - [ ] Step 4: Naming conventions check
-- [ ] Step 5: Dead code and imports check
+- [ ] Step 5: Dead exports and module hygiene check
 - [ ] Step 6: Readability and complexity check
-- [ ] Step 7: DRY violations check
-- [ ] Step 8: Comment quality check
-- [ ] Step 9: File length and structure check
-- [ ] Step 10: Console usage check
-- [ ] Step 11: Emit findings in unified format, sorted by severity
+- [ ] Step 7: File length and structure check
+- [ ] Step 8: Console usage check
+- [ ] Step 9: Emit findings in unified format, sorted by severity
 ```
 
 ---
@@ -60,21 +72,17 @@ review-style Progress:
 
 ## Scope Detection
 
-See shared script: `skills/shared/git-merge-base.md`
+See shared script: `.metaproject/skills/gdskills/shared/git-merge-base.md`
 
 Run that script to determine `BASE_SHA` before collecting the diff.
 
-```bash
-# Default mode — all changes from merge-base to working tree
-git diff --name-only "${BASE_SHA}"
-git diff "${BASE_SHA}"
-
-# Explicit range mode
-git diff --name-only <FROM_SHA>..<TO_SHA>
-git diff <FROM_SHA>..<TO_SHA>
-```
-
 Only review code changed in scope. Do not flag style issues in lines outside the diff.
+
+**Supplied text first.** When the payload carries `slices`, `context_files`, `diff` or `file_contents`, review exactly that text and never rebuild the diff. A choice's history (law 4) is read with `git log`, `git blame` and `git show` only where the host gives a read-only child git; on keryx shell a read-only child has no shell and no git tool, so read the `git log -L`/`git blame` excerpts the payload supplies, or say the history was not read. Only with none supplied, collect it:
+```bash
+git diff --name-status "${BASE_SHA}" && git diff "${BASE_SHA}" && git ls-files --others --exclude-standard
+# explicit range: <FROM_SHA>..<TO_SHA> in place of "${BASE_SHA}"
+```
 
 ---
 
@@ -82,23 +90,14 @@ Only review code changed in scope. Do not flag style issues in lines outside the
 
 ### 1. Naming Conventions
 
-**Variables and functions**
-- `camelCase` for variables, function parameters, and function names
-- `PascalCase` for classes, interfaces, enums, and React components
-- `UPPER_SNAKE_CASE` for module-level constants (truly constant values, not `let` reassigned as constants)
-- Boolean variables/functions prefixed with `is`, `has`, `can`, `should` (e.g., `isLoading`, `hasAccess`)
-- Avoid single-letter names except in short array callbacks (`arr.map(x => x.id)` acceptable; `let x = fetchUser()` is not)
-- Avoid abbreviations that are not universally understood (`usr`, `mgr`, `repo` vs `repository`)
+Casing, boolean prefixes and verb names follow the language's published defaults; report a departure only where the surrounding code follows the default.
 
-**Functions**
-- Function names are verbs or verb phrases: `getUser`, `handleSubmit`, `parseConfig`
-- Event handlers prefixed with `on` or `handle`: `onSubmit`, `handleClick`
-- Predicate functions return boolean and are named accordingly: `isValid()`, not `checkValid()`
+**Variables and functions**
+- Single-letter names only for loop counters and short array callbacks (`arr.map(x => x.id)`); `let x = fetchUser()` is a finding (the Name row)
 
 **Classes and interfaces**
-- Interface names use `I` prefix: `IUserService`, `IAuthGuard`
+- Interfaces are named without an `I` prefix (`UserService`, not `IUserService`); an `I` prefix the change introduces is a finding
 - Enum members: `UPPER_SNAKE_CASE` or `PascalCase` — whichever the project uses consistently; flag inconsistency
-- Type alias names: `PascalCase`
 
 **Files and directories**
 - File names match the primary export: `UserService` → `user.service.ts`
@@ -108,86 +107,46 @@ Naming severity is set by the Style laws below and by the canonical rubric in `r
 
 ---
 
-### 2. Dead Code and Unused Imports
+### 2. Dead Exports
 
-- Unused variables (`const x = ...` never referenced) — flag as `minor`
-- Unused function parameters in non-interface-implementing functions — flag as `minor`
-- Unused imports — flag as `minor`; provide the removal patch
-- Commented-out code blocks (more than one line) — flag as `minor`; ask: "Is this intentional? If not, remove."
 - Exported functions/classes that are never imported anywhere in the diff scope — flag as `info`
-  (may be used externally; do not assume dead without evidence)
+  (may be used externally; do not assume dead without evidence). Unused variables, parameters and imports are the linter's.
 
 ---
 
 ### 3. Readability and Complexity
 
-**Conditions**
-- Overly complex boolean conditions (more than 3 clauses without parentheses grouping) — flag as `minor`; suggest extracting to a named predicate
+**Conditions and nesting** (clause, depth and complexity thresholds are the Readability thresholds table)
+- A boolean condition over the clause threshold — suggest extracting a named predicate
+- Callback or `if/else` nesting over the depth threshold — suggest extraction, `async/await` or guard clauses
+- A function over the decision-branch threshold — suggest splitting into named functions
 - Double negatives (`!isNotEmpty`) — flag as `minor`; rewrite to positive form
 - Ternary chains (ternary inside ternary) — flag as `minor`; suggest `if/else` or early return
 
-**Nesting**
-- Functions with callback nesting deeper than 3 levels — flag as `minor`; suggest extraction or `async/await`
-- `if/else` trees deeper than 3 levels — flag as `minor`; suggest guard clauses (early returns)
-
-**Magic numbers**
-- Numeric or string literals used in logic without a named constant — flag as `minor`
-- Exception: index `0`, `1`, `-1`, empty string `""`, and HTTP status codes when the context is obvious
-- Suggest: `const MAX_RETRY_COUNT = 3;`
-
-**Cyclomatic complexity**
-- Functions with more than 10 decision branches (if/else/switch cases/ternary/loop) — flag as `minor`
-- Suggest splitting into smaller, named functions
-
 ---
 
-### 4. DRY Violations
+### 4. Module Hygiene
 
-- Clearly duplicated logic blocks (same or near-identical code in two places within the diff) — flag as `major` if the blocks are non-trivial (>5 lines), `minor` if small
-- Duplicated string literals used in multiple places — flag as `info`; suggest a shared constant
-- Similar switch/if-else trees that could be a lookup map — flag as `minor`
-
-Do not flag DRY violations for code outside the diff even if legacy duplication exists.
-
----
-
-### 5. Import Organization
-
-- Imports must be grouped (framework/library imports first, then project imports, then relative imports); blank line between groups
-- Imports within a group should be alphabetically sorted (or consistently ordered — match project convention)
 - Barrel imports (`import * as X from '...'`) without reason — flag as `info`
-- Circular imports (visible from import paths) — flag as `major`
 - Re-exporting something that is immediately re-used in the same file — flag as `minor` (unnecessary indirection)
 
 ---
 
-### 6. Comment Quality
+### 5. Public API Docs
 
-**Misleading or outdated comments**
-- Comment describes what the code does but the code has changed — flag as `minor`
-- Comment says "TODO: remove before deploy" and was merged — flag as `major`
-- Comment is actively wrong (incorrect description of behavior) — flag as `major`
-
-**Missing JSDoc on public APIs**
-- Public functions/classes exported from a module should have a JSDoc comment describing purpose, params, and return value
-- Missing JSDoc on public APIs: flag as `info` (unless the project has a documented standard requiring it, in which case `minor`)
-
-**Noise comments**
-- `// increment i` above `i++` — flag as `info`; suggest removing
-- Section divider comments (`// =========`) that add no semantic value — flag as `info`
+- Missing JSDoc on a public export: flag as `info` (`minor` where the project has a documented standard). Comment quality is `review-clean-code`'s.
 
 ---
 
-### 7. File Length and Structure
+### 6. File Length and Structure
 
-- Files exceeding 500 lines (excluding generated code, test fixtures, and migration files) — flag as `info` with a suggestion to split by responsibility
-- Files exceeding 800 lines — flag as `minor`
-- Single file exporting more than 5 unrelated things — flag as `minor`; suggest splitting into focused modules
-- Test files: no limit enforced; complexity handled by test count and grouping
+- A file over a length threshold — suggest splitting by responsibility
+- A file over the unrelated-exports threshold — suggest splitting into focused modules
+- A React component file whose parts are out of order (imports, interfaces, component, helpers) — flag as `minor`
 
 ---
 
-### 8. Console Usage
+### 7. Console Usage
 
 - `console.log` / `console.error` / `console.warn` in non-test production code — flag as `minor`
 - Suggest replacing with project logger (`AppLogger`, `Logger`, etc.) or remove entirely
@@ -199,15 +158,10 @@ Do not flag DRY violations for code outside the diff even if legacy duplication 
 
 ### Shared laws (every reviewer)
 
-1. **A claim of runtime harm with no reproducible path is `info`.** If you cannot
-   name the input, call, or condition that reaches the code, you have an
-   observation, not a finding. Report it as `info` and say what would settle it.
-2. **Never flag the theoretical.** The path you describe must exist in the code
-   under review. Do not report a safe API because it could be misused, or a
-   pattern because it is often wrong elsewhere.
-3. **One finding per class, not one per occurrence.** When the same shape appears
-   at several sites, report it once and list every site. Ten findings that are one
-   finding hide the other nine problems.
+1. **A claim of runtime harm with no reproducible path is `info`.** If you cannot name the input, call, or condition that reaches the code, you have an observation, not a finding. Report it as `info` and say what would settle it.
+2. **Never flag the theoretical.** The path you describe must exist in the code under review. Do not report a safe API because it could be misused, or a pattern because it is often wrong elsewhere.
+3. **One finding per class, not one per occurrence.** When the same shape appears at several sites, report it once and list every site. Ten findings that are one finding hide the other nine problems.
+4. **A deliberate choice is not a defect until its reason is read and shown wrong.** An explicit override, suppression or exemption, a comment or commit giving a reason, or a sibling doing the same is a decision: read its reason (the comment, `git log -L` or `git blame`, the sibling) before you report it, and report it only when you can show that reason wrong. A project rule is checked against accepted platform practice and its known exceptions before a deviation from it is reported.
 
 Severity levels are defined once, in `review-orchestrator/SKILL.md` →
 **Severity (canonical)**. This reviewer does not restate them: `blocker` is the
@@ -219,16 +173,15 @@ boundary is the trigger-and-outcome test.
 | Rule | Rationale |
 |------|-----------|
 | Style findings are **never** `blocker` | None of the four merge-blocking shapes is reachable from a style observation. This reviewer's finding format omits `blocker` for that reason |
-| A naming issue is `minor`; it reaches `major` only when the name has already produced an observable wrong outcome at a call site you can name | Identical to `review-clean-code` law 2, deliberately: the same condition must not carry two severities |
-| Duplication is `minor`, reported once with every site listed | Identical to `review-clean-code` law 3 |
-| Never flag issues handled by the project's autoformatter (indentation, trailing spaces, bracket style) | Linter/formatter owns that; double-flagging creates noise |
-| Do not expand scope to architectural or logic concerns | Stay in style lane; hand off to the right reviewer. A circular import that fails at runtime is `review-architecture`'s finding, not a style one |
+| A naming issue is `minor`; it reaches `major` only when the name has already produced an observable wrong outcome at a call site you can name | The `solid-principles.mdc` Name row; this lens is its only rater |
+| Never flag issues handled by the project's autoformatter or linter (indentation, trailing spaces, bracket style, import grouping and order, unused imports and variables) | Linter/formatter owns that; double-flagging creates noise. This does not cover the `from "src/..."` import-path row of `code-style-patterns.mdc` Rule 8, which is path style, not grouping or order |
+| Do not expand scope to architectural or logic concerns | Stay in style lane; hand off to the right reviewer. Circular imports are `review-architecture`'s |
 
 ---
 
 ## Orchestrated Review Contract
 
-When dispatched by `review-orchestrator`, follow the provided `reviewer-input.schema.json` payload. Return a `REVIEW_RESULT` object compatible with `skills/review/review-orchestrator/reviewer-finding.schema.json`, then a concise markdown summary. Keep findings evidence-based, include concrete `suggested_fix` for every blocker/major, and return `NEEDS_CONTEXT` instead of guessing when required context is missing.
+When dispatched by `review-orchestrator`, follow the provided `reviewer-input.schema.json` payload. Return a `REVIEW_RESULT` object compatible with `.metaproject/skills/gdskills/review/review-orchestrator/reviewer-finding.schema.json`, then a concise markdown summary. Keep findings evidence-based, include concrete `suggested_fix` for every blocker/major, and return `NEEDS_CONTEXT` instead of guessing when required context is missing.
 
 ---
 
@@ -265,7 +218,7 @@ observation is theatre, not rigour.
 - **Severity**: major | minor | info
 - **File**: path/to/file.ts:line
 - **Problem**: what is wrong
-- **Why it matters**: readability / maintainability / DRY / convention consistency
+- **Why it matters**: readability / maintainability / convention consistency
 - **Fix**: concrete suggestion
 - **Patch** (optional):
   ```diff
@@ -283,14 +236,14 @@ STATUS: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
 ```
 
 - `DONE` — no major or above findings (minor/info only or none)
-- `DONE_WITH_CONCERNS` — one or more major findings (actively misleading names, circular imports, non-trivial DRY violations)
+- `DONE_WITH_CONCERNS` — one or more major findings (a name that has produced a named wrong outcome at a call site)
 - `NEEDS_CONTEXT` — project naming convention unclear and no context doc provided; state what is ambiguous
 - `BLOCKED` — cannot access diff; state reason
 
 ```markdown
 # Style Review Report
 
-## Verdict: APPROVE | APPROVE_WITH_SUGGESTIONS | REQUEST_CHANGES
+<!-- No merge verdict: the orchestrator owns it. A standalone run summarizes findings only. -->
 
 ## Summary
 <2-3 sentences: overall naming and readability health, notable patterns found.>
@@ -308,13 +261,13 @@ STATUS: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
 - info: N
 
 ## Major Issues
-<[F-NNN] findings — misleading names, circular imports, significant DRY violations>
+<[F-NNN] findings — names that produced a named wrong outcome>
 
 ## Minor & Info
 <[F-NNN] findings>
 
 ## Positive Notes
-<Optional. Consistent naming, clean imports, good comments.>
+<Optional. Consistent naming, readable structure.>
 ```
 
 ---
@@ -323,7 +276,9 @@ STATUS: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
 
 | Concern | This skill | Use instead |
 |---------|------------|-------------|
-| Naming, DRY, readability, imports, comments, file length | YES | — |
+| Names, readability, barrels and re-exports, file length | YES | — |
+| Duplication, magic literals, comments, lookup maps | NO | `review-clean-code` |
+| Circular imports | NO | `review-architecture` |
 | Logic bugs, incorrect return values | NO | `review-logic` |
 | Architectural layer violations | NO | `review-architecture` |
 | Security vulnerabilities | NO | `review-security-code` |
@@ -356,7 +311,5 @@ If absent, infer conventions from surrounding unchanged code in the same files; 
 | Rationalization | Why it is wrong |
 |----------------|-----------------|
 | "The naming is a bit odd but I understand it" | Reviewers understand their own code; the next dev won't |
-| "Commented-out code might be needed later" | Git history exists for that; dead comments add noise |
-| "It's only one magic number" | One `42` today becomes twelve untraceable `42`s tomorrow |
-| "DRY violation is minor so I'll skip it" | Non-trivial duplication is `major`; do not understate it |
 | "The file is 600 lines but it's organized" | Organization doesn't prevent merge conflicts and scroll fatigue |
+| "An unused import is an easy minor to add" | The linter owns unused imports and variables; a finding here double-reports it |

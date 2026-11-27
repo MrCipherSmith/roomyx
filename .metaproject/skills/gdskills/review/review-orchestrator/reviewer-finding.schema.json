@@ -74,11 +74,19 @@
             ]
           },
           "line": {
+            "description": "Do not count lines. Quote the code in `quote` instead and leave this null: `keryx review ingest` finds the quote in `file` and writes the line the match started on, overwriting anything reported here. A model is poor at counting lines and good at repeating text it has just read, and this asks it only for the second. Kept in the contract because a finding with nothing to quote — one about the round rather than a site — still has nowhere else to point.",
             "type": [
               "integer",
               "null"
             ],
             "minimum": 1
+          },
+          "quote": {
+            "description": "The code this finding is about, copied verbatim out of `file`. A few lines is enough — it is matched against the file at the round's head, exactly first, then with whitespace collapsed, then (a one-line quote of at least 12 characters) as an exact substring of exactly one line; a shorter fragment must be a whole line. A quote that appears in more than one place is recorded as `unlocatable` rather than anchored to the first hit, so quote enough to be unambiguous.",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "problem": {
             "type": "string"
@@ -113,6 +121,28 @@
             "type": "boolean",
             "default": false
           },
+          "location_class": {
+            "type": "string",
+            "enum": ["in-diff", "pre-existing", "pr-process"],
+            "description": "Where the finding sits, for rendering only. in-diff counts toward the merge verdict. pre-existing does not block. pr-process renders under Scope, not as a code finding. Absent means in-diff."
+          },
+          "publication": {
+            "type": "string",
+            "enum": ["finding", "question", "omit"],
+            "description": "How an info finding is shown. question renders under Questions. omit stays in the keryx:findings block and is not published as a finding. Absent means finding. Never changes severity."
+          },
+          "degradation_class": {
+            "title": "Which way the change made the code worse than the base branch",
+            "type": "string",
+            "enum": ["behaviour-delta", "default-change", "diff-vs-description", "debt", "performance", "cross-pr", "blind-test"],
+            "description": "Optional, set by `review-degradation`. Closed list: `behaviour-delta` (the diff behaves differently from base), `default-change` (a default or normalisation moved), `diff-vs-description` (the description and the diff disagree), `debt` (structure the change adds), `performance` (a slower path), `cross-pr` (two changes that conflict on merge), `blind-test` (a test that cannot see the regression)."
+          },
+          "evidence_kind": {
+            "title": "What proves a degradation finding",
+            "type": "string",
+            "enum": ["probe", "consumer-trace", "merge-trace", "red-test", "base-diff"],
+            "description": "Optional. Closed list: `probe` (a run that shows the difference), `consumer-trace` (a consumer of the changed symbol followed to its effect), `merge-trace` (the merged result of two heads), `red-test` (a test that fails on the head), `base-diff` (the same path read on base and on head). A `major` or `blocker` from `review-degradation` without it is downgraded to `info` at ingest, not rejected."
+          },
           "class_scope": {
             "title": "Every site of this shape, and how the set was derived",
             "description": "A finding anchored to one file:line is a claim about one site. Repeatedly, a fix repaired that site and left its siblings — one writer of five, one operator instruction of four, six readers of eight — and the next review round found them. Required for blocker and major; optional below, because enumerating the class for every info finding is theatre. Kept identical to src/gdskills/contracts/review-finding.schema.json, which is stricter (additionalProperties: false) and would reject this property if it were declared only here.",
@@ -125,15 +155,15 @@
             "properties": {
               "sites": {
                 "type": "array",
-                "minItems": 1,
                 "items": {
                   "type": "string"
                 },
-                "description": "Every location carrying the shape, including ones already correct. A single-entry list is a claim that the class has one member."
+                "description": "Every location carrying the shape, including ones already correct. A single-entry list is a claim that the class has one member. An empty list is the negative enumeration (the search ran and found no site); it is valid only with a non-empty enumeration_method."
               },
               "enumeration_method": {
                 "type": "string",
                 "minLength": 1,
+                "pattern": "\\S",
                 "description": "How the set was derived: the grep or query run, the source-level guard that enumerates it, or why the list is exhaustive. 'I checked the others' is not a method."
               }
             }
@@ -164,6 +194,53 @@
       "type": "array",
       "items": {
         "type": "string"
+      }
+    },
+    "inputs_unreadable": {
+      "title": "Mandatory inputs the reviewer could not read",
+      "description": "Name each mandatory input of the dispatch the reviewer could not read: pr_context.json, this schema, a context file, the payload, the slice manifest. Empty or absent when it read them all. A DONE or DONE_WITH_CONCERNS result that names any is not a finished run for `ledger build` or `retry-plan`. Only this field is read for it, never the summary's wording.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "follow_ups": {
+      "title": "Follow-ups handed back to the parent",
+      "description": "Work the reviewer could not do itself and leaves to the parent. Each entry becomes a research obligation `<raw>:fu<N>` (N counts from 1, in this order; a `Parent follow-up:` line after the REVIEW_RESULT block is appended) with status `unresolved`. It closes only through a disposition (`finding`, `refuted`, `out-of-scope` or `narrowed` with a \"what remains\" text); until then the ledger is not reconciled and the report lists it as not verified.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "prior_dispositions": {
+      "title": "Dispositions of prior findings (FIX slices)",
+      "description": "Returned by a reviewer on a FIX slice: one entry for every attached prior finding id, giving its disposition checked against the code. The ledger reads it.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "disposition"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "disposition": {"type": "string", "enum": ["closed", "open", "partial", "regressed", "withdrawn"]}
+        }
+      }
+    },
+    "slices": {
+      "title": "Slices this result covered",
+      "description": "The ids of the dispatched slices the reviewer read. An entry is an id string, or an object with an `id`, an optional `coverage` note and an optional `status`. `keryx review retry-plan` and `ledger build` read both. An object counts as covered only when its `status` is absent or one of DONE, COMPLETE, COMPLETED, COVERED, OK (any case); any other status (NOT_READ, INCOMPLETE, SKIPPED, PARTIAL, …) leaves the slice uncovered and is named in the plan reason or the ledger gap. An entry with no id counts for nothing.",
+      "type": "array",
+      "items": {
+        "type": ["string", "object"],
+        "minLength": 1,
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "coverage": { "type": "string" },
+          "status": { "type": "string" }
+        },
+        "additionalProperties": true
       }
     },
     "stats": {

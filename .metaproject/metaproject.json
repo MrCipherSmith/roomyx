@@ -90,7 +90,14 @@
       "hooks": {
         "gitPostCommit": ".git/hooks/post-commit",
         "postUpdate": ".metaproject/hooks/post-update.d"
-      }
+      },
+      "capabilities": [
+        {
+          "id": "gdskills.external-agents",
+          "enabled": false,
+          "kind": "ceiling"
+        }
+      ]
     },
     "memory": {
       "enabled": true,
@@ -231,13 +238,26 @@
       }
     }
   },
-  "updatedAt": "2026-09-09T16:54:53.344Z",
+  "updatedAt": "2026-10-08T17:13:09.598Z",
   "agentEntrypoints": {
+    "metaproject": ".metaproject/index.md",
     "index": ".metaproject/index.md",
     "readme": ".metaproject/README.md",
     "root": [
-      "AGENTS.md",
-      "CLAUDE.md"
-    ]
+      {
+        "runtime": "codex",
+        "path": "AGENTS.md",
+        "scope": "shared"
+      },
+      {
+        "runtime": "claude",
+        "path": "CLAUDE.md",
+        "scope": "shared"
+      }
+    ],
+    "claudeSettings": {
+      "path": ".claude/settings.json",
+      "scope": "shared"
+    }
   }
 }

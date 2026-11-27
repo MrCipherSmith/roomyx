@@ -1,10 +1,10 @@
 ---
 name: context-collector
-description: "Use when a job needs a unified context document — gathering docs, libraries, and references for sub-agents before execution."
+description: "Use when a job needs a unified context document — gathering docs, libraries, and references for sub-agents before execution. NOT for: deciding what to build from that context (use interview, or job-orchestrator for the whole pipeline)."
 triggers:
-  - "Collect context"
-  - "Build context"
-  - "Gather context"
+  - "collect context"
+  - "gather context"
+  - "build context"
   - "Update context"
   - "Refresh context"
   - "Context for job"
@@ -12,9 +12,9 @@ triggers:
 metadata:
   author: "MrCipherSmith"
   version: "1.1.0"
-  category: "context"
+  category: "orchestration"
   agent_worthy: true
-  compatible_harnesses: "cursor,codex,zed,opencode"
+  compatible_harnesses: "cursor,codex,zed,opencode,claude"
 license: "MIT"
 ---
 
@@ -39,7 +39,7 @@ Collects and maintains a **unified context document** for a job. The context doc
 6. Keep the context document up-to-date as the job evolves (version-tracked updates)
 
 **Input:** Task description + job name + project path (from orchestrator or user)
-**Output:** `context.md` document in `.metaproject/jobs/<job-name>/ai/` and `.metaproject/jobs/<job-name>/man/`, documented via `job-documenter`
+**Output:** `context.md` document in `.metaproject/jobs/<job-name>/ai/` and `.metaproject/jobs/<job-name>/man/`, written straight into the job folder `keryx job init` created
 
 ## When to Use
 
@@ -55,7 +55,7 @@ Phase 1: RECEIVE     ->  Parse input, determine scope and focus areas
 Phase 2: LOCAL       ->  Scan local docs, jobs, rules, codebase for relevant context
 Phase 3: EXTERNAL    ->  Fetch external docs for libraries, APIs, best practices
 Phase 4: SYNTHESIZE  ->  Merge all findings into a single context document
-Phase 5: DOCUMENT    ->  Save via job-documenter, return result
+Phase 5: DOCUMENT    ->  Save into the job folder, return result
 ```
 
 ---
@@ -487,27 +487,18 @@ When updating an existing context:
 
 Save the context document and notify orchestrator.
 
-### 5.1 Save via job-documenter (when running within a job)
+### 5.1 Save into the job folder (when running within a job)
 
-If JOB_NAME is provided, dispatch `job-documenter`:
+If JOB_NAME is provided, the job folder already exists — `keryx job init` creates
+it, and the orchestrator owns it. Write the full context document, metadata block
+included, to `<JOBS_ROOT>/<JOB_NAME>/ai/context.md` and `<JOBS_ROOT>/<JOB_NAME>/man/context.md`.
 
-```
-ACTION: add-document
-JOB_NAME: <JOB_NAME>
-JOBS_ROOT: <JOBS_ROOT>
+Do not record it with `keryx job document`: that command takes only `analysis`,
+`implementation-report`, `review` and `verification-report`, and recording a type a
+second time replaces the first file, so filing a context document under
+`analysis` would overwrite the real analysis.
 
-DATA:
-  DOC_TYPE:    context
-  TARGET:      both
-  TITLE:       Context — <task description short>
-  CONTENT:     <full context document>
-  AGENT:       context-collector
-  TASK:        Collect context for <task description>
-  VERSION:     <1.0 for new, incremented for update>
-  DOC_STATUS:  final
-```
-
-For ACTION=update, use the same flow — `job-documenter` will overwrite the existing `context.md`.
+For ACTION=update, write to the same paths — the new revision replaces the existing `context.md`.
 
 ### 5.2 Save directly (when running standalone without a job)
 
@@ -600,7 +591,7 @@ When the orchestrator dispatches this skill as a sub-agent:
 You are the context-collector agent. Your task is to research and build
 a context document for the current job.
 
-Load the skill from: skills/orchestration/context-collector/SKILL.md
+Load the skill from: .metaproject/skills/gdskills/orchestration/context-collector/SKILL.md
 
 ACTION: collect
 JOB_NAME: <job-name>
@@ -622,7 +613,7 @@ For updates:
 You are the context-collector agent. Your task is to update the existing
 context document for this job.
 
-Load the skill from: skills/orchestration/context-collector/SKILL.md
+Load the skill from: .metaproject/skills/gdskills/orchestration/context-collector/SKILL.md
 
 ACTION: update
 JOB_NAME: <job-name>
@@ -653,3 +644,19 @@ Execute update flow and return a CONTEXT_RESULT block.
 10. **DO NOT** fetch external docs for standard well-known patterns already covered by project rules.
 11. **DO NOT** modify any project files — this is a read + research + write-to-jobs skill only.
 12. **DO NOT** skip the metadata block and update log — they are mandatory for version tracking.
+
+---
+
+## Red Flags
+
+Stop and re-read this skill if you are thinking:
+
+| Rationalization | Rebuttal |
+|---|---|
+| "More context is safer, so I'll include everything I found." | Rule 9 caps `context.md` at ~500 lines, and 3.4 admits only HIGH and MEDIUM findings. A 1200-line context is read by no sub-agent; the three paragraphs that mattered are now buried, which is the same as not having collected them. |
+| "I know this library well, so I can write the API section from memory." | Phase 3 fetches the docs for the version the project actually pins. A remembered signature is the single most expensive thing in this document: every sub-agent downstream implements against it without checking. |
+| "The task mentions React, so I should fetch React documentation." | Rule 10: no external fetch for well-known patterns already covered by project rules. External research is for the specific API, version gotcha or convention this task turns on — not for a topic overview. |
+| "This section of the existing context looks stale, so I'll drop it while updating." | 4.3 and Rule 4: preserve existing sections unless they are explicitly outdated. "Looks stale" from inside a scoped update usually means "I did not re-research it" — removing it silently deletes a decision another agent is relying on. |
+| "I fixed the small inconsistency I noticed in the source file while reading it." | Rule 11: this skill writes only into the job folder. An edit made during collection lands in a diff nobody attributed to a task, and the implementer inherits it without knowing. |
+| "The context is written, so I can return — saving it can happen later." | Phase 5 is part of the skill. A `context.md` that was never written to the job folder leaves the next phase resolving `CONTEXT_LOCATION` to nothing. |
+| "The content changed only slightly, so bumping the Version and update log is overkill." | Rule 12 and Rule 3: version, timestamp and update log are mandatory. Without them, two agents reading different revisions have no way to tell which one they have. |

@@ -1,0 +1,178 @@
+---
+description: "Shared catalog of AI-slop tells in UI (visual, copy, behavioral) with visibility tiers, the project's craft thresholds, the positive-direction principle, and the severities reviewers use. Read by ui-direction, ui-craft, and review-ui-ux."
+alwaysApply: false
+globs:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.vue"
+  - "**/*.svelte"
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.html"
+  - "**/DESIGN.md"
+---
+
+# UI Anti-Slop
+
+One vocabulary for the three UI skills: `ui-direction` (concept before code), `ui-craft`
+(implementation), `review-ui-ux` (review). The creator and the reviewer judge by the same list.
+Rendered geometry (sizing, overflow, reflow, RTL) is `layout-rendering.mdc`.
+
+Canon applies: WCAG 2.2 AA, the NN/g usability heuristics and response-time limits, Practical
+Typography, and Jakob's Law. This rule holds only this project's decisions on top of them.
+
+**Applies to.** Marketing and content surfaces (landing, pricing, docs home, blog) use every row.
+App screens (dashboards, admin, settings, data views) use Behavioral slop, Components & surfaces,
+Motion, and the craft thresholds; there, body text of 14–16px is allowed when the component
+library sets it and `DESIGN.md` says so.
+
+## Why slop happens
+
+- **Distributional convergence.** With no direction a model emits the most probable design:
+  Inter, indigo-on-white, centered hero, three cards, fade-up on scroll. Every "safe" default
+  is a vote for the average.
+- **A ban list alone fails.** Ban purple and the output moves to the *next* most probable look
+  ("second-wave slop": cream + serif + terracotta; near-black + one neon accent; broadsheet).
+  The cure is a **positive direction derived from the subject**, with this list as a guard rail.
+- **Slop is a stack, not a tell.** One default (Inter for body text) is fine. Five defaults
+  together are slop. Score density, not presence.
+- **Behavioral slop** is the half nobody screenshots: missing states, no validation, no focus
+  ring. Models learn from code snapshots, not from using flows.
+
+## Core principles
+
+1. **Direction comes from the subject.** Industry, materials, vernacular, printed artefacts,
+   the client's own numbers and names. Not from "modern, clean, minimal".
+2. **Spend boldness in one place.** Exactly one signature element; everything else quiet.
+   Before finishing, remove one element.
+3. **Distinctive look, conventional behavior.** Navigation, links, forms and keyboard stay standard.
+4. **Decoration carries meaning or goes.** Borders, numbering, eyebrows, dividers, badges.
+5. **Never invent proof.** No made-up stats, logos, testimonials, customers, or "Live" chips.
+6. **If `DESIGN.md`, the brief or the job context names a look, follow it** — even if that look
+   is on the list below.
+7. **Don't claim checks that weren't run.** No browser → say so.
+
+## Tell catalog
+
+Tiers say how visible a tell is, not how severe a finding is; severity comes from
+**Review severities** below. **T1** — recognizable as AI within ~3 seconds by a layperson.
+**T2** — obvious to anyone who builds UI. **T3** — weak alone, damning in a stack.
+
+### Color
+| Tier | Tell | Fix |
+|---|---|---|
+| T1 | Purple→blue / violet→indigo gradient on hero or background; radial "hero blobs" | 4–6 named colors with roles, derived from the subject |
+| T1 | Gradient text (`bg-clip-text`) on headlines | Solid ink; emphasis by size/weight |
+| T2 | Untouched framework palette (`indigo-500` primary, `emerald-500` success) | Own tokens; tune hue/chroma to the palette |
+| T2 | Second-wave palettes used by reflex: cream `#F4F1EA` + terracotta `~#D97757`; near-black + acid green/vermilion | Justify from the subject or choose again |
+| T2 | Brand color on more than 3 surfaces | Accent on the primary action + at most one other element |
+| T3 | Gradient borders, decorative gradient washes, glows | Tone steps between surfaces |
+| T3 | Gray text on colored backgrounds | Tint/shade of the background hue |
+| T3 | Dark mode = inverted light mode | Re-tune each token for dark |
+
+### Typography
+| Tier | Tell | Fix |
+|---|---|---|
+| T1 | Inter / Roboto / Arial / Open Sans / Lato / system-ui as the *only* face | Choose a face for the subject; state the choice before coding |
+| T2 | Re-converged substitutes used by default: Space Grotesk, Plus Jakarta Sans, Geist | Vary across projects; pick by mood, not habit |
+| T2 | Accent on one headline word ("Build *faster*" — italic/colored/serif swap) | Let the sentence carry itself |
+| T2 | Tracked ALL-CAPS eyebrow above every heading; mono for decorative meta labels | Only where it encodes information |
+| T2 | Meta strings "A · B · C"; labels "WORD — fragment" | Plain sentence-case labels |
+| T3 | Framework size ramp verbatim (12/14/16/18/24/30/36/48/60/72) | Modular ratio (1.2 / 1.25 / 1.333); a defined scale has ≤5 sizes |
+| T3 | Close weights (400 vs 600); body at 600 | Extreme contrast (200–300 vs 700–900); body 400 |
+| T3 | Headlines ≥48px with default tracking | −0.02 to −0.05em, leading 0.85–1.05 |
+
+### Layout & composition
+| Tier | Tell | Fix |
+|---|---|---|
+| T1 | Stock page order: pill badge → centered headline → 2 CTAs → logo row → 3 feature cards → pricing → CTA band | Sections as claims with proof; neighbors use different structures |
+| T1 | Three equal icon cards with the icon in a tinted rounded square | Structure follows content (list, table, diagram, one large proof) |
+| T2 | Fully centered page, no alignment axis | Left-aligned grid; ≤3 shared left edges |
+| T2 | Every section the same height/padding/heading size | Rhythm: section gaps clearly larger than internal gaps, varied |
+| T2 | 01/02/03 markers on content that is not a sequence | Number only real steps |
+| T3 | Big number + small label + stat row as hero | Open with the subject's most characteristic element |
+| T3 | Glass pill floating nav; fake grey-bar dashboard as hero art | Real product, real data |
+
+### Components & surfaces
+| Tier | Tell | Fix |
+|---|---|---|
+| T1 | SaaS card kit: one radius (16–24px) + same soft shadow everywhere; cards in cards | Radius by role (child ≤ parent); shadows only on floating layers |
+| T2 | Card with shadow + border + tinted fill at once | Pick one separation method |
+| T2 | Glassmorphism / backdrop-blur without depth meaning | Opaque surfaces with tone steps |
+| T2 | Default icon set at default size, the usual five (zap, shield-check, bot, sparkles, rocket) | Fewer icons; icons only where they speed recognition |
+| T3 | "→" appended to every link/CTA; same hover-lift on every card | Affordance via convention; hover only where clickable |
+| T3 | Colored thick left border on a rounded card as decoration | Border only for state |
+
+### Motion
+| Tier | Tell | Fix |
+|---|---|---|
+| T2 | Same fade-and-slide-up on every section on scroll; count-up stats | One orchestrated moment; user-triggered motion explains change |
+| T3 | Drifting blobs, pulsing cards, shimmer that answers no question | Delete |
+| T3 | Bounce/elastic easing, `transition: all`, linear UI easing | ease-out in, ease-in out; transform/opacity only |
+
+### Copy & content
+| Tier | Tell | Fix |
+|---|---|---|
+| T1 | Invented round stats (10x, 99.9%, 10,000+), fake logos/testimonials | Delete anything unsourced; list sample content for replacement |
+| T1 | Placeholder people/brands (Jane Doe, Sarah Johnson, Acme, Globex), lorem ipsum | Real or clearly marked sample content |
+| T2 | Filler verbs: unlock, supercharge, empower, elevate, seamless, streamline | Say what the product does, in the user's words |
+| T2 | Emoji in headings and bullets | Remove |
+| T3 | Generic CTAs ("Get started", "Submit", "Learn more") | Outcome label ("Save changes", "Book a table") |
+| T3 | Empty state = generic illustration + two lines that fit any product | Specific reason + direct action |
+
+### Behavioral slop
+| Tier | Tell | Fix |
+|---|---|---|
+| T1 | `outline: none` without `:focus-visible` replacement | Visible focus ring, ≥3:1 against adjacent colors |
+| T1 | Missing loading / empty / error / disabled states | Design all of them |
+| T2 | Forms with no validation, placeholder-as-label, pre-disabled submit | Visible labels, inline errors, focus first error |
+| T2 | Critical actions only visible on hover; color-only status | Always reachable; text/icon + color |
+| T2 | No `prefers-reduced-motion` variant | Keep content, drop travel |
+
+## Craft thresholds (project picks on top of the canon)
+
+**Type.** 1–2 families. Body 16–20px (≥16px on mobile inputs; 14–16px on app screens per
+**Applies to**). Display ≥3× body on marketing pages. A defined type scale has ≤5 sizes; one
+dense app screen shows ≤3 of them.
+
+**Color.** ≤3 contrast treatments per view.
+
+**Space & shape.** One spacing scale (4/8/12/16/24/32/48/64/96/128). Groups separated more than
+items within them. Radius: one scale by role, nested radius concentric.
+
+**Targets.** ≥44px on touch, above the WCAG 24px floor.
+
+**Motion.** ~100ms for toggles, 200–300ms for dialogs, nothing ≥500ms; stagger 60–90ms;
+travel 16–32px.
+
+**Feedback.** Loaders appear after ~150–300ms and stay ≥300ms. Skeletons match final dimensions.
+
+## Slop score
+
+Count tells by tier on the reviewed surface: `T1×3 + T2×2 + T3×1`.
+- 0–3 — distinctive or deliberately neutral
+- 4–8 — template-leaning; fix T1/T2 first
+- ≥9 — reads as AI-generated; redo direction, don't patch
+
+A tell is exempt when `DESIGN.md`, the brief or the job context explicitly chooses it — record
+the exemption and where it was read.
+
+---
+
+## Review severities (shared with reviewers)
+
+`review-ui-ux` rates these by this table. Change a row here, never in a reviewer. A row counts
+only when the change touches the surface, and only on the surfaces **Applies to** names. A tier
+is visibility; the severity is this table's. Overflow and reflow at a width are rated by
+`layout-rendering.mdc`.
+
+| Signal | A finding when | Default | Not a finding |
+|---|---|---|---|
+| Invented proof shipped as fact: stats, logos, testimonials, customers (Copy T1, principle 5) | it renders in shipped copy | `major` | content marked as sample; Storybook fixtures |
+| Primary task unreachable by keyboard, or focus invisible on the primary flow (`outline: none` with no `:focus-visible`, `div onClick`) | Tab through the flow cannot finish the task or cannot see where focus is | `major`; `minor` on a non-primary control | a `:focus-visible` replacement exists |
+| Text contrast below 4.5:1 (3:1 large) on primary content | the pair is on shipped primary text, measured or computed from the token pair | `major` | decorative text; a pair not measured (`info`) |
+| Missing loading, empty or error state on a primary view; destructive action with no confirm or Undo | the view or action is primary | `major`; `minor` on a secondary view | a state the component library renders by default |
+| Other WCAG floor misses: target under 24px, color-only status, no reduced-motion branch, placeholder-as-label, paste blocked, zoom disabled, missing accessible name | always | `minor`; `major` when it blocks the primary flow | an N/A the author recorded |
+| T1 tell, or slop score ≥9 | counted per tier on the changed surface | `minor` | a tell `DESIGN.md`, the brief or the job context chose; invented proof, focus and missing states, which the rows above rate (they still count in the score) |
+| T2 tell, hierarchy competition, inconsistent tokens, drift from `DESIGN.md` | always | `minor` | the same exemptions |
+| T3 tell (generic CTA labels included), polish, or a visual claim with no measurement | always | `info` | — |

@@ -44,6 +44,7 @@
     "src/installer/personas.ts",
     "src/installer/registry.ts",
     "src/installer/resolve-connection.ts",
+    "src/installer/room-tool.ts",
     "src/installer/skill-sync.ts",
     "src/installer/skill-targets.ts"
   ],
@@ -58,6 +59,9 @@
   ],
   "mcp-management": [
     "src/mcp-management/server.ts"
+  ],
+  "room-token.ts": [
+    "src/room-token.ts"
   ],
   "server": [
     "src/server/http-transport.ts",
@@ -74,10 +78,13 @@
     "src/writer-lease.ts"
   ],
   "test": [
+    "test/bundled-skill-sync.test.ts",
     "test/cli-commands.test.ts",
     "test/cli-init.test.ts",
     "test/cli-launcher.test.ts",
+    "test/cli-room-lease-ratchet.test.ts",
     "test/cli-room-ownership-e2e.test.ts",
+    "test/cli-room-tools.test.ts",
     "test/cli-room.test.ts",
     "test/cli-serve-lifecycle.test.ts",
     "test/cli/args.test.ts",
@@ -106,28 +113,37 @@
     "test/client/tool-error.test.ts",
     "test/client/transcript.test.ts",
     "test/client/wrap-defect.test.ts",
+    "test/helpers/room-client.ts",
     "test/helpers/until.ts",
     "test/installer/history.test.ts",
     "test/installer/init-plan.test.ts",
     "test/installer/init.test.ts",
+    "test/installer/mcp-config-shape.test.ts",
     "test/installer/personas.test.ts",
     "test/installer/registry-liveness.test.ts",
     "test/installer/registry.test.ts",
     "test/installer/resolve-connection.test.ts",
+    "test/installer/skill-sync-symlink.test.ts",
     "test/installer/skill-sync.test.ts",
     "test/installer/skill-targets.test.ts",
+    "test/lockfile.test.ts",
+    "test/log/fold.test.ts",
+    "test/log/seq-ceiling.test.ts",
     "test/log/store.test.ts",
     "test/log/write-contract.test.ts",
     "test/mcp-management/server.test.ts",
     "test/server/dispatcher-attached.test.ts",
     "test/server/owner-command.test.ts",
+    "test/server/owner-queue-leak.test.ts",
     "test/server/owner-queue.test.ts",
     "test/server/rebinding-guard.test.ts",
+    "test/server/room-token.test.ts",
     "test/server/serve.test.ts",
     "test/server/session-lifetime.test.ts",
     "test/server/shutdown-order.test.ts",
     "test/server/shutdown.test.ts",
     "test/server/tools.test.ts",
+    "test/server/transcript-limit.test.ts",
     "test/server/transport-gates.test.ts",
     "test/writer-lease.test.ts"
   ]

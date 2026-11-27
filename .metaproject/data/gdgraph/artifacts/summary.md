@@ -2,11 +2,11 @@
 
 ## Stats
 
-- Source files indexed: 107
+- Source files indexed: 122
 - Imported asset files indexed: 0
-- Total nodes: 107
-- Edges: 200
-- Import edges: 200
+- Total nodes: 122
+- Edges: 241
+- Import edges: 241
 - Asset edges: 0
 - Unresolved imports: 0
 - Import resolution: 100%
@@ -16,10 +16,10 @@
 
 | Module | Source Files |
 |---|---:|
-| test | 56 |
+| test | 68 |
 | client | 20 |
-| installer | 9 |
-| server | 8 |
+| installer | 10 |
+| server | 9 |
 | log | 4 |
 | scripts | 3 |
 | cli | 2 |
@@ -27,6 +27,7 @@
 | cli.ts | 1 |
 | lockfile.ts | 1 |
 | mcp-management | 1 |
+| room-token.ts | 1 |
 | writer-lease.ts | 1 |
 
 ## Unresolved By Type
