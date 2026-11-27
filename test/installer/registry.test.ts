@@ -5,7 +5,9 @@ import {
   mkdtempSync,
   openSync,
   readFileSync,
+  chmodSync,
   rmSync,
+  statSync,
   utimesSync,
   writeFileSync,
 } from "node:fs";
@@ -48,6 +50,22 @@ afterEach(async () => {
 });
 
 describe("registry", () => {
+  test.skipIf(process.platform === "win32")("registry file is owner-only, and a loose old one is tightened on the next write", () => {
+    setup();
+    registerRoom(registryPath, { port: 1, logPath: FIXTURE, pid: 1, token: unreachableToken() });
+    expect(statSync(registryPath).mode & 0o777).toBe(0o600);
+    chmodSync(registryPath, 0o666);
+    registerRoom(registryPath, { port: 2, logPath: FIXTURE, pid: 1, token: unreachableToken() });
+    expect(statSync(registryPath).mode & 0o777).toBe(0o600);
+  });
+
+  test.skipIf(process.platform === "win32")("a registry directory roomyx creates is owner-only", () => {
+    setup();
+    const nested = join(dir, "fresh", "registry.json");
+    registerRoom(nested, { port: 1, logPath: FIXTURE, pid: 1, token: unreachableToken() });
+    expect(statSync(join(dir, "fresh")).mode & 0o777).toBe(0o700);
+  });
+
   test("registerRoom generates an id and persists the entry", () => {
     setup();
     const entry = registerRoom(registryPath, { port: 12345, logPath: FIXTURE, pid: process.pid, token: unreachableToken() });

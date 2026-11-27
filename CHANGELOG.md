@@ -13,6 +13,16 @@ patch and never a minor. The rule, the reason, and an audit of the four of seven
 releases that followed it are in
 [`docs/roomyx/versioning.md`](docs/roomyx/versioning.md) and decision D-13.
 
+## [Unreleased]
+
+### Security
+
+- **The room registry, which holds each room's token, is now written 0600.** It was
+  written with `writeFileSync`'s default (`0666 & ~umask`), so on a shared host
+  any local user could read the token and drive the room. The directory is 0700
+  when roomyx creates it. A registry written by an older version stays loose until
+  its next write replaces it; `chmod 600` it by hand to close the window sooner.
+
 ## [0.12.2] — 2026-09-12
 
 A documentation patch, and the defect it fixes was on the first screen anyone
