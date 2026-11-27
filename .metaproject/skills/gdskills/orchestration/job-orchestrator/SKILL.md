@@ -1,19 +1,14 @@
 ---
 name: job-orchestrator
-description: "Use when a GitHub issue or complex intent needs to be analyzed, planned, and implemented end-to-end with sub-agents."
+description: "Use when a GitHub issue or complex intent needs to be analyzed, planned, and implemented end-to-end with sub-agents — this skill orchestrates the whole task from issue to PR. NOT for: the same pipeline under Task Manager flow state (use flow-orchestrator)."
 triggers:
-  - "Implement issue"
+  - "implement issue"
+  - "full workflow"
+  - "orchestrate task"
   - "Issue to PR"
-  - "Orchestrate"
   - "Run pipeline"
   - "Analyze and implement"
   - "Full implementation"
-  - "Full review"
-  - "Полное ревью"
-  - "Review my code"
-  - "Analyze branch"
-  - "Review via orchestrator"
-  - "Orchestrated review"
   - "Auto-implement"
   - "Auto-implement issue"
   - "Orchestrate issue"
@@ -27,17 +22,15 @@ metadata:
 license: "MIT"
 ---
 
-<SUBAGENT-STOP>
-If you were dispatched as a subagent to execute a specific task, skip this skill entirely.
-This skill is for orchestrators and interactive session-level routing only.
-Proceed directly with your assigned task.
-</SUBAGENT-STOP>
-
 # Job Orchestrator
+
+## Preflight
+
+Run in the main session: this skill dispatches sub-agents. Without a subagent-spawn tool (`Agent`, `spawn_subagent` or the host's equivalent), or with the depth budget spent (Claude Code nests at most 3 deep), the whole output is this line, with no tool calls and no work of your own: `STATUS: BLOCKED nested_dispatch_unavailable — run this skill in the main session`
 
 ## Purpose
 
-Dynamic orchestrator that builds execution plans based on user intent. Unlike a fixed pipeline, the orchestrator adapts its workflow to what the user actually needs — from "just analyze this issue" to "implement, review, and create a PR". It dispatches sub-agents (`issue-analyzer`, `context-collector`, `tests-creator`, `task-implementer`, `code-verifier`, `review-orchestrator`) and persists every step, document and retry through `keryx job`, which writes `.metaproject/jobs/<job-name>/`.
+Dynamic orchestrator that builds execution plans based on user intent. Unlike a fixed pipeline, the orchestrator adapts its workflow to what the user actually needs — from "just analyze this issue" to "implement, review, and create a PR". It dispatches sub-agents (`issue-analyzer`, `context-collector`, `tests-creator`, `task-implementer`, `code-verifier`, `review-orchestrator`) and persists every step, document and retry through `keryx job`, which writes `.metaproject/jobs/<job-name>/`. Plan bridge: publish these steps with `plan_set` under the ids `keryx job status` reports, mirror each `keryx job step` with `plan_update`, and mark them `proposed` while the approval above is open — see the `session-plan-bridge` rule.
 
 **The package is the state.** `keryx job` is the only writer of `state.json`; it validates every write against the registered contract `job-orchestrator-state` and refuses one that does not conform. Never hand-write `state.json`, and never hold a step's outcome only in this session — a step recorded nowhere is a step that did not happen as far as the next session is concerned.
 
@@ -610,19 +603,14 @@ CONTEXT_RESULT:
 into every subsequent dispatch prompt:
 
 ```
-CONTEXT_LOCATION: <JOBS_ROOT>/<job-name>/context_v<N>.md
+CONTEXT_LOCATION: <JOBS_ROOT>/<job-name>/ai/context.md
 ```
 
-**Context versioning:** never overwrite an existing context file — write snapshots as
-`context_v1.md`, `context_v2.md`, and so on. Version 1 comes from the first collect in
-2.3; each update writes the next number.
-
-The current version is the highest-numbered file in the package, which is a fact on
-disk that any session can read:
-
-```bash
-ls .metaproject/jobs/<job-name>/context_v*.md
-```
+**Context versioning:** the file lives at this one fixed path and is overwritten in
+place on every update — never written to a new, version-numbered filename. Each
+collect/update instead increments the `Version` field in the document's own
+"Document Metadata" table and appends a line to its `Update Log` section (see
+context-collector SKILL.md §4.1, §4.3); that table on disk is the current version.
 
 `state.json` does not carry a context pointer and nothing writes one — do not tell a
 sub-agent to look for one. The orchestrator passes the path (Constructing Subagent
@@ -645,7 +633,7 @@ Task({
     JOB_NAME: <job-name>
     JOBS_ROOT: <JOBS_ROOT>
     PROJECT_DIR: <project_dir>
-    CONTEXT_VERSION: <current version + 1>  ← write to context_v<N+1>.md
+    CONTEXT_VERSION: <current version + 1>  ← written into ai/context.md's Version field; file overwritten in place
 
     DATA:
       TASK_DESCRIPTION: <original task description>
@@ -703,6 +691,8 @@ fi
 
 > **IMPORTANT**: After creating the worktree, ALL subsequent operations (implementation, review, lint, test, git) MUST run in the **worktree directory**, NOT in the original project directory.
 
+> **Concurrency**: every subsequent git command MUST use `git -C <worktree_path>`, never a bare `git`, and MUST NOT `git stash` or `git add -A`/`--all`/`.` — see `rules/core/git-concurrency.mdc`. Pin each dispatch to `<worktree_path>` explicitly; a dispatched agent's first action is `cd <worktree_path> && pwd && git branch --show-current`, re-checked before its first write.
+
 **Record state:**
 ```
 BRANCH_STATE:
@@ -756,8 +746,10 @@ FOR wave_index, wave_tasks in enumerate(WAVES):
 
   keryx job step <job-name> tests-creator --status in-progress      # wave 1 only
   # Step A — tests-creator (MANDATORY, run first)
-  Dispatch one tests-creator per task in this wave, in a SINGLE turn (parallel).
-  Wait for ALL of them. Collect TEST_SPECS[task_id] from each response.
+  keryx skills resolve-context --for test --files <task target_files, comma-joined> --task-type <task_type> --task-text '<task title and description, each ' written as '\''>' --out <JOBS_ROOT>/<job-name>/results/<task_id>.test.resolved.json
+  Dispatch one tests-creator per task in this wave, in a SINGLE turn (parallel), each carrying resolved_context_file.
+  Wait for ALL of them. Collect TEST_SPECS[task_id] from each response, then per result:
+    keryx skills contracts validate <task_id>-tests.json --schema tests-creator-output --resolved <that resolved file>
   keryx job step <job-name> tests-creator --status completed         # last wave only
 
   # Parallel safety check, before Step B:
@@ -765,14 +757,21 @@ FOR wave_index, wave_tasks in enumerate(WAVES):
 
   keryx job step <job-name> implement --status in-progress           # wave 1 only
   # Step B — task-implementer (after all test stubs are committed)
+  keryx skills resolve-context --for implement ... --out <JOBS_ROOT>/<job-name>/results/<task_id>.implement.resolved.json
   Dispatch one task-implementer per task in this wave, in a SINGLE turn (parallel),
-  each carrying test_case_specs: TEST_SPECS[task_id].
-  Wait for ALL of them.
+  each carrying test_case_specs: TEST_SPECS[task_id] and resolved_context_file (an entry promoted by a declared condition, reason condition:glob:<g> or condition:keyword:<k>, needs its project_context_applied item to carry path, sha256 of the whole file, the declared anchor, a summary of 40+ characters in the worker's own words, and how read|followed, never n/a).
+  Wait for ALL of them; per result: keryx skills contracts validate <result.json> --schema task-implementer-output --resolved <that resolved file>
 
   Read each result's STATUS line:
-    all DONE                  → continue to next wave
-    any DONE_WITH_CONCERNS    → record the concerns, continue
-    any BLOCKED               → STOP, read the result file, resolve or ask the user
+    DONE / DONE_WITH_CONCERNS → accept it (record every concern)
+    BLOCKED                   → do not accept it; read its result file
+
+  # Task boundary commit, for EVERY accepted result, before anything else,
+  # whatever auto_commit was (see "Task boundary commit" below):
+  FOR each accepted result: commit its still-changed reported paths, or skip
+
+  any BLOCKED → STOP, resolve or ask the user
+  otherwise   → continue to next wave
 ```
 
 #### tests-creator dispatch (Step A)
@@ -792,7 +791,8 @@ Task({
     - branch:           <branch name>
     - package_manager:  <pm>
     - run_command:      <runner>
-    - context_path:     <JOBS_ROOT>/<job-name>/context_v<N>.md
+    - context_path:     <JOBS_ROOT>/<job-name>/ai/context.md
+    - resolved_context_file: <JOBS_ROOT>/<job-name>/results/<task_id>.test.resolved.json
 
     ## Required response
     Begin with STATUS: <STATUS>. Return the test_case_specs for this task and
@@ -800,6 +800,8 @@ Task({
     <JOBS_ROOT>/<job-name>/results/<task_id>-tests.json and return the path.
 })
 ```
+
+**Before this wave's first task-implementer dispatch:** when `review.jev.edit_guard` is on (`.metaproject/tasks.config.json`), confirm the guard is active — `keryx review jev-edit-guard status`, else `keryx review jev-edit-guard install` — and say why in one line.
 
 #### task-implementer dispatch (Step B)
 
@@ -820,18 +822,58 @@ Task({
     - run_command:      <runner>
     - issue_number:     <N>
     - job_name:         <job-name>
-    - context_path:     <JOBS_ROOT>/<job-name>/context_v<N>.md
+    - context_path:     <JOBS_ROOT>/<job-name>/ai/context.md
+    - resolved_context_file: <JOBS_ROOT>/<job-name>/results/<task_id>.implement.resolved.json
+
+    ## Automation (task-implementer input `automation`)
+    - auto_commit:      <implementer_settings.auto_commit>   # false: do not commit; report exact paths
 
     ## Required response format (compact — no inline JSON)
     STATUS: DONE
     Task: <task_id>
-    Commits: [abc1234 feat(x): ...]
+    Commits: [abc1234 feat(x): ...]    # auto_commit=false: Commits: none (auto_commit=false)
     Tests: <N passed, M failed>
     Result file: <JOBS_ROOT>/<job-name>/results/<task_id>.json
 
     Write full detail to the result file. Do NOT inline it.
 })
 ```
+
+**Who commits is set by the dispatch, never by a default.** Step B always passes
+`auto_commit` explicitly. The worker's own default is `true`, so a dispatch that
+leaves it out gets a worker that commits even when `implementer_settings.auto_commit`
+is `false`.
+
+**Task boundary commit, for every accepted result, whatever `auto_commit` was:**
+a task is not done until its diff is committed (`rules/core/git-concurrency.mdc`
+rule 4, "Reporting Back"). As soon as a result is accepted (`STATUS: DONE` or
+`DONE_WITH_CONCERNS`), take its reported `files_modified`/`files_created`/
+`files_deleted` from the result file and commit the ones git still shows as
+changed, never `-A`/`--all`/`.`:
+```bash
+set -- <each files_modified/files_created/files_deleted path, single-quoted: 'src/a.ts' 'docs/b c.md'>   # may be none; an unquoted path with a space splits and is skipped
+PENDING=()
+for p in "$@"; do
+  [ -n "$(git -C <worktree_path> status --porcelain -- "$p")" ] && PENDING+=("$p")
+done
+if [ ${#PENDING[@]} -eq 0 ]; then
+  echo "boundary commit: nothing left to commit, skipped"
+else
+  git -C <worktree_path> add -- "${PENDING[@]}"
+  git -C <worktree_path> commit -m "<type>(<scope>): <task description>
+
+task: <task_id>" -- "${PENDING[@]}"
+fi
+```
+With `auto_commit=false` this commits exactly the worker's paths. With
+`auto_commit=true` the worker already committed, so nothing is left and the step
+skips. That is the expected outcome, not an error. If paths remain after an
+`auto_commit=true` worker, it left part of its diff uncommitted: the step
+commits it, and you record that as a concern. Each path is checked on its own
+because `git status --porcelain --` with no path lists the whole tree, `git add`
+fails on a path that is neither on disk nor tracked, and `git commit` with
+nothing staged exits 1. The trailing `-- "${PENDING[@]}"` commits only these
+paths, so a file another lane staged is not swept into this commit.
 
 **Each wave runs in ONE worktree.** The worktree created in 2.4 is the whole job's
 workspace — waves are ordered, not isolated from each other, and a later wave sees
@@ -904,7 +946,7 @@ git log <merge_base>..HEAD --oneline
 
 | Check | Pass | Fail action |
 |-------|------|-------------|
-| At least 1 commit exists | ≥1 commit | `retryable` — re-dispatch the task-implementers for that wave with: "No commits were made. Implement the changes and commit them." |
+| At least 1 commit exists | ≥1 commit | `implementer_settings.auto_commit=true`: `retryable` — re-dispatch the task-implementers for that wave with: "No commits were made. Implement the changes and commit them." `auto_commit=false`: the task-boundary commit (wave loop, after Step B) should already have committed each accepted result's files — if none exist, `retryable`: re-run that commit step for the wave's result files instead of re-dispatching workers. |
 | At least 1 file modified | ≥1 file changed | Same as above |
 | Claimed files actually modified | All files named in the result files appear in the diff | Log discrepancy as a concern, continue |
 
@@ -946,13 +988,13 @@ journal line is the record.
 `review-orchestrator` is the review path. It is not one strategy among several: it is
 the only entry point that produces a **managed review record**, and every round this
 skill runs is a round that must be citable afterwards. The legacy alternatives —
-launching `code-ai-review` / `code-learned-review` / `code-style-review` by hand, or the
+launching a `code-*` profile (`code-learned-review`, or the retired ones) by hand, or the
 never-bundled `code-review` 4-agent skill — are gone. They emitted prose into a chat
 transcript and nothing else, which is precisely the failure the managed pipeline
 replaced.
 
 A pull request driven by this orchestrator has to pass the completion gate shipped in
-0.2.71. Its five conditions are what 2.6 and 2.7 are built to satisfy:
+0.2.71. Its conditions are what 2.6 and 2.7 are built to satisfy:
 
 | Gate condition | Satisfied by |
 |---|---|
@@ -961,6 +1003,7 @@ A pull request driven by this orchestrator has to pass the completion gate shipp
 | scope B is recorded when a scope-B reviewer ran | `keryx review blast-radius --json` → `review ingest --blast-radius` (2.6.1) |
 | no inbound PR comment is unanswered | `keryx review comments collect` every round, `… reply --final` once (2.6.2) |
 | verification stats exist | `review-verifier` dispatched, passed as `--verifications` (2.6.1) |
+| no held finding lacks an operator decision | `review-premise` (Wave D) claims passed as `--premises`; each held finding asked as `review-orchestrator` "Wave D" says (2.6.1) |
 
 #### 2.6.0 Review Scope Selection
 
@@ -1020,16 +1063,14 @@ carried in the dispatch prompt and reported in 2.9.
 **Step 1 — check the budget before dispatching, while stopping is still possible.**
 
 ```bash
-keryx review budget --spent <usd-so-far> --outstanding <subagents this orchestrator has in flight>
+keryx review budget --spent <usd-so-far> --full --outstanding <subagents still running, 0 if none>
 ```
 
-`--outstanding` is not optional here. `src/review/caps.ts` names `job-orchestrator`
-as the outermost of the three nesting levels — `job-orchestrator` →
-`flow-orchestrator` → `review-orchestrator` — that its cap of 4 in-flight reviewers
-was chosen to survive. keryx is a CLI invoked once per command; it cannot observe
-subagents running inside another orchestrator's process. **The cap binds the nested
-total only when the parent declares its own in-flight count.** Omit `--outstanding`
-and the cap bounds the reviewer fan-out alone, which the record then states plainly.
+`--outstanding` is the number of subagents this session still has running while the
+round starts (0 when none). All three orchestrators run inline in the main session, so the
+reviewers are the only fan-out; keryx cannot observe other subagents, so **the wave size
+(at most 10 for `--all` or a full review; add `--full`) binds the total only when you
+declare that count.** Omit it and the record states that the cap bounds the reviewers alone.
 
 A non-zero exit means the spend ceiling (3 USD by default) is reached: stop and ask
 the user rather than dispatching another fan-out.
@@ -1078,40 +1119,36 @@ keryx review tier --scope <scope> --diff-lines <n> --findings <n> [--security] [
 ```
 
 Paste the `model` block it prints into that dispatch. `model_strategy: "current"` is
-gone: it meant "do not switch models", which is exactly the behaviour this command
-replaced. The command names no model — it ranks what the provider reports at runtime
-and, when it cannot rank anything, prints `inherit: true`, which means the dispatch
-runs on the session model. That is a correct answer, not a failure.
+gone. The command names no model: it ranks what the provider reports at runtime and,
+when it cannot, prints `inherit: true` — the dispatch runs on the session model, a correct answer.
 
-**Step 6 — dispatch `review-orchestrator`.**
+**Step 6 — run `review-orchestrator` inline, in this main session.** Load
+`skills/gdskills/review/review-orchestrator/SKILL.md` yourself; do **not** wrap it in a
+`Task` — a subagent cannot spawn the reviewers and the skill answers
+`STATUS: BLOCKED nested_dispatch_unavailable`. Give it these inputs:
 
 ```
-Task({
-  description: "Review round <n>: <job-name>",
-  subagent_type: "general-purpose",
-  prompt: |
-    Load skill: skills/gdskills/review/review-orchestrator/SKILL.md
-
-    flags:            <selected flags, e.g. --backend --security --testing-practices>
-    commit_range:     <BASE_SHA>..HEAD
-    issue_url:        <issue URL, when the job has one — enables the Stage 1 spec gate>
-    context_doc:      <JOBS_ROOT>/<job-name>/context_v<N>.md
-    verification_mode: annotate
-    managed_review:   { mode: "review-flow", target: "branch", target_ref: "<feature-branch>" }
-    is_fix_round:     <true on any round after the first>
-    pr_comments:      { enabled: <true when a PR exists> }
-
-    Emit the unified report AND the fenced ```json keryx:findings``` block.
-    Dispatch review-verifier (Wave C) over the consolidated findings and return
-    its verification claims as a file path.
-})
+flags:             <selected flags, e.g. --backend --security --testing-practices>
+commit_range:      <BASE_SHA>..HEAD   # round 1 only; a later round takes its range from round.json
+issue_url:         <issue URL, when the job has one — enables the Stage 1 spec gate>
+context_doc:       <JOBS_ROOT>/<job-name>/ai/context.md
+verification_mode: annotate
+managed_review:    { mode: "review-flow", target: "branch", target_ref: "<feature-branch>" }
+is_fix_round:      <true on any round after the first; the round, its range and prior_findings come from `review start`/`review plan`, never from your own range>
+pr_comments:       { enabled: <true when a PR exists> }
 ```
 
-**Step 7 — verification is part of the round, not an extra.** `review-orchestrator`
-dispatches `review-verifier` in Wave C over the consolidated findings. The verifier
-**runs something** and can only delete — it never raises a severity, adds a finding,
-or rewrites one, and it never verifies a finding raised by the same reviewer. Its
-claims are merged by the CLI, not by hand.
+It emits the unified report AND the fenced ```json keryx:findings``` block, runs
+`review-verifier` (Wave C) and then `review-premise` (Wave D) over the consolidated
+findings, and returns the verification claims and the premise claims as file paths.
+
+**Step 7 — verification and the premise check are part of the round, not extras.**
+`review-orchestrator` dispatches `review-verifier` in Wave C over the consolidated
+findings. The verifier **runs something** and can only delete — it never raises a
+severity, adds a finding, or rewrites one, and it never verifies a finding raised by the
+same reviewer. After it, `review-premise` (Wave D) judges whether each finding is a
+defect at all: it can lower a severity or hold a finding for the operator, never add
+one. Both claim sets are merged by the CLI, not by hand.
 
 **Step 8 — ingest the round.** This is what makes it citable.
 
@@ -1121,13 +1158,13 @@ keryx review ingest --report <path/to/review-report.md> --ref <feature-branch> \
   --scope <JOBS_ROOT>/<job-name>/scope.json \
   --blast-radius <JOBS_ROOT>/<job-name>/blast-radius.json \
   --verifications <path/to/verifications.json> --verification-mode annotate \
-  --refuted <path/to/refuted.json> \
+  --premises <path/to/premises.json> --refuted <path/to/refuted.json> \
   --spent <usd-so-far> --outstanding <subagents in flight>
 ```
 
-An unrecognised option is **refused, not ignored** — a silently dropped flag writes
-nothing and still reports success. `--refuted` carries findings this round raised and
-then dismissed; without it the package keeps only the survivors of an unlogged triage.
+An unrecognised option is **refused, not ignored**. `--refuted` carries findings this round
+raised and then dismissed; without it the package keeps only the survivors of an unlogged
+triage. A first ingest without `--premises` holds nothing; a re-ingest carries earlier holds.
 
 **Findings are the canonical shape.** One vocabulary, everywhere in this skill:
 
@@ -1143,8 +1180,17 @@ then dismissed; without it the package keeps only the survivors of an unlogged t
 
 **Classify:**
 ```
-NEEDS_FIX = count(blocker) > 0 OR count(major) > 0
+HELD      = findings review-premise holds (challenged / owner-decision) with no operator decision
+OPEN      = blocker + major findings not in HELD
+NEEDS_FIX = count(OPEN) > 0
 ```
+
+A HELD finding is neither fixable nor clean: it never enters a fix prompt, and it blocks
+the job until answered. Ask the operator about each one with the host's question tool and
+record the answer with `keryx review decide-premise --answered-by …` as `review-orchestrator`
+"Wave D" says (never send them to a terminal); an upheld one rejoins OPEN at its severity
+(carrying `premise_verdict` and `premise_answer` as task-implementer's `FIX_CONTEXT` defines them), a dismissed one carries `dismissed-incorrect` from the
+operator's decision. Unattended: stop and report the HELD list; never let the loop end reading clean while HELD is non-empty.
 
 **Document:** record the report in the job package too, so the job and the review
 record point at each other:
@@ -1164,25 +1210,25 @@ Ask unless automation settings explicitly set `publish_pr_review_report`:
 ```text
 Publish the review report to the PR?
 
-  A) Concise PR comment only
-  B) Concise PR comment + detailed AI markdown artifact (recommended for follow-up fixes)
+  A) Concise PR review only
+  B) Concise PR review + detailed AI markdown artifact (recommended for follow-up fixes)
   C) Do not publish
 
 > pick a letter (default: C)
 ```
 
 **Rules:**
-- The PR comment and AI artifact must be written in English only, regardless of the chat language or reviewer output language.
+- The PR review and AI artifact must be written in English only, regardless of the chat language or reviewer output language.
 - Default is C. Never publish to a PR without explicit user confirmation or `publish_pr_review_report: comment`, `publish_pr_review_report: comment-and-ai-artifact`.
-- If the user chooses A, delegate concise comment formatting to `review-orchestrator`'s PR Review Report Publication contract.
+- If the user chooses A, delegate concise review formatting to `review-orchestrator`'s PR Review Report Publication contract.
 - If the user chooses B, also generate `.metaproject/jobs/<job-name>/review-ai-report.md` using `review-orchestrator`'s Detailed AI Markdown Artifact contract, and include in the comment's `Meta` section both an `AI artifact` path and an `AI artifact description` row explaining that the file carries detailed findings, fix guidance, patch guidance, regression coverage, validation plan, and follow-up agent context.
 - **If no PR exists yet**, do not ask now and do not stash a pending decision — nothing persists one. Ask this question again after the PR step (2.10) creates the PR, when the answer can actually be acted on.
 - The decision is acted on immediately or not at all. There is no `publication_plan` field in `state.json`; what was published is stated in the 2.9 report.
 
 **Automation values:**
 - `publish_pr_review_report: ask` -> ask the question above.
-- `publish_pr_review_report: comment` -> publish the concise PR comment only.
-- `publish_pr_review_report: comment-and-ai-artifact` -> publish the concise PR comment and create the detailed AI markdown artifact.
+- `publish_pr_review_report: comment` -> publish the concise PR review only.
+- `publish_pr_review_report: comment-and-ai-artifact` -> publish the concise PR review and create the detailed AI markdown artifact.
 - `publish_pr_review_report: none` -> do not publish.
 
 #### 2.6.3 Post-Review Checkpoint
@@ -1226,26 +1272,22 @@ with evidence, not silence.
 
 Only runs if NEEDS_FIX is true. Default max: **3 iterations** (`max_review_iterations`).
 
-Three is the shared round bound: `task-implementer`, `flow-orchestrator` and
-this skill all use it. *"The first three to four repair iterations account for
+Three is the self-fix bound `task-implementer` and this skill share
+(`flow-orchestrator`'s review bound is five, by operator decision). *"The first three to four repair iterations account for
 most achievable gains"* ([arXiv:2607.05197](https://arxiv.org/abs/2607.05197));
 correctness falls **0.820 -> 0.673** across two forced revisions while
 cumulative ever-correct is **0.847**
-([arXiv:2607.24604](https://arxiv.org/abs/2607.24604)). Aider hardcodes
-`max_reflections = 3`; OpenHands' critic uses 3.
+([arXiv:2607.24604](https://arxiv.org/abs/2607.24604)). Other agent tools
+hardcode the same bound (`max_reflections = 3`).
 
-The bound is a ceiling, not a target. Repetition ends the loop earlier and
-**regardless of remaining iterations** — a counter cannot tell "converging
-slowly" from "stuck", and an agent emitting the identical failing output three
-times spends the whole budget before anything notices.
+The bound is a ceiling, not a target. Repetition ends the loop earlier, **regardless of
+remaining iterations**: a counter cannot tell "converging slowly" from "stuck".
 
-**A finding leaves this loop by being dispositioned, never by being absent.** The
-previous version of this section recomputed "unresolved" as whatever the next round
-still reported — so a finding the next reviewer simply did not look at was recorded as
-fixed. That is absence-as-evidence, and the completion gate refuses it.
+**A finding leaves this loop by being dispositioned, never by being absent.** One the next
+reviewer did not look at is not fixed: absence-as-evidence, which the completion gate refuses.
 
 ```
-UNRESOLVED_FINDINGS = all blocker + major findings from step 2.6
+UNRESOLVED_FINDINGS = OPEN from step 2.6          # never a HELD finding (Classify, 2.6.1)
 PREVIOUS_REVIEW_OUTPUT = <the ingested report from step 2.6>
 
 FOR iteration in [1, 2, 3]:
@@ -1262,20 +1304,21 @@ FOR iteration in [1, 2, 3]:
      previously_unresolved: <findings that were in UNRESOLVED_FINDINGS last iteration but still present>
          → Prefix: "These specific findings were NOT fixed in iteration <N-1>: [list]"
 
-  3. Launch task-implementer with the fix prompt (subagent_type: "general-purpose"),
+  3. Re-run `keryx skills resolve-context --for implement` on the fix files (with `--task-text '<fix task description, each ' written as '\''>'` and a fresh `--out`), then launch task-implementer
+     with the fix prompt and `resolved_context_file` (subagent_type: "general-purpose"),
      on the model `keryx review tier --fix-attempt <N> --findings <n> --json` computes
-  4. Run the sanity check (step 2.5.2 logic) — verify commits were made
+  4. Run the sanity check (step 2.5.2 logic) — verify commits were made — and `contracts validate --resolved` on the result
   5. Run the next managed round — the FULL 2.6.1 sequence, not a bare re-dispatch:
        keryx review budget  --spent <usd> --outstanding <n>
-       keryx review start   --target branch --ref <feature-branch> --head <new-head>
+       keryx review plan    --target branch --ref <feature-branch> --head <new-head>
+                            # start + scope + blast-radius + slice + required + estimate on the new head;
+                            # round.json names the delta, scope.json and blast-radius.json land in the package
        keryx review comments collect --repo <r> --pr <n> --sha <new-head> --round <N+1> --out <file>
-       keryx review scope        --ref "$BASE_SHA" --json > scope.json
-       keryx review blast-radius --ref "$BASE_SHA" --previous blast-radius.json --json > blast-radius.json
-       <dispatch review-orchestrator with is_fix_round: true>
+       <run review-orchestrator inline, in this session; it takes the round from round.json>
        keryx review ingest  --report <new-report> --ref <feature-branch> --head <new-head> \
                             --scope scope.json --blast-radius blast-radius.json \
-                            --verifications <file> --refuted <file> --outstanding <n>
-  6. Recompute NEEDS_FIX from the ingested findings
+                            --verifications <file> --premises <file> --refuted <file> --outstanding <n>
+  6. Recompute HELD, OPEN and NEEDS_FIX from the ingested findings; a new HELD finding is asked about as in Classify
   7. Record what became of each finding raised in the PREVIOUS round — every one of
      them, before the next iteration starts:
 
@@ -1289,9 +1332,8 @@ FOR iteration in [1, 2, 3]:
      must cite where the outcome is written down. A recorded state and its citation
      cannot be overwritten by a later close — record a correction as a new round.
      Closing with no dispositions leaves every finding reading `unknown`, which means
-     "nobody wrote down what happened".
-  8. UNRESOLVED_FINDINGS = the blocker + major findings of the NEW round that are
-     still without a terminal disposition
+     "nobody wrote down what happened". A HELD finding gets no disposition here: it waits for the operator.
+  8. UNRESOLVED_FINDINGS = the OPEN findings of the NEW round still without a terminal disposition
 
   9. STUCK CHECK — runs before the next iteration and ignores the budget:
      IF any finding identity is in UNRESOLVED_FINDINGS for the SECOND iteration
@@ -1312,7 +1354,7 @@ FOR iteration in [1, 2, 3]:
 
 AFTER THE LAST ROUND ONLY — answer every inbound PR comment, once:
   keryx review comments reply --repo <owner/repo> --pr <n> --outcomes <file> \
-                             --sha <head-sha> --final [--flow-link <url>]
+                             --review <review-id> --sha <head-sha> --final [--flow-link <url>]
 
 IF still NEEDS_FIX after max iterations, or the stuck check broke the loop:
   Log "Unresolved after <N> iterations" with finding list, and say WHICH of the
@@ -1320,6 +1362,8 @@ IF still NEEDS_FIX after max iterations, or the stuck check broke the loop:
   steps. Give every surviving finding a disposition (dismissed-wont-fix or
   dismissed-deprioritised, with evidence) rather than leaving it `unknown`
   → continue to VERIFY (2.8)
+
+IF HELD is non-empty when the loop ends: ask the operator (Classify); unattended, stop and report the HELD list
 ```
 
 `comments reply` **refuses without `--final`**: replying per round turns one review
@@ -1426,7 +1470,7 @@ IF no skill_drift and Skill Learning == none:
 ELSE for each flagged project-skill:
   1. Dispatch a subagent to build the learning proposal:
      - Model: COMPUTED, not chosen — run
-         keryx review tier --scope narrow --json
+         keryx review tier --findings 1 --diff-lines 0 --json
        and paste the `model` block into the dispatch. The command names no model:
        it ranks what the provider reports at runtime, and when it cannot rank
        anything it prints `inherit: true`, which means the dispatch runs on the
@@ -1514,7 +1558,7 @@ JOB_NAME: <job-name>
 BRANCH: <feature_branch>
 BASE: <base_branch>
 ISSUE_NUMBER: <issue_number if available>
-CONTEXT_PATH: <JOBS_ROOT>/<job-name>/context_v<N>.md
+CONTEXT_PATH: <JOBS_ROOT>/<job-name>/ai/context.md
 ```
 
 `pr-issue-documenter` will analyze the branch diff and produce a structured PR description (Summary + Changes by area + Key Files table). Use its output as the `body` for the PR.
@@ -1704,7 +1748,7 @@ the dispatch prompt, or it does not reach the sub-agent:
 ```
 branch:      { name, worktree_path, merge_base, package_manager, run_command }
 analysis:    { total_tasks, tasks, dependency_order }
-context_doc: the path to the highest-numbered context_v<N>.md in the package
+context_doc: the path to the job's ai/context.md
 review:      the current round's findings — the durable copy is the managed review
              package, not this
 ```
@@ -1905,28 +1949,8 @@ When `dry_run: true` is set (or `--dry-run` is passed):
 3. **Phase 2 is skipped entirely** — no sub-agents dispatched, no git operations
 4. **Output:** Full plan tree with agent names, input data shapes, dependencies:
 
-```
-Dry-run plan for: issue-4141--pipeline-validation
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Step 1: analyze          [issue-analyzer]           → input: issue #4141
-Step 2: context          [context-collector]        → input: analysis result, project_dir
-Step 3: prepare          [orchestrator]             → creates: feature/pipeline-validation worktree
-Step 4: tests-creator    [tests-creator × 3]        → RED stubs, one per task
-Step 5: implement        [task-implementer × 3]     → wave-parallel, 3 tasks
-Step 6: sanity-check     [orchestrator]             → verifies commits exist
-Step 7: verify           [code-verifier]            → lint + type-check + test + imports
-Step 8: review           [review-orchestrator]      → managed round, ingested
-Step 9: security         [security-audit]           → conditional: auth/API/DB/env files
-Step 10: fix             [task-implementer]         → conditional: if NEEDS_FIX
-Step 11: verify-post-fix [code-verifier]            → conditional: after fix
-Step 12: perf-check      [perf-check]               → conditional: frontend/bundle files
-Step 13: report          [orchestrator]             → aggregates all results
-Step 14: pr              [orchestrator + gh CLI]    → conditional: if create_pr
-Step 15: deploy          [deploy]                   → conditional: if user asks
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Estimated sub-agent calls: 11-14 (varies with tasks and review findings)
-No changes will be made. Use without --dry-run to execute.
-```
+The full plan tree (agent names, input shapes, dependencies, no changes made):
+`SKILL.detail.md`, "Dry-run plan output example".
 
 5. Ask user: "Execute this plan? (yes / adjust / abort)"
 
@@ -1946,7 +1970,7 @@ What actually bounds this orchestrator:
 | review → fix rounds | 3 | 2.7, and `max_review_iterations` (`maximum: 3`) in the input contract |
 | repetition, whatever the count says | first repeat | the STUCK CHECK in 2.7, and `keryx review loop` against the durable record |
 | retries per step | recorded, not guessed | `metrics.steps[].retries`, incremented by `keryx job step --status in-progress` and read back with `keryx job status --json` |
-| reviewer fan-out | 4 in flight | `keryx review budget --outstanding <n>` before every dispatch (2.6.1) |
+| reviewer fan-out | ≤10 per wave | `keryx review budget --outstanding <n>` before every dispatch (2.6.1) |
 | spend | 3 USD by default | `keryx review budget --spent <usd>` — a non-zero exit means stop and ask |
 
 Each of these is a number some command reads or writes. A guard no command can
@@ -1987,6 +2011,7 @@ Each step failure is classified into one of three classes with different recover
 | All reviewers fail | `recoverable` | Record the round as failed with a reason, add a warning to the report, continue to VERIFY (2.8) |
 | Fix loop exceeds max_review_iterations | `recoverable` | Disposition every surviving finding, log which ended the loop, continue to VERIFY (2.8) |
 | Final checks fail | `recoverable` | Include in report, still propose PR (user decides) |
+| A GitHub CI check on the PR fails | `recoverable` | When `review.jev.ci_triage` is on, run `keryx review ci-triage --run <id> --json` before reporting it as a defect: `flaky`/`deterministic` → rerun once and note it in the report, a second failure counts as `real-regression`; `real-regression` → treat as a real failure; `infra` → report it, don't touch code. Verdict is advisory only. |
 | gh CLI not available | `recoverable` | Print PR data, user creates manually. `keryx review comments` needs it too — say so rather than reporting `0 outstanding`. |
 
 ### Retry Protocol (for `retryable` errors)
@@ -2004,13 +2029,7 @@ attempt 1: keryx job step <job-name> <step-id> --status in-progress
 **Critical:** on retry, re-send the **same prompt** — hold it for the duration of the
 step and re-send it verbatim. Never re-derive it; re-derivation causes drift.
 
-The prompt itself is **not** persisted: `keryx job` writes no `step.prompt` and no
-prompt size, so do not instruct a resuming session to read one. What *is* persisted is
-that the attempt happened — `metrics.steps[].retries`, incremented every time the step
-re-enters `in_progress`, and the `--reason` line in `journal.md`. A resumed session
-therefore knows how many attempts a step has had, which is the fact the retry budget
-needs, and reconstructs the prompt from the plan and the analysis exactly as the first
-attempt did.
+The prompt itself is **not** persisted: `keryx job` writes no `step.prompt` and no prompt size, so do not instruct a resuming session to read one. What *is* persisted is that the attempt happened — `metrics.steps[].retries`, incremented every time the step re-enters `in_progress`, and the `--reason` line in `journal.md`. A resumed session therefore knows how many attempts a step has had, which is the fact the retry budget needs, and reconstructs the prompt from the plan and the analysis exactly as the first attempt did.
 
 ---
 
@@ -2087,6 +2106,25 @@ wrong, cannot be undone by trying again.
 
 ---
 
+## Red Flags
+
+The two callouts above ("the result looks fine without a status line", "the
+subagent can read `state.json` itself") are the two this orchestrator gets wrong
+most often. These are the rest. Stop and re-read this skill if you are thinking:
+
+| Rationalization | Rebuttal |
+|---|---|
+| "The worker returned `STATUS: DONE`, so the task is verified." | `DONE` is the worker's report that it finished its own task, self-check included. The gate is step 2.8: `code-verifier` over the wave's whole diff. A task can be individually DONE and still break the build the moment it meets the other tasks in the wave. |
+| "The user is right here — I'll just ask which option they prefer." | Between Phase 0 and completion there are exactly two reasons to ask: a critical failure, and extending the plan from analyze to implement. Everything else was settled in Phase 0. A mid-run question turns an autonomous run into a session the user has to babysit. |
+| "`git checkout -b` is simpler than setting up a worktree for this one." | It switches the user's own working directory out from under their live session, mid-run. This is in the "unrecoverable if wrong" list: `git worktree add`, always, and every later command runs inside that worktree. |
+| "I know this step completed — recording it through `keryx job` is bookkeeping." | The package IS the state. `keryx job` is the only writer of `state.json`, and a resumed session knows only what it reads there. A step held in this session's head did not happen as far as the next session is concerned. |
+| "The subagent will work better with the full analysis JSON, so I'll paste it in." | The minimality principle: each subagent type gets its scoped slice. Extra context does not add capability; it fills the window with material the worker must first decide is irrelevant, and raises the odds it invents something from it. |
+| "This step failed twice — one more attempt with a sharper prompt should do it." | The retry protocol is one retry with the EXACT same prompt plus the error list; a second failure escalates to the user. Re-deriving the prompt causes drift, and the drifted attempt no longer tests the same thing. |
+| "The branch is ready and the PR is the obvious next step, so I'll push." | Do not push until the user confirms, unless `auto_create_pr` is set. A push is visible to everyone watching the repository, and there is no un-push they will not see. |
+| "The job finished cleanly, so the report can be short." | Say where the job package is, every time. It is the only durable record of the run; a user who cannot find it is left with a summary and nothing to check it against. |
+
+---
+
 ## Configurable Jobs Root
 
 `JOBS_ROOT` in this document is shorthand for **`.metaproject/jobs`, relative to the
@@ -2113,29 +2151,7 @@ When a job ends with a step recorded `failed`, or with unresolved blocker findin
    off `journal.md`, which `keryx job` timestamped as the job ran, and the retry counts
    come from `keryx job status <job-name> --json`:
 
-```markdown
-# Post-Mortem: <job-name>
-
-## Timeline
-(from .metaproject/jobs/<job-name>/journal.md — every line as recorded)
-- <ISO timestamp> - created
-- <ISO timestamp> - step: implement in-progress (retries 0)
-- <ISO timestamp> - step: implement in-progress (retries 1)
-- <ISO timestamp> - step: implement failed (retries 1) — <reason>
-
-## What Went Wrong
-- <Step name> failed with: <error class> — <error message>
-- Recorded retries: <metrics.steps[].retries>
-- Root cause hypothesis: <analysis>
-
-## What Worked
-- <N> tasks completed successfully
-- Context collection was accurate
-
-## Recommendations for Retry
-- Fix <specific issue> before re-running
-- Consider splitting task-3 into smaller subtasks
-```
+Use the template in `SKILL.detail.md`, "Post-mortem document template".
 
 2. Save to `.metaproject/jobs/<job-name>/post-mortem.md`
 3. Include in final user message: "Post-mortem saved to `.metaproject/jobs/<job-name>/post-mortem.md`"
@@ -2175,16 +2191,7 @@ terminal disposition.
 keryx job status <job-name> --json     # `retries` per step, plus phase and next_step
 ```
 
-**Aggregated in the report:**
-```markdown
-## Metrics
-| Step | Duration | Retries |
-|------|----------|---------|
-| Analyze | 45s | 0 |
-| Context | 30s | 0 |
-| Implement | 5m 22s | 1 |
-| Review | 1m 10s | 0 |
-| **Total** | **7m 47s** | **1** |
-```
+**Aggregated in the report:** a per-step Duration/Retries table with a total row
+(`SKILL.detail.md`, "Metrics table in the report").
 
 This data identifies which steps are bottlenecks and which ones needed a second attempt.

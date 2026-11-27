@@ -1,18 +1,18 @@
 ---
 name: issue-analyzer
-description: "Use when decomposing a GitHub issue into atomic tasks for AI implementation, planning task breakdown, or preparing work for task-implementer agents."
+description: "Use when decomposing a GitHub issue into atomic tasks for AI implementation, planning task breakdown, or preparing work for task-implementer agents. NOT for: writing the code for those tasks (use task-implementer)."
 triggers:
-  - "Analyze issue"
-  - "Decompose issue"
-  - "Break down issue"
+  - "analyze issue"
+  - "decompose issue"
+  - "break down issue"
   - "Issue to tasks"
   - "Plan issue implementation"
 metadata:
   author: "MrCipherSmith"
   version: "1.1.0"
-  category: "analysis"
+  category: "orchestration"
   agent_worthy: true
-  compatible_harnesses: "cursor,codex,zed,opencode"
+  compatible_harnesses: "cursor,codex,zed,opencode,claude"
 license: "MIT"
 ---
 
@@ -20,7 +20,7 @@ license: "MIT"
 
 ## Purpose
 
-Analyzes a GitHub issue and decomposes it into atomic implementation tasks that can be dispatched to `task-implementer` sub-agents. Designed to run autonomously as a sub-agent — no user interaction required.
+Analyzes a GitHub issue and decomposes it into atomic implementation tasks that can be dispatched to `task-implementer` sub-agents. Designed to run autonomously as a sub-agent — no user interaction required. Plan bridge: publish these four phases with `plan_set` under the ids `phase-1`…`phase-4` and move each with `plan_update` — see the `session-plan-bridge` rule.
 
 **Input:** GitHub issue URL (or repo + number) + codebase path(s)
 **Output:** JSON analysis object with one task entry per atomic task, each containing full context for implementation

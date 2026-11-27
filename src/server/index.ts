@@ -110,7 +110,7 @@ export function createRoomMcpServer(logPath: string, options: RoomMcpServerOptio
         "pass next_seq back as since_seq to continue.",
       inputSchema: {
         since_seq: z.number().int().min(0),
-        limit: z.number().int().min(0).optional(),
+        limit: z.number().int().min(1).optional(),
       },
     },
     async ({ since_seq, limit }) => ({
@@ -194,8 +194,20 @@ export function createRoomMcpServer(logPath: string, options: RoomMcpServerOptio
         // is the answer — and it SETTLES the entry, because delivering the same
         // veto twice (once to the handler, once to whoever reads the queue) is
         // worse than one delivery to a stub the embedder wrote itself.
-        const verdict = await options.onOwnerCommand({ kind, body, id: queued.id });
-        queue.ack(queued.id);
+        //
+        // The `ack` lives in `finally`, not after the `await`: a handler that
+        // throws still settled the entry — it just settled it badly — and
+        // leaving the slot held is a second veto lost in a new way, this time
+        // silently. Rethrowing (implicit here — nothing catches) is what tells
+        // the operator who posted it that their command was never acted on;
+        // the SDK turns the throw into an error result the same way
+        // `room.ack_owner_command` already relies on below.
+        let verdict: { status: Exclude<OwnerCommandStatus, "queued">; reason?: string };
+        try {
+          verdict = await options.onOwnerCommand({ kind, body, id: queued.id });
+        } finally {
+          queue.ack(queued.id);
+        }
         const settled: OwnerCommandResult = { id: queued.id, status: verdict.status };
         if (verdict.reason !== undefined) settled.reason = verdict.reason;
         return { content: [{ type: "text", text: JSON.stringify(settled) }] };

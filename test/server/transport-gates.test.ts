@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { roomTokenHeaders } from "../../src/room-token";
 import { serve } from "../../src/server/serve";
 import type { ServeHandle } from "../../src/server/serve";
 
@@ -35,10 +36,23 @@ afterEach(async () => {
   dirs.length = 0;
 });
 
-async function status(url: string, headers: Record<string, string> = {}): Promise<number> {
-  const response = await fetch(url, {
+/**
+ * Carries the room's token, because the statuses asserted below are 403 and 404 —
+ * and the token gate answers 401 ahead of both. A credential-less request would
+ * make each case green while never reaching the gate it names.
+ */
+async function status(
+  room: { url: string; token: string },
+  headers: Record<string, string> = {},
+): Promise<number> {
+  const response = await fetch(room.url, {
     method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json, text/event-stream", ...headers },
+    headers: {
+      "content-type": "application/json",
+      accept: "application/json, text/event-stream",
+      ...roomTokenHeaders(room.token),
+      ...headers,
+    },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
   });
   await response.text();
@@ -62,10 +76,10 @@ describe("the transport's own gates", () => {
     // never saw. Nothing was exploitable, but "every path except one" is the
     // property that stops being true quietly.
     handle = await serve(FIXTURE, { port: 0 });
-    expect(await status(handle.url, { "mcp-session-id": "nope", host: "evil.example" })).toBe(403);
-    expect(await status(handle.url, { "mcp-session-id": "nope", origin: "http://evil.example" })).toBe(403);
+    expect(await status(handle, { "mcp-session-id": "nope", host: "evil.example" })).toBe(403);
+    expect(await status(handle, { "mcp-session-id": "nope", origin: "http://evil.example" })).toBe(403);
     // And with honest headers it is still a 404, not a new session.
-    expect(await status(handle.url, { "mcp-session-id": "nope" })).toBe(404);
+    expect(await status(handle, { "mcp-session-id": "nope" })).toBe(404);
   }, 20000);
 
   test("a second signal during shutdown does not start a second one", async () => {

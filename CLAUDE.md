@@ -5,7 +5,7 @@
 
 **HARD GATE:** Before the first shell command, search, grep, file read, code navigation, planning step, implementation, review, analysis, or subagent dispatch in this repository, explicitly read `.metaproject/index.md`. Do not treat it as a referenced/on-demand file; load it immediately when present.
 
-This Metaproject block is optional project-local routing. If `.metaproject/index.md` or referenced Metaproject files are absent, state `metaproject: unavailable` and continue with the main contents of this AGENTS.md/CLAUDE.md file.
+This Metaproject block is optional project-local routing. If `.metaproject/index.md` or referenced Metaproject files are absent, state `metaproject: unavailable` and continue with the rest of the project's agent instructions.
 
 If you create or switch to a git worktree, repeat the hard gate in that worktree root before any repository action there.
 
@@ -31,11 +31,15 @@ For a non-trivial navigation, debugging, review, or investigation task, end with
 
 For implementation, review, refactoring, planning, documentation, or quality tasks, use project-local Metaproject skills first: .metaproject/skills/catalog.md, .metaproject/project-skills/, then .metaproject/skills/gdskills/. External/global skills are fallback only when explicitly needed.
 
+The orchestrators (`review-orchestrator`, `flow-orchestrator`, `job-orchestrator`, `autodoc-orchestrator`) run in the main session: the main agent reads the SKILL.md and runs it inline, and never hands a whole orchestrator to a subagent, because a subagent cannot spawn the reviewers and workers the orchestrator dispatches.
+
 For creating, changing, debugging, reviewing, or running tests, use the Metaproject testing skill and read .metaproject/data/testing/context.md before broad test search or raw logs.
 
 For lessons learned, decisions, constraints, repeated mistakes, and historical project context, use the Metaproject memory skill before broad documentation search.
 
 For starting, tracking, or finishing a managed piece of work (a flow), use the Metaproject flow skill for state/status commands. For non-trivial implementation through Task Manager, use the local gdskills flow-orchestrator first: .metaproject/skills/gdskills/orchestration/flow-orchestrator/SKILL.md. All flow state changes go through the keryx flow CLI.
+
+For choosing which model to run this session, a subagent dispatch, or a scheduled/unattended run on, use the model tiers: the flagship tier for planning and review, one tier down for subagents, docs, and unattended work, and the smallest tier only for trivial, mechanical work. Declare a tier, never a model id, in a rule/skill/subagent file — this project has not pinned any of these categories in `routing.config.json`, so every one of them runs on the session's own model.
 
 <!-- /keryx:index -->
 

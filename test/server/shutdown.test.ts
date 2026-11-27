@@ -2,8 +2,8 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import type { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { connectToRoom, connectToRoomWithTransport } from "../helpers/room-client";
 import { serve } from "../../src/server/serve";
 import { until } from "../helpers/until";
 import type { ServeHandle } from "../../src/server/serve";
@@ -53,8 +53,7 @@ describe("shutting a served room down", () => {
     // That stream is what pinned the process, and it is what a polling client
     // does *not* reliably hold between its short requests — measured both ways
     // against the old code: bare client hangs, poller does not.
-    client = new Client({ name: "shutdown-test", version: "0.1.0" });
-    await client.connect(new StreamableHTTPClientTransport(new URL(handle.url)));
+    client = await connectToRoom(handle, "shutdown-test");
     // Wait for the stream the hang depends on, not for a number: a client that
     // has not attached one cannot pin the server, so a fixed sleep here would
     // let a slow machine pass this test without ever entering the case.
@@ -81,21 +80,31 @@ describe("shutting a served room down", () => {
       procs.push(proc);
 
       let port = 0;
+      // The token comes out of the registry entry alongside the port, which is
+      // the real client's own path: the entry is where both are written, and
+      // reading one without the other is how an in-tree caller would break.
+      let token = "";
       await until(() => {
         try {
-          const rooms = (JSON.parse(readFileSync(registryPath, "utf8")) as { rooms: Array<{ port: number }> }).rooms;
-          if (rooms.length > 0 && rooms[0]) port = rooms[0].port;
+          const rooms = (
+            JSON.parse(readFileSync(registryPath, "utf8")) as { rooms: Array<{ port: number; token?: string }> }
+          ).rooms;
+          if (rooms.length > 0 && rooms[0]) {
+            port = rooms[0].port;
+            token = rooms[0].token ?? "";
+          }
         } catch {
           // not written yet
         }
-        return port > 0;
+        return port > 0 && token !== "";
       }, "the room to register");
 
       // The precondition the old test never established: something is attached
       // and holding a stream open.
-      const attached = new Client({ name: "shutdown-test", version: "0.1.0" });
-      const attachedTransport = new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${port}/mcp`));
-      await attached.connect(attachedTransport);
+      const { client: attached, transport: attachedTransport } = await connectToRoomWithTransport(
+        { url: `http://127.0.0.1:${port}/mcp`, token },
+        "shutdown-test",
+      );
       await until(() => attachedTransport.sessionId !== undefined, "the session to be established");
 
       proc.kill(signal);

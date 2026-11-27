@@ -7,6 +7,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { serveManagement } from "../../src/mcp-management/server";
 import { serve } from "../../src/server/serve";
 import type { ServeHandle } from "../../src/server/serve";
+import type { ManagementHandle } from "../../src/mcp-management/server";
 import { registerRoom } from "../../src/installer/registry";
 
 const FIXTURE = join(import.meta.dir, "..", "fixtures", "sample-room.jsonl");
@@ -15,7 +16,9 @@ const BUNDLED_SKILL = join(import.meta.dir, "..", "fixtures", "bundled-skill.md"
 let dir: string;
 let configPath: string;
 let registryPath: string;
-let managementHandle: ServeHandle | undefined;
+// `ManagementHandle`, not `ServeHandle`: the management server has no per-room
+// token, and typing it as a room handle would hide exactly that distinction.
+let managementHandle: ManagementHandle | undefined;
 let roomHandle: ServeHandle | undefined;
 
 function setup() {
@@ -33,6 +36,14 @@ afterEach(async () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
+/**
+ * No token, deliberately. The per-room token is the ROOM server's (T15/AC10);
+ * the management server has a different surface, no owner-command queue, and
+ * D-11 already closed its one dangerous path by removing `yes` from
+ * `skills.sync`. These clients present no credential and must still be served —
+ * which is what makes "the token is an option on the shared transport" a
+ * statement this suite checks rather than a claim in a comment.
+ */
 async function connectClient(url: string): Promise<Client> {
   const client = new Client({ name: "roomyx-mgmt-test-client", version: "0.0.0" });
   await client.connect(new StreamableHTTPClientTransport(new URL(url)));
@@ -43,7 +54,7 @@ describe("MCP management server", () => {
   test("roomyx.rooms.list returns live rooms via a real MCP round-trip (AC5)", async () => {
     setup();
     roomHandle = await serve(FIXTURE, { port: 0 });
-    registerRoom(registryPath, { port: roomHandle.port, logPath: FIXTURE, pid: process.pid });
+    registerRoom(registryPath, { port: roomHandle.port, logPath: FIXTURE, pid: process.pid, token: roomHandle.token });
 
     managementHandle = await serveManagement({ registryPath, bundledSkillPath: BUNDLED_SKILL, configPath }, { port: 0 });
     const client = await connectClient(managementHandle.url);
@@ -53,6 +64,14 @@ describe("MCP management server", () => {
     const rooms = JSON.parse(text);
     expect(rooms).toHaveLength(1);
     expect(rooms[0].port).toBe(roomHandle.port);
+    // And NOT the room's token. This server takes no credential of its own, so a
+    // listing that carried the rooms' tokens would hand every room's credential
+    // to the one caller the token exists to bound: an unauthenticated loopback
+    // request, which is the request the audit made with `curl`. The token would
+    // have leaked simply because the entry it lives in is what this tool
+    // serialises — nobody would have had to ask for it.
+    expect(rooms[0].token).toBeUndefined();
+    expect(text).not.toContain(roomHandle.token);
 
     await client.close();
   });

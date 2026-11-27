@@ -2,16 +2,33 @@ import { describe, expect, test } from "bun:test";
 import { appendFileSync, copyFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import type { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { connectToRoom } from "../helpers/room-client";
 import { serve } from "../../src/server/serve";
 
 const FIXTURE = join(import.meta.dir, "..", "fixtures", "sample-room.jsonl");
 
-async function connectClient(url: string): Promise<Client> {
-  const client = new Client({ name: "roomyx-test-client", version: "0.0.0" });
-  await client.connect(new StreamableHTTPClientTransport(new URL(url)));
-  return client;
+/**
+ * **A contract change, recorded here rather than argued about later.**
+ *
+ * This helper used to connect with no credential, and the test below was named
+ * for the fact that it worked: "a real StreamableHTTPClientTransport can connect
+ * and call room.get_state". Under AC10 that is no longer true, and
+ * `test/server/room-token.test.ts` asserts its direct negation — an SDK client
+ * that sends no token cannot connect.
+ *
+ * The two are not in conflict. What changed is the contract: the room endpoint
+ * now asks for the per-room token, so "a real client connects" means "a real
+ * client that presents the token connects". These cases keep asserting everything
+ * they asserted before, over the same real transport, with the credential added;
+ * the uncredentialled case moved to the file that is about the credential.
+ *
+ * It goes through `connectToRoom` — i.e. through `roomTransport` — rather than
+ * building a header here, so there is one place the wire format is written and
+ * the tests are downstream of it.
+ */
+function connectClient(room: { url: string; token: string }): Promise<Client> {
+  return connectToRoom(room);
 }
 
 describe("serve", () => {
@@ -25,10 +42,10 @@ describe("serve", () => {
     }
   });
 
-  test("a real StreamableHTTPClientTransport can connect and call room.get_state (AC1)", async () => {
+  test("a real client presenting the room token can connect and call room.get_state (AC1, AC10)", async () => {
     const handle = await serve(FIXTURE, { port: 0 });
     try {
-      const client = await connectClient(handle.url);
+      const client = await connectClient(handle);
       const result = await client.callTool({ name: "room.get_state", arguments: {} });
       const text = (result.content as Array<{ type: string; text: string }>)[0]?.text ?? "";
       const state = JSON.parse(text);
@@ -43,7 +60,7 @@ describe("serve", () => {
   test("a real client can call room.get_transcript and room.get_agent_detail (AC1)", async () => {
     const handle = await serve(FIXTURE, { port: 0 });
     try {
-      const client = await connectClient(handle.url);
+      const client = await connectClient(handle);
 
       const transcriptResult = await client.callTool({
         name: "room.get_transcript",
@@ -90,7 +107,7 @@ describe("serve", () => {
   test("a real client reads each participant's delta, and the description it is told (D-18 item 5)", async () => {
     const handle = await serve(FIXTURE, { port: 0 });
     try {
-      const client = await connectClient(handle.url);
+      const client = await connectClient(handle);
 
       const delta = async (args: Record<string, unknown>) => {
         const result = await client.callTool({ name: "room.get_delta_for", arguments: args });
@@ -162,7 +179,7 @@ describe("serve", () => {
 
     const handle = await serve(logPath, { port: 0 });
     try {
-      const client = await connectClient(handle.url);
+      const client = await connectClient(handle);
       const state = JSON.parse(
         ((await client.callTool({ name: "room.get_state", arguments: {} })).content as Array<{ text: string }>)[0]
           ?.text ?? "{}",
@@ -213,7 +230,7 @@ describe("serve", () => {
     const beforeMtime = statSync(FIXTURE).mtimeMs;
 
     const handle = await serve(FIXTURE, { port: 0 });
-    const client = await connectClient(handle.url);
+    const client = await connectClient(handle);
     await client.callTool({ name: "room.get_state", arguments: {} });
     await client.callTool({ name: "room.get_transcript", arguments: { since_seq: 0 } });
     await client.close();
@@ -233,11 +250,11 @@ describe("serve", () => {
     // serve() instance, must both succeed.
     const handle = await serve(FIXTURE, { port: 0 });
     try {
-      const first = await connectClient(handle.url);
+      const first = await connectClient(handle);
       await first.callTool({ name: "room.get_state", arguments: {} });
       await first.close();
 
-      const second = await connectClient(handle.url);
+      const second = await connectClient(handle);
       const result = await second.callTool({ name: "room.get_state", arguments: {} });
       const text = (result.content as Array<{ type: string; text: string }>)[0]?.text ?? "";
       expect(JSON.parse(text).roster).toHaveLength(3);

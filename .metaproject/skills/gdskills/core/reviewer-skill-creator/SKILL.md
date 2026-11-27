@@ -17,7 +17,6 @@ triggers:
   - "make a reviewer from this profile"
   - "создай ревьюера"
   - "создай нового ревьюера на основании"
-  - "import vantage reviewers"
   - "import overlay reviewers"
 metadata:
   author: "MrCipherSmith"
@@ -53,28 +52,28 @@ these go.
 
 ## Bulk import of overlay reviewers
 
-When the overlays already exist as `review-vantage-*` skill packages (for
-example an overlay skill tree with `review-vantage-*` packages), do not recreate them one by one.
+When the reviewers already exist as skill packages in a tree someone else maintains, import
+them instead of recreating them one by one. Dry-run first, then the same command without it:
 
 ```bash
-keryx skills import --from <overlay-home> --module review
-# alias: keryx review import --from <overlay-home>
+keryx review import --from <overlay-home> --only 'review-acme-*' --dry-run
+keryx review import --from <overlay-home> --only 'review-acme-*'
+keryx review reviewers              # every imported name must be listed here
+keryx skills remove review/<name>   # undo one
 ```
 
-That copies every `review-vantage-*` package into
-`.metaproject/project-skills/review/`, stamps Origin on each SKILL.md, and is
-the same discovery `review-orchestrator` uses. Generic copies of keryx
-reviewers (`review-logic`, `review-frontend`, …) are skipped on purpose —
-those would shadow the bundled engine.
+`keryx review import` is the review-shaped spelling of `keryx skills import --module review`:
+same importer, module implied. A tree of several packages is refused, with the candidate list,
+until `--only <glob>` names the ones you want: `review-orchestrator` dispatches every package in
+module `review`, and one with no path gate is dispatched on every round. Import reviewers only —
+an orchestrator or facade, a deprecated alias, a report generator, or anything with no review
+contract does not belong there. One package directory passed as `--from` needs no `--only`.
 
-One overlay package:
-
-```bash
-keryx review import --from <overlay-home>/skills/review-vantage-frontend
-```
-
-Then `keryx review reviewers`. Until that list shows the names, they are not
-wired.
+Read `SKILL.detail.md` beside this file before running an import. It is the worked example, with
+real output: the refusals, what each run writes, how `flags`, `paths`, `pathsSource`,
+`stackRequires`, `unresolvedRules` and `drift` are derived, rule collisions, undo with
+`keryx skills remove`, refresh, the per-clone note, and the `review-learning.config.json` shape.
+Until `keryx review reviewers` shows the names, they are not wired.
 
 ---
 
@@ -131,7 +130,7 @@ Three fields, three different jobs, and mixing them is the recorded failure mode
 somewhere else and will move on; without the hash, a reviewer built from last
 month's version reads as current forever, and nobody finds out until its findings
 disagree with the standard it claims to encode. With it,
-`keryx review reviewers` reports `drift: changed` the moment the file differs.
+`keryx review reviewers` prints that reviewer's row as `- <name> (<origin> — changed)` the moment the file differs.
 
 Quote the path if it starts with `~` and you want it stored that way; an
 unquoted `~` is expanded by the shell before keryx sees it. Either is fine —
@@ -153,9 +152,9 @@ Required, all of it in `SKILL.md`:
   `review-orchestrator/SKILL.md` → **Severity (canonical)** and add one table
   saying where this reviewer's recurring conditions land under it. Ten private
   rubrics feeding one sort produce a ranking that means ten things at once.
-- **Shared laws** — copy the three verbatim from the orchestrator: no
-  unreproducible harm claim above `info`, never flag the theoretical, one finding
-  per class.
+- **Shared laws** — copy the four verbatim from the orchestrator: no unreproducible
+  harm claim above `info`, never flag the theoretical, one finding per class, a
+  deliberate choice is no defect until its reason is read and shown wrong.
 - **Class scope** — `blocker` and `major` carry every site holding the shape and
   the enumeration method that found them.
 - **Orchestrated Review Contract** — return `REVIEW_RESULT` per
@@ -192,8 +191,8 @@ keryx review reviewers
 
 The second is the one that matters: it is the same call
 `review-orchestrator` makes, so its output is proof the reviewer will be
-dispatched rather than a hope. Check the row shows your reviewer with
-`drift: clean`.
+dispatched rather than a hope. Check the row reads `- <reviewer-name> (<origin> — clean)` — `changed` means the
+source moved, `missing` that it no longer resolves, `no recorded origin` that the reviewer was created without `--origin`.
 
 Then say, in your reply, which of the three piles from Step 1 you kept, which you
 dropped, and what you could not verify against this project.
@@ -216,13 +215,13 @@ dropped, and what you could not verify against this project.
 
 ## Refreshing a reviewer whose source moved on
 
-`keryx review reviewers` reporting `drift: changed` means the source file differs
-from what was imported. It does **not** mean the reviewer is wrong.
+A row of `- <name> (<origin> — changed)` from `keryx review reviewers` means the
+source file differs from what was imported. It does **not** mean the reviewer is wrong.
 
 Re-read the source, diff it against what the skill encodes, and then decide per
 change: fold it in, or record in the skill why this project deliberately differs.
-Re-run Step 2's command with the same `--name` to re-record the hash once the
-skill matches the source again.
+For a reviewer written here, re-run Step 2's command with the same `--name` to re-record the hash once it matches the source again.
+For an imported package, `keryx skills update review/<name>` re-reads its Origin and overwrites the SKILL.md — see `SKILL.detail.md`.
 
 A deliberate divergence that is written down is a decision. The same divergence
 undocumented is drift that will be silently "fixed" by whoever refreshes next.
@@ -237,7 +236,44 @@ undocumented is drift that will be silently "fixed" by whoever refreshes next.
 | Refresh one whose origin drifted | YES | — |
 | Create an entity/module project-skill | NO | `entity-skill-creator` |
 | Change a reviewer keryx ships | NO | edit `src/gdskills/bundled/skills/review/` and open a PR |
-| Update a skill from review findings | NO | `entity-skill-learner`, `keryx skills learn` |
+| Update a skill from review findings | NO | `keryx skills learn` |
 | Decide which reviewers a round dispatches | NO | `review-orchestrator` |
-| Import a tree of overlay reviewers | YES — `keryx skills import --from <dir> --module review` (`keryx review import` alias) | — |
+| Import a tree of overlay reviewers | YES — `keryx review import --from <dir> --only '<glob>'`, dry-run first (`SKILL.detail.md`) | — |
 | Import a non-review SKILL.md / GitHub URL | NO | `entity-skill-creator` / `keryx skills import` |
+
+---
+
+## Red Flags
+
+| Rationalization | Why it is wrong |
+|----------------|-----------------|
+| "The source's voice is what makes it a good standard — stripping it loses the edge." | A reviewer distilled from someone's tone reviews tone. Step 4 drops the persona pile whole and keeps the method with its reason beside it; a reason transplants into a codebase the author never saw, and an assertion does not. |
+| "I know where the source file lives, so `--origin` adds nothing." | Without the recorded hash, a reviewer built from last month's version of that file reads as current forever, and nobody finds out until its findings disagree with the standard it claims to encode. `drift: changed` is the whole point. |
+| "The target should say what the reviewer is for, so a sentence is clearer." | The target is a routing key that `keryx skills route` matches queries against. A sentence there produces a skill that matches nothing and verifies as permanently stale. The prose belongs in `--note`. |
+| "The source has a clear severity scale, so I will carry it over." | Ten private rubrics feeding one sorted report produce a ranking that means ten things at once. Point at **Severity (canonical)** and add one table saying where this reviewer's recurring conditions land under it. |
+| "The files are written and the frontmatter is valid, so the reviewer is wired." | Creating files is not registration, and registration is not discovery. Until `keryx review reviewers` prints the name, the orchestrator will never dispatch it. |
+| "The source's conventions are sensible, so they will hold in this project too." | They are true of the source's own codebase until verified here. Keep a convention only after checking it against this project, and say in your reply which ones you could not check. |
+| "The row came back `— changed`, so the reviewer is wrong and I will overwrite it." | It means the source moved, not that the reviewer is wrong. Diff the two and decide per change: fold it in, or write down why this project deliberately differs. An undocumented divergence is drift the next refresh silently "fixes". |
+
+---
+
+## Verification
+
+Report done only once all of these hold:
+
+- `keryx skills verify review/<reviewer-name>` passes.
+- `keryx review reviewers` lists the reviewer as `- <reviewer-name> (<origin> — clean)` — that literal row, not a `drift:` field, which the command never prints. This is the
+  same call `review-orchestrator` makes, so its output — not the presence of the
+  files — is what proves the reviewer will be dispatched.
+- The `SKILL.md` carries all six required parts from Step 3: Scope naming the
+  neighbouring reviewers it excludes, a Checklist of performable checks, a
+  pointer to the canonical severity rubric with no rubric of its own, the four
+  shared laws verbatim, the class-scope contract, and the Orchestrated Review
+  Contract with its own finding-id prefix.
+- `--origin` was passed whenever a source file exists, and the recorded path is
+  the one a human would read later.
+- Any method that only works when a command is run — a mutation, a measurement, a
+  probe — is stated as an iron law, together with what the finding is worth
+  without it.
+- The reply says which of Step 1's three piles were kept, which were dropped, and
+  what could not be verified against this project.

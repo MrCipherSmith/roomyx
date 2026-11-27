@@ -8,15 +8,17 @@ description: |
   styling tokens, Storybook expectations, and local tooling rules. Dispatched
   by review-orchestrator for --frontend-conventions, --project-conventions,
   --all, or frontend src/**/*.ts(x) changes when local convention docs exist.
-triggers:
-  - "review frontend conventions"
-  - "review --frontend-conventions"
-  - dispatched by review-orchestrator
+  NOT for: generic React and MobX correctness with no local rule behind it
+  (review-frontend), what the CSS actually renders (review-layout), or naming and
+  readability as a matter of taste (review-style).
+triggers: ["frontend conventions", "local frontend rules", "CLAUDE frontend", "review frontend conventions"]
 metadata:
   author: "MrCipherSmith"
-  version: "1.0.0"
+  version: "1.1.0"
   category: "review"
   stack_requires: "react,mobx"
+  overlap_group: "frontend"
+  overlap_rank: "generic"
 license: "MIT"
 ---
 
@@ -24,7 +26,7 @@ license: "MIT"
 
 Reviewer for frontend repository conventions that are more specific than generic React/MobX
 correctness. Use it alongside `review-frontend`, `review-style`, `review-performance`, and
-`review-logic`.
+`review-logic`. Its inputs are the reviewer payload only; session memory and earlier conversation are not inputs. It runs no command unless its payload's `allowed_tools` says `run-tests`, except the read-only `git log`, `git blame` and `git show` where its host gives a read-only child git (keryx shell does not: there the payload supplies the history).
 
 Before reviewing, read the nearest project guide files if they exist: root `CLAUDE.md`,
 `AGENTS.md`, `.junie/guidelines.md`, `ARCHITECTURE.md`, and module-level `CLAUDE.md` files.
@@ -56,28 +58,15 @@ project-specific guide was found.
 
 ### TypeScript
 
-- Avoid `any` and broad `as` casts. Prefer type guards, discriminated unions, and precise types.
+- Avoid broad `as` casts. Prefer type guards, discriminated unions, and precise types. `any`, `!` and the `I` prefix are `.metaproject/rules/core/code-style-patterns.mdc` Rule 8.
 - Keep tests and stories typed unless intentionally exercising invalid edge cases.
 - Follow local React type import conventions consistently.
 - Write new code in the direction of stricter compiler settings.
 
-### React Components
+### React Components and State Stores
 
-- Keep components thin: read state, bind events, render.
-- Business logic, IO, validation, and data transformation belong in stores/services.
-- Avoid React local state/memo/callback hooks where the local architecture expects observable or
-  computed state.
-- Use effects only for lifecycle, subscriptions, and third-party integration; always clean up.
-- Components reading observable state are wrapped in the repository's reactive wrapper.
-- Props shape and file naming follow local conventions.
+Components follow `.metaproject/rules/core/code-style-patterns.mdc` (reactive wrapper, thin components, where state lives, effects and cleanup, props naming) and stores follow `.metaproject/rules/core/mobx-store-template.mdc` (naming and file casing, reactivity in the constructor, member order, `@action.bound` on public UI-called methods only, actions around async mutations). Each takes its severity from that rule's **Review severities** table, and a local guide that is stricter wins. Local `useState` for UI-only state and a memo over non-store values are correct. Beyond the rules:
 
-### State Stores
-
-- Store classes follow local naming, file casing, context, and hook conventions.
-- Observable classes initialize their reactivity in constructors.
-- Member ordering follows local lint/member-ordering rules.
-- UI-called actions preserve `this` binding.
-- Async callbacks that mutate observable state re-enter an action boundary.
 - Derived serializable state has a single source of truth such as `currentState` when that is the
   local pattern.
 
@@ -88,13 +77,12 @@ project-specific guide was found.
   entries.
 - Browser storage goes through shared wrappers/adapters; direct `localStorage`/`sessionStorage`
   access is a review finding when wrappers exist.
-- Catch blocks normalize user-facing messages, preserve original errors for logging, and notify
-  through the established UI notification channel.
+- Catch blocks notify through the established UI notification channel and normalize user-facing
+  messages; keeping the cause and logging once are `.metaproject/rules/core/error-handling.mdc` Rules 3 and 5.
 
 ### Stories and Tooling
 
-- New reusable UI surfaces have stories or examples matching local standards.
-- Stories include representative default, empty/minimal, and stress/large states where useful.
+- New reusable UI surfaces have stories or examples matching local standards; which states they cover is `.metaproject/rules/core/storybook-guidelines.mdc` Rule 2.
 - Wrapper components expose plain props for controls when the primary component is store-only.
 - Treat unused-code tools as signals: preserve intentional public APIs with narrow ignores rather
   than deleting documented runtime/story/test entrypoints.
@@ -105,15 +93,10 @@ project-specific guide was found.
 
 ### Shared laws (every reviewer)
 
-1. **A claim of runtime harm with no reproducible path is `info`.** If you cannot
-   name the input, call, or condition that reaches the code, you have an
-   observation, not a finding. Report it as `info` and say what would settle it.
-2. **Never flag the theoretical.** The path you describe must exist in the code
-   under review. Do not report a safe API because it could be misused, or a
-   pattern because it is often wrong elsewhere.
-3. **One finding per class, not one per occurrence.** When the same shape appears
-   at several sites, report it once and list every site. Ten findings that are one
-   finding hide the other nine problems.
+1. **A claim of runtime harm with no reproducible path is `info`.** If you cannot name the input, call, or condition that reaches the code, you have an observation, not a finding. Report it as `info` and say what would settle it.
+2. **Never flag the theoretical.** The path you describe must exist in the code under review. Do not report a safe API because it could be misused, or a pattern because it is often wrong elsewhere.
+3. **One finding per class, not one per occurrence.** When the same shape appears at several sites, report it once and list every site. Ten findings that are one finding hide the other nine problems.
+4. **A deliberate choice is not a defect until its reason is read and shown wrong.** An explicit override, suppression or exemption, a comment or commit giving a reason, or a sibling doing the same is a decision: read its reason (the comment, `git log -L` or `git blame`, the sibling) before you report it, and report it only when you can show that reason wrong. A project rule is checked against accepted platform practice and its known exceptions before a deviation from it is reported.
 
 Severity levels are defined once, in `review-orchestrator/SKILL.md` →
 **Severity (canonical)**. This reviewer does not restate them: `blocker` is the
@@ -124,7 +107,7 @@ boundary is the trigger-and-outcome test.
 
 ## Orchestrated Review Contract
 
-When dispatched by `review-orchestrator`, follow the provided `reviewer-input.schema.json` payload. Return a `REVIEW_RESULT` object compatible with `skills/review/review-orchestrator/reviewer-finding.schema.json`, then a concise markdown summary. Keep findings evidence-based, include concrete `suggested_fix` for every blocker/major, and return `NEEDS_CONTEXT` instead of guessing when required context is missing.
+When dispatched by `review-orchestrator`, follow the provided `reviewer-input.schema.json` payload. Return a `REVIEW_RESULT` object compatible with `.metaproject/skills/gdskills/review/review-orchestrator/reviewer-finding.schema.json`, then a concise markdown summary. Keep findings evidence-based, include concrete `suggested_fix` for every blocker/major, and return `NEEDS_CONTEXT` instead of guessing when required context is missing.
 
 ---
 
@@ -172,8 +155,38 @@ conditions land under that rubric.
 | Condition | Severity | Why, under the canonical rubric |
 |---|---|---|
 | Unguarded direct storage writes that can throw on quota | `blocker` | Crash on a reachable input |
-| Lost reactivity; masked translation or error behaviour | `major` | Named trigger and named outcome. Identical to `review-frontend`'s rating for lost reactivity, deliberately |
+| Lost reactivity (`code-style-patterns.mdc` Rule 1 row); a masked translation | `major` | Named trigger and named outcome. Identical to `review-frontend`'s rating for lost reactivity, deliberately. An error path is rated by `error-handling.mdc`, not here |
 | A convention violation the linter or CI already fails on | `minor` | The machine catches it; a reviewer restating it is not a merge gate |
 | Naming, story coverage, file placement | `minor` | Correct today; the cost is to the next editor |
 | A convention preference with no named consequence | `info` | Shared laws 1 and 2 |
+
+---
+
+## Red Flags
+
+| Rationalization | Why it is wrong |
+|----------------|-----------------|
+| "There is no project guide here, but I know what good React looks like." | Then you are running the neutral baseline, and you must say so in the report. A preference with no local rule and no named consequence is `info`, not a convention violation — this lane's authority comes from the project's own documents. |
+| "The guide says one thing but the newer files all do another, so that is the convention." | A pattern repeated in code is a candidate convention, not a decision. Cite the guide and name the divergence; let the team choose which one moves. |
+| "The linter already fails on this, so it is at least `major`." | The machine catches it before merge. A reviewer restating a lint error spends a merge gate on something no human can ship past, which is why the rubric above puts it at `minor`. |
+| "It is one direct `localStorage` call — the wrapper is overkill here." | The wrapper exists because the raw API throws on quota and is absent in some environments. One unguarded call is the class; enumerate the others before deciding it is small. |
+| "This component does not read observables, so it does not need the reactive wrapper." | Check what it reads through props and through the store getters it calls. Lost reactivity is silent, which is why it is rated the same here as in `review-frontend`. |
+| "The inline `style` is dynamic, so the token rule does not reach it." | Only the computed part is dynamic. Colours and spacing inside it still come from the local tokens, and mixing the two is how a theme change stops applying to one surface. |
+
+---
+
+## Verification
+
+Report done only once all of these hold:
+
+- The report names which local convention documents were found and read, or
+  states plainly that none exist and only the neutral baseline ran.
+- Every finding cites the local rule it rests on — the guide, the lint config, or
+  the baseline section above — and names `file:line`.
+- Every `blocker` and `major` carries `class_scope` with `sites` and an
+  `enumeration_method` naming the search that produced them.
+- No finding invents a severity: each lands under **Severity (canonical)** in
+  `review-orchestrator/SKILL.md`.
+- The reply is the `REVIEW_RESULT` the Orchestrated Review Contract asks for, or
+  `NEEDS_CONTEXT` naming the context that was missing — never a guess in its place.
 

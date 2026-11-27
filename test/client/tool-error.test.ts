@@ -80,7 +80,7 @@ describe("a server that answers with an error", () => {
     const statuses: string[] = [];
     const toolErrors: string[] = [];
     client = new RoomClient(
-      { url: handle.url, stateIntervalMs: 20, transcriptIntervalMs: 20 },
+      { url: handle.url, token: handle.token, stateIntervalMs: 20, transcriptIntervalMs: 20 },
       {
         onConnectionChange: (status) => statuses.push(status),
         onToolError: (message) => toolErrors.push(message),
@@ -116,7 +116,7 @@ describe("a server that answers with an error", () => {
     const toolErrors: string[] = [];
     const messages: string[] = [];
     client = new RoomClient(
-      { url: handle.url, stateIntervalMs: 50, transcriptIntervalMs: 50 },
+      { url: handle.url, token: handle.token, stateIntervalMs: 50, transcriptIntervalMs: 50 },
       {
         onToolError: (message) => toolErrors.push(message),
         onNewMessages: (batch) => messages.push(...batch.map((m) => m.body)),
@@ -141,7 +141,7 @@ describe("a server that answers with an error", () => {
     handle = (await servePoisoned()).handle;
     const statuses: string[] = [];
     client = new RoomClient(
-      { url: handle.url, stateIntervalMs: 20, transcriptIntervalMs: 20 },
+      { url: handle.url, token: handle.token, stateIntervalMs: 20, transcriptIntervalMs: 20 },
       { onConnectionChange: (status) => statuses.push(status) },
     );
     client.start();
@@ -183,7 +183,7 @@ describe("stopping the client", () => {
 
     let polled = false;
     const roomClient = new RoomClient(
-      { url: handle.url, stateIntervalMs: 5, transcriptIntervalMs: 5 },
+      { url: handle.url, token: handle.token, stateIntervalMs: 5, transcriptIntervalMs: 5 },
       {
         onStateUpdate: () => {
           polled = true;
@@ -223,7 +223,7 @@ describe("a tool error that does not go away", () => {
     handle = (await servePoisoned()).handle;
     const toolErrors: string[] = [];
     client = new RoomClient(
-      { url: handle.url, stateIntervalMs: 100, transcriptIntervalMs: 100 },
+      { url: handle.url, token: handle.token, stateIntervalMs: 100, transcriptIntervalMs: 100 },
       { onToolError: (message) => toolErrors.push(message) },
     );
     client.start();

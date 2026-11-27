@@ -1,6 +1,6 @@
 ---
 name: metaproject-router
-description: Use when choose which Metaproject module, working skill, or project-skill should be used for a user request.
+description: "Use when a request's routing to a Metaproject module, skill, or project-skill is unclear and needs deciding before any work starts. NOT for: a request whose owning module or skill is already known."
 ---
 
 # metaproject-router
@@ -16,6 +16,7 @@ Choose which Metaproject module, working skill, or project-skill should be used 
 - which skill should be used
 - ordinary product-development request
 - agent should decide tools
+- pick the module
 
 ## Workflow
 

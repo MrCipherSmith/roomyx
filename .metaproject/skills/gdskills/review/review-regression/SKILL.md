@@ -10,11 +10,10 @@ description: |
 triggers:
   - "review regression"
   - "does this change break anything"
-  - "blast radius review"
-  - "dispatched by review-orchestrator"
+  - "blast radius"
 metadata:
   author: "MrCipherSmith"
-  version: "1.0.0"
+  version: "1.3.0"
   category: "review"
   compatible_harnesses: "cursor,codex,zed,opencode,claude"
 license: "MIT"
@@ -23,15 +22,14 @@ license: "MIT"
 # Review: Regression
 
 You are reviewing **scope B** of a deep round. The files you are given are not
-under review. They are under **regression check**.
+under review. They are under **regression check**. Its inputs are the reviewer payload only; session memory and earlier conversation are not inputs. It runs no command unless its payload's `allowed_tools` says `run-tests`, except the read-only `git log`, `git blame` and `git show` where its host gives a read-only child git (keryx shell does not: there the payload supplies the history).
 
 ## The one question
 
 > Does this change break an existing behaviour here?
 
 Not "is this code good". Not "would I have written it this way". The blast-radius
-set is code that already worked; your job is to find where the change stops it
-working.
+set is code that already worked; your job is to find where the change stops it working.
 
 This is enforced, not requested. `keryx review ingest` runs
 `screenBlastRadiusFindings` over the findings this scope returns and refuses
@@ -89,9 +87,7 @@ Step 3b.
 - the flow's frozen acceptance criteria;
 - the previous round's findings.
 
-The set is bounded by edge distance and a file cap, and **everything the cap
-dropped is recorded**. If the record says files were dropped, say so in your
-summary rather than implying the set was complete.
+The set is bounded by edge distance and a file cap, and **everything the cap dropped is recorded**. If the record says files were dropped, say so in your summary rather than implying the set was complete.
 
 ## How to look
 
@@ -164,22 +160,53 @@ rejected anyway, so in practice every finding you report carries one.
 - **Fix**: concrete suggestion
 ```
 
-Severity comes from **Severity (canonical)** in `review-orchestrator/SKILL.md`.
-This reviewer keeps no table of its own.
+Severity comes from **Severity (canonical)** in `review-orchestrator/SKILL.md`; no table here. When dispatched, follow the `reviewer-input.schema.json` payload and return a `REVIEW_RESULT` object compatible with
+`.metaproject/skills/gdskills/review/review-orchestrator/reviewer-finding.schema.json`, then a short summary; `NEEDS_CONTEXT` rather than a guess. On a FIX slice, also return `prior_dispositions: [{id, disposition}]` for every attached finding id.
 
 ### Shared laws (every reviewer)
 
-1. **A claim of runtime harm with no reproducible path is `info`.** If you cannot
-   name the input, call, or condition that reaches the code, you have an
-   observation, not a finding. Report it as `info` and say what would settle it.
-2. **Never flag the theoretical.** The path you describe must exist in the code
-   under review. Do not report a safe API because it could be misused, or a
-   pattern because it is often wrong elsewhere.
-3. **One finding per class, not one per occurrence.** When the same shape appears
-   at several sites, report it once and list every site. Ten findings that are one
-   finding hide the other nine problems.
+1. **A claim of runtime harm with no reproducible path is `info`.** If you cannot name the input, call, or condition that reaches the code, you have an observation, not a finding. Report it as `info` and say what would settle it.
+2. **Never flag the theoretical.** The path you describe must exist in the code under review. Do not report a safe API because it could be misused, or a pattern because it is often wrong elsewhere.
+3. **One finding per class, not one per occurrence.** When the same shape appears at several sites, report it once and list every site. Ten findings that are one finding hide the other nine problems.
+4. **A deliberate choice is not a defect until its reason is read and shown wrong.** An explicit override, suppression or exemption, a comment or commit giving a reason, or a sibling doing the same is a decision: read its reason (the comment, `git log -L` or `git blame`, the sibling) before you report it, and report it only when you can show that reason wrong. A project rule is checked against accepted platform practice and its known exceptions before a deviation from it is reported.
 
-Severity levels are defined once, in `review-orchestrator/SKILL.md` →
-**Severity (canonical)**. This reviewer does not restate them: `blocker` is the
-four merge-blocking shapes named there and nothing else, and the `major`/`minor`
-boundary is the trigger-and-outcome test.
+Severity levels are defined once, in `review-orchestrator/SKILL.md` → **Severity (canonical)**. This reviewer does not restate them: `blocker` is the four merge-blocking shapes named there and nothing else, and the `major`/`minor` boundary is the trigger-and-outcome test.
+
+---
+
+## Red Flags
+
+| Rationalization | Why it is wrong |
+|----------------|-----------------|
+| "This code in the blast radius is badly written, so I will say so." | Scope B asks one question, and it is not that one. The screen rejects it as `outside-set` or as `non-regression-severity`, and the round is spent on a finding nobody reads. |
+| "The caller might break." | Might is not a regression. Name the argument that is no longer passed, the type that narrowed, the branch that went away — or file nothing. Below `major` the screen rejects it by construction. |
+| "I will anchor the finding at the changed line, since that is the cause." | Scope A already reviewed that line. Anchor where the damage lands: the caller a human has to open is the one that breaks. |
+| "The blast radius came back empty, so the change breaks nothing." | An empty radius for a non-code change is recorded as unresolved, not clean. Say the radius could not answer the question — silence that reads as "nothing found" is the failure this lane was built to stop. |
+| "It is a `major` about a dependent and the anchor names the file, so the link to the change is obvious." | `no-link-to-change` is a substring match over your prose, and only a `blocker` is exempt from it. Name the changed file, module or symbol in the finding text or it is dropped before it reaches `findings.json`. |
+| "The set was capped, but I covered the important ones." | The cap is recorded. If files were dropped, say so in the summary; a report that implies a complete sweep over a truncated set is a false claim about coverage. |
+| "The change is only reached through a spawned process / a string-keyed lookup, so the graph must have missed it — I will report it anyway." | Report it, and say the graph could not see the edge. What you must not do is present a runtime path as if the computed set produced it. |
+
+---
+
+## Verification
+
+Report done only once all of these hold:
+
+- Every finding is anchored inside the computed set or the changed set, at the code that **breaks** rather than the code that changed.
+- Every finding is `major` or above, and every `major` names the changed file, module or symbol whose behaviour moved — the anchor alone does not carry it.
+- Every finding carries `class_scope` whose `sites` are the callers that break and whose `enumeration_method` is the walk over the blast-radius set that produced them.
+- The summary states whether the cap dropped files, and whether the radius could answer the question at all for the shape of this change.
+- Nothing that is merely an observation about pre-existing code is filed here; it is either raised under scope A or not at all.
+
+<!-- keryx:layers-block:start -->
+## Project layers: graph, tests, wiki, memory
+
+Your payload may carry a `layers` block for your files: the files the graph says are affected, symbol neighbours, related tests, the wiki pages that describe the files and the memory entries for their module. It is bounded, and `truncated` names what was cut and the command that fetches the rest. When the diff alone does not settle a question, ask the project. Each command below is read-only and calls no model.
+
+- `keryx gdgraph affected <file>`: who depends on the file. Use it before you call a change contained, and whenever a changed export, signature or behaviour may have callers outside your files.
+- `keryx test related <file>`: the tests that cover the file. Use it before you say a behaviour is untested, and to judge whether a test would fail if the code broke.
+- `keryx wiki ask "<q>"`: what the project wiki says a module is for and which rules bind it. Use it when the intent of the code is unclear and the diff does not state it.
+- `keryx memory search "<q>"`: recorded lessons, decisions and known mistakes. Use it before you report a pattern the project may already have decided on, and when a failure looks like one it has seen.
+
+In a review package, `keryx gdgraph affected <file> --data-dir <package>/layers/graph` reads the graph built at the PR head; the tracked graph may be from another commit. A finding still rests on the code you read: what a layer says is a lead, not evidence. If a layer is empty or a command fails, say so in the report instead of guessing.
+<!-- keryx:layers-block:end -->

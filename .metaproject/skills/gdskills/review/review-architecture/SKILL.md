@@ -3,20 +3,20 @@ name: review-architecture
 model_tier: deep
 description: |
   Use when: reviewing code for architectural violations — layer violations, dependency direction
-  mistakes, module boundary coupling, SOLID principle breaches, NestJS module/provider structure,
+  mistakes, module boundary coupling, dependency inversion, circular imports, NestJS module/provider structure,
   React MVVM boundary violations, or MobX store layer misplacement.
   Dispatched by review-orchestrator with --architecture or --backend.
   NOT for: style/naming preferences, logic correctness bugs, or security vulnerabilities.
 triggers:
-  - "review architecture"
+  - "architecture review"
+  - "boundary review"
+  - "layering"
   - "check architecture"
   - "architectural review"
-  - "architecture review"
   - "check layers"
-  - "dispatched by review-orchestrator"
 metadata:
   author: "MrCipherSmith"
-  version: "1.0.0"
+  version: "1.2.0"
   category: "review"
   compatible_harnesses: "cursor,codex,zed,opencode,claude"
 license: "MIT"
@@ -26,7 +26,7 @@ license: "MIT"
 
 Specialized reviewer for **architectural patterns and structural decisions**.
 Reviews only changes introduced in the current branch (merge-base to HEAD).
-Focuses exclusively on verifiable structural violations — not style opinions or hypothetical concerns.
+Focuses exclusively on verifiable structural violations — not style opinions or hypothetical concerns. Its inputs are the reviewer payload only; session memory and earlier conversation are not inputs. It runs no command unless its payload's `allowed_tools` says `run-tests`, except the read-only `git log`, `git blame` and `git show` where its host gives a read-only child git (keryx shell does not: there the payload supplies the history).
 
 ---
 
@@ -41,7 +41,7 @@ Architecture Review Progress:
 - [ ] Step 5: Check layer assignments and dependency direction
 - [ ] Step 6: Check module/provider boundaries
 - [ ] Step 7: Check design pattern correctness (Repository, DI, MVVM)
-- [ ] Step 8: Check SOLID violations
+- [ ] Step 8: Check dependency inversion
 - [ ] Step 9: Check framework-specific concerns (NestJS / React / MobX)
 - [ ] Step 10: Emit findings in unified format
 ```
@@ -61,23 +61,16 @@ Architecture Review Progress:
 
 ## Scope Detection
 
-See shared script: `skills/shared/git-merge-base.md`
-
-Run the script to determine `BASE_SHA`, then collect the diff:
-
-```bash
-# Changed files — used for stack auto-detection
-git diff --name-status "${BASE_SHA}"
-
-# Full diff — used for finding exact violations
-git diff "${BASE_SHA}"
-
-# Untracked new files
-git ls-files --others --exclude-standard
-```
+See shared script: `.metaproject/skills/gdskills/shared/git-merge-base.md`
 
 Review scope: **changes introduced in the current branch since merge-base only**.
 Do not review pre-existing architectural problems unless they are directly touched by the diff.
+
+**Supplied text first.** When the payload carries `slices`, `context_files`, `diff` or `file_contents`, review exactly that text and never rebuild the diff. A choice's history (law 4) is read with `git log`, `git blame` and `git show` only where the host gives a read-only child git; on keryx shell a read-only child has no shell and no git tool, so read the `git log -L`/`git blame` excerpts the payload supplies, or say the history was not read. Only with none supplied, collect it:
+```bash
+git diff --name-status "${BASE_SHA}" && git diff "${BASE_SHA}" && git ls-files --others --exclude-standard
+# explicit range: <FROM_SHA>..<TO_SHA> in place of "${BASE_SHA}"
+```
 
 ---
 
@@ -99,43 +92,30 @@ When `stack_hint` is not provided, infer from changed file paths:
 
 ### Layer Violations
 
-A **layer violation** occurs when code belonging to one architectural layer is placed in another.
-Common layers (adapt to the project's actual layering):
-
-```
-UI (View) → ViewModel / Store → Service → Domain → Infrastructure (DB, HTTP)
-```
-
-- [ ] API call or HTTP client import inside a React component (should be in store/service)
-- [ ] Business logic inside a controller (should be in service/use-case)
-- [ ] Database query directly inside a service bypassing the repository layer
-- [ ] Domain entity mutating itself with HTTP response data (infrastructure leaking into domain)
-- [ ] UI component computing derived state that belongs in a ViewModel or computed property
+A **layer violation** occurs when code belonging to one architectural layer is placed in another. The layers and what each may import are `.metaproject/rules/core/clean-architecture.mdc` (backend: controller, use case, repository, domain, infrastructure, each boundary mapping its own types) and `.metaproject/rules/core/code-style-patterns.mdc` Rule 2 (frontend: component renders, store holds logic, service does I/O only; derived state is `@computed` per `.metaproject/rules/core/mobx-store-template.mdc` Rule 1). Adapt to the project's actual layering and report a placement those rules forbid.
 
 ### Dependency Direction
 
 Dependencies must flow **inward** (from infrastructure toward domain), never outward.
 
-- [ ] Domain module importing from infrastructure (e.g., domain entity importing ORM types)
+- [ ] Domain module importing from infrastructure (`.metaproject/rules/core/clean-architecture.mdc`)
 - [ ] Core/shared module importing from feature module (inverted dependency)
-- [ ] Circular import between modules (A imports B, B imports A)
+- [ ] Circular import between modules (A imports B, B imports A); rated by `.metaproject/rules/core/clean-architecture.mdc` Review severities
 - [ ] Barrel file (`index.ts`) that creates hidden circular references
 
 ### Module Boundary Violations
 
-- [ ] Feature A directly accessing feature B's internal service instead of a public API/facade
+- [ ] Feature A reaching into feature B's internal files instead of its public exports (`.metaproject/rules/core/clean-architecture.mdc`)
 - [ ] Shared `utils/` or `common/` module containing domain-specific business logic
 - [ ] Cross-module data transformation happening in the wrong module
 
 ### Design Pattern Misuse
 
-**Repository pattern:**
-- [ ] Repository method containing business logic (filtering/transformation beyond simple queries)
-- [ ] Service bypassing repository and using ORM/DB client directly
+**Repository pattern** (`.metaproject/rules/core/clean-architecture.mdc`: the repository is the I/O boundary, business rules live in the domain):
 - [ ] Multiple repositories doing the same data transformation independently
 
 **Dependency Injection:**
-- [ ] `new SomeService()` inside a class that should receive it via DI
+- [ ] `new X()` for an I/O, network or clock dependency inside a class that should receive it (`.metaproject/rules/core/solid-principles.mdc` section D)
 - [ ] Service locator pattern used instead of constructor injection
 - [ ] Singleton service holding request-scoped state
 
@@ -143,27 +123,11 @@ Dependencies must flow **inward** (from infrastructure toward domain), never out
 - [ ] Command handler performing a query and returning domain data (mixed responsibility)
 - [ ] Use-case importing another use-case (chain via domain events instead)
 
-### SOLID Violations
+### Dependency Inversion
 
-Focus on **SRP** and **DIP** — the two most commonly violated in practice.
+This lens owns DIP, layer and dependency direction, module boundaries and circular imports; their severities are `.metaproject/rules/core/clean-architecture.mdc` Review severities. SRP, OCP, LSP and ISP are `review-clean-code`'s, rated by `.metaproject/rules/core/solid-principles.mdc` Review severities. A component that renders, fetches and derives is `.metaproject/rules/core/code-style-patterns.mdc` Rule 2.
 
-**SRP (Single Responsibility):**
-- [ ] Class/module doing two unrelated things (e.g., handles auth AND sends emails)
-- [ ] Service with >5 injected dependencies (smell: likely SRP violation)
-- [ ] Component rendering UI AND fetching data AND computing derived state
-
-**OCP (Open/Closed):**
-- [ ] `switch`/`if-else` chain over a type discriminant that will grow (should be polymorphism or strategy)
-
-**LSP (Liskov Substitution):**
-- [ ] Subclass overriding a method with stronger preconditions or weaker postconditions
-
-**ISP (Interface Segregation):**
-- [ ] Implementing interface that forces implementing methods never used by this class
-
-**DIP (Dependency Inversion):**
-- [ ] High-level module importing a concrete low-level class (should import an abstraction)
-- [ ] Infrastructure class passed directly through multiple layers instead of behind an interface
+- DIP asks for an interface only at an I/O or substitution boundary; a single internal implementation gets none. An infrastructure class passed through several layers instead of behind an interface at that boundary is a finding.
 
 ### NestJS-Specific
 
@@ -171,24 +135,21 @@ Focus on **SRP** and **DIP** — the two most commonly violated in practice.
 - [ ] `@Global()` overused — global providers for non-truly-global concerns
 - [ ] Circular dependency between NestJS modules without `forwardRef`
 - [ ] Provider scope mismatch: `REQUEST`-scoped service injected into `DEFAULT`-scoped service
-- [ ] Controller fat with business logic that belongs in the service layer
+- [ ] Controller holding business logic or a query that belongs in the domain/use-case layer (`clean-architecture.mdc`)
 - [ ] `@Module` imports array including modules it does not need (unnecessary coupling)
 
 ### React + MVVM (with MobX)
 
-- [ ] Business logic directly in a component (should be in store action or computed)
-- [ ] `useEffect` performing state orchestration that belongs in a MobX reaction or action
-- [ ] Store method calling another store's `private` action directly (should go through public API)
+Logic in a component, effects that orchestrate state, and cleanup are `.metaproject/rules/core/code-style-patterns.mdc` Rules 2 and 5 with `.metaproject/rules/core/mobx-store-template.mdc` Rule 8. This lens adds:
+
 - [ ] Component subscribing to raw observable fields instead of using computed/derived values
 - [ ] View rendering based on multiple raw observable fields instead of a single computed boolean
 
 ### MobX Store Layer
 
-- [ ] `@action` performing async work without wrapping in `runInAction` on resolution
+Mutation outside an action, async resolution without `runInAction`, and inter-store callbacks left public are `.metaproject/rules/core/mobx-store-template.mdc` Rules 2 and 3 and their rows; a store importing another store's internal file is `.metaproject/rules/core/clean-architecture.mdc` (public exports only). This lens adds:
+
 - [ ] `@computed` with side effects (computed must be pure)
-- [ ] Observable state mutated outside of an `@action` (MobX strict mode violation)
-- [ ] Store importing from another store's internal file instead of its public export
-- [ ] Inter-store callback (`onChangeX`, `handleX`, `syncX`) declared `public` when only used internally (should be `private`)
 
 ---
 
@@ -197,20 +158,21 @@ Focus on **SRP** and **DIP** — the two most commonly violated in practice.
 | Concern | This skill | Use instead |
 |---------|------------|-------------|
 | Layer violations, dependency direction, module coupling | YES | — |
-| SOLID violations (SRP, DIP, OCP, LSP, ISP) | YES | — |
+| Dependency inversion (DIP) | YES | — |
+| SRP, OCP, LSP, ISP, duplication, magic literals, comments | NO | `review-clean-code` |
 | NestJS module/provider/scope issues | YES | — |
 | React MVVM boundary, MobX store layer | YES | — |
 | Logic bugs, off-by-one, null safety | NO | `review-logic` |
 | Security vulnerabilities (injection, auth bypass) | NO | `review-security-code` |
-| Style, naming, import order | NO | `review-style` |
+| Style, naming, readability | NO | `review-style` |
 | Performance (bundle size, render cost, query plan) | NO | `review-performance` |
-| MobX store internals deep-dive | surface violations only | `code-mobx-store-review` for full store audit |
+| MobX store internals deep-dive | surface violations only | `review-frontend` for full store audit |
 
 ---
 
 ## Orchestrated Review Contract
 
-When dispatched by `review-orchestrator`, follow the provided `reviewer-input.schema.json` payload. Return a `REVIEW_RESULT` object compatible with `skills/review/review-orchestrator/reviewer-finding.schema.json`, then a concise markdown summary. Keep findings evidence-based, include concrete `suggested_fix` for every blocker/major, and return `NEEDS_CONTEXT` instead of guessing when required context is missing.
+When dispatched by `review-orchestrator`, follow the provided `reviewer-input.schema.json` payload. Return a `REVIEW_RESULT` object compatible with `.metaproject/skills/gdskills/review/review-orchestrator/reviewer-finding.schema.json`, then a concise markdown summary. Keep findings evidence-based, include concrete `suggested_fix` for every blocker/major, and return `NEEDS_CONTEXT` instead of guessing when required context is missing.
 
 ---
 
@@ -262,29 +224,20 @@ conditions land under that rubric, not a second rubric.
 
 | Condition | Severity | Why, under the canonical rubric |
 |---|---|---|
-| Circular dependency that fails at runtime (an import resolves to `undefined` on a path the change reaches) | `blocker` | Crash |
 | Module scope mismatch that produces wrong data across requests | `blocker` | Data corruption |
-| Layer violation — API/IO call in a component, business logic in a controller, domain importing infrastructure | `major` | A named trigger and a named outcome, but structural: not a crash, data loss, vulnerability, or missing acceptance criterion. Identical to `review-frontend`'s rule for the same condition |
-| Broken DIP; cross-module coupling with a named consequence | `major` | Same |
-| SRP smell with a clear separation path; ISP violation; a component reading several raw observables instead of a computed | `minor` | The code is correct; the cost is to whoever restructures it next |
+| Layer violation in the backend — business logic in a controller, domain importing infrastructure (a frontend component's layer violation is the `code-style-patterns.mdc` Rule 2 row) | `minor` — `major` only when a concrete defect it causes is named (trigger and outcome) | Structural cost lands on the next editor. Identical to `review-backend` for the same condition |
+| Cross-module coupling; circular import (`blocker` only when it fails at runtime) | `minor` — `major` under the same condition | `clean-architecture.mdc` Review severities |
+| A component reading several raw observables instead of a computed | `minor` | The code is correct; the cost is to whoever restructures it next |
 | Architectural opinion with no named violation | `info` | Shared laws 1 and 2 |
-
-A circular import that resolves cleanly is not a `blocker` — it is `minor`, and
-if the concern is purely readability it belongs to `review-style`.
 
 ## Iron Laws
 
 ### Shared laws (every reviewer)
 
-1. **A claim of runtime harm with no reproducible path is `info`.** If you cannot
-   name the input, call, or condition that reaches the code, you have an
-   observation, not a finding. Report it as `info` and say what would settle it.
-2. **Never flag the theoretical.** The path you describe must exist in the code
-   under review. Do not report a safe API because it could be misused, or a
-   pattern because it is often wrong elsewhere.
-3. **One finding per class, not one per occurrence.** When the same shape appears
-   at several sites, report it once and list every site. Ten findings that are one
-   finding hide the other nine problems.
+1. **A claim of runtime harm with no reproducible path is `info`.** If you cannot name the input, call, or condition that reaches the code, you have an observation, not a finding. Report it as `info` and say what would settle it.
+2. **Never flag the theoretical.** The path you describe must exist in the code under review. Do not report a safe API because it could be misused, or a pattern because it is often wrong elsewhere.
+3. **One finding per class, not one per occurrence.** When the same shape appears at several sites, report it once and list every site. Ten findings that are one finding hide the other nine problems.
+4. **A deliberate choice is not a defect until its reason is read and shown wrong.** An explicit override, suppression or exemption, a comment or commit giving a reason, or a sibling doing the same is a decision: read its reason (the comment, `git log -L` or `git blame`, the sibling) before you report it, and report it only when you can show that reason wrong. A project rule is checked against accepted platform practice and its known exceptions before a deviation from it is reported.
 
 Severity levels are defined once, in `review-orchestrator/SKILL.md` →
 **Severity (canonical)**. This reviewer does not restate them: `blocker` is the
@@ -295,7 +248,7 @@ boundary is the trigger-and-outcome test.
 
 - Only flag actual violations found **in the diff**, not pre-existing issues untouched by the change.
 - Every finding MUST cite a specific `file:line` from the diff.
-- Architecture opinions without a clear, named violation (layer, SOLID principle, pattern misuse) are `info` only — never `blocker` or `major`.
+- Architecture opinions without a clear, named violation (layer, dependency, pattern misuse) are `info` only — never `blocker` or `major`.
 - Do not flag correct framework usage as a violation just because an alternative exists.
 
 ---
@@ -341,7 +294,7 @@ STATUS: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
 ### Design Pattern Misuse
 <[F-NNN] findings or "None detected.">
 
-### SOLID Violations
+### Dependency Inversion
 <[F-NNN] findings or "None detected.">
 
 ### Framework-Specific (NestJS / React+MobX)
@@ -355,21 +308,7 @@ STATUS: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
 
 ## Job Context Awareness
 
-When dispatched by `review-orchestrator` or `job-orchestrator`, the prompt MAY include:
-
-```
-JOB_NAME:     <job-name>
-CONTEXT_PATH: .metaproject/jobs/<job-name>/ai/context.md
-```
-
-If provided and the file exists, read the context document **before** reviewing the diff.
-Use it to:
-- Understand which architectural patterns and layers were intentionally chosen
-- Avoid flagging deliberate deviations from the default layer model as violations
-- Identify framework and library choices that affect what counts as a valid pattern
-
-If absent, proceed normally — context is optional and non-blocking.
-When in doubt about whether a pattern was intentional, use `info` severity and note the uncertainty.
+When dispatched by `review-orchestrator` or `job-orchestrator`, the prompt MAY carry `JOB_NAME` and `CONTEXT_PATH: .metaproject/jobs/<job-name>/ai/context.md`. If given and the file exists, read it before you start; use it for intentional design decisions (do not flag correct library usage), acceptance criteria when there is no `issue_url`, and the severity of edge cases the team accepted. If absent, proceed normally: context is optional and non-blocking.
 
 ---
 
@@ -377,10 +316,22 @@ When in doubt about whether a pattern was intentional, use `info` severity and n
 
 | Rationalization | Why it is wrong |
 |----------------|-----------------|
-| "This class is large, so it must violate SRP" | Size alone is not a violation; cite what two unrelated responsibilities it holds |
 | "I see a potential layer violation in a file not in the diff" | Scope is diff-only; pre-existing issues are out of scope unless the diff touches them |
 | "This architecture opinion makes things cleaner, so it's a major" | Opinions without a named violation are `info` only |
 | "I'll flag every cross-import as a boundary violation" | Not all cross-imports violate boundaries; check whether the dependency direction is correct |
 | "The team probably didn't intend this pattern" | Unless the context doc or a clear rule says otherwise, assume intentional; use `info` if unsure |
 | "NestJS global module is always wrong" | `@Global()` is a violation only when used for non-global concerns; framework-provided globals are fine |
 | "I can't determine if this is wrong without knowing the full architecture" | Use `NEEDS_CONTEXT` status and ask one specific question |
+
+<!-- keryx:layers-block:start -->
+## Project layers: graph, tests, wiki, memory
+
+Your payload may carry a `layers` block for your files: the files the graph says are affected, symbol neighbours, related tests, the wiki pages that describe the files and the memory entries for their module. It is bounded, and `truncated` names what was cut and the command that fetches the rest. When the diff alone does not settle a question, ask the project. Each command below is read-only and calls no model.
+
+- `keryx gdgraph affected <file>`: who depends on the file. Use it before you call a change contained, and whenever a changed export, signature or behaviour may have callers outside your files.
+- `keryx test related <file>`: the tests that cover the file. Use it before you say a behaviour is untested, and to judge whether a test would fail if the code broke.
+- `keryx wiki ask "<q>"`: what the project wiki says a module is for and which rules bind it. Use it when the intent of the code is unclear and the diff does not state it.
+- `keryx memory search "<q>"`: recorded lessons, decisions and known mistakes. Use it before you report a pattern the project may already have decided on, and when a failure looks like one it has seen.
+
+In a review package, `keryx gdgraph affected <file> --data-dir <package>/layers/graph` reads the graph built at the PR head; the tracked graph may be from another commit. A finding still rests on the code you read: what a layer says is a lead, not evidence. If a layer is empty or a command fails, say so in the report instead of guessing.
+<!-- keryx:layers-block:end -->

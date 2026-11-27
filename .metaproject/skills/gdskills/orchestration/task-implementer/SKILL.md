@@ -1,9 +1,11 @@
 ---
 name: task-implementer
 model_tier: standard
-description: "Use when implementing a single decomposed task from issue-analyzer end-to-end, or executing autonomous code changes from a JSON task object."
+description: "Use when implementing a single task out of an issue-analyzer breakdown end-to-end, or executing autonomous code changes from a JSON task object. NOT for: splitting an issue into that breakdown in the first place (use issue-analyzer)."
 triggers:
-  - "Implement task"
+  - "implement task"
+  - "execute task"
+  - "atomic task"
   - "Execute task scenario"
   - "Code this task"
   - "Run task-implementer"
@@ -11,7 +13,7 @@ triggers:
 metadata:
   author: "MrCipherSmith"
   version: "1.3.1"
-  category: "implementation"
+  category: "orchestration"
   agent_worthy: true
   compatible_harnesses: "claude,cursor,codex,zed,opencode"
 license: "MIT"
@@ -96,10 +98,12 @@ For a description-based task, omit `issue_number` and issue references in commit
 
 ```
 FIX_CONTEXT:
-  review_feedback:      structured findings from reviewer (file, line, severity, message)
+  review_feedback:      structured findings from reviewer (id, file, line, severity, message, suggested_fix); the one statement of the premise fields (flow 459): `premise_verdict` on each item review-premise judged, and `premise_answer: "uphold"` on a held one (challenged, owner-decision) the operator upheld; an item with a held `premise_verdict` and no `premise_answer: "uphold"` is refused, not fixed
   original_task_ids:    the tasks that introduced the findings (array)
   iteration:            fix iteration number, 1..3 — the same repair bound as 5.4
 ```
+
+**A reviewer's `suggested_fix` is a hypothesis, not an instruction.** Per finding: reproduce it first — a test or probe that fails on the current head (red); check the suggested fix against the plan's state × event matrix (`plan.md`, when it has one) and every caller the change reaches; then fix and show the probe green. A finding that does not reproduce is reported, not fixed. Record each divergence in `notes`: `suggested_fix diverged: <id> — <what you did instead and why>` or `did not reproduce: <id>`.
 
 **1.4 Validate the request against the contract:**
 
@@ -141,7 +145,7 @@ git -C "<codebase_path>" rev-parse --abbrev-ref HEAD   # must equal <branch>
 
 **1.5 TDD Check (if `test_case_specs` is present):**
 
-If the task object contains `test_case_specs` (provided by `tests-creator`):
+If the task object contains `test_case_specs` (provided by `tests-creator`, or in a fix round the reviewers' red probes):
 1. Read each test file listed in `test_case_specs.test_files`
 2. Run the tests using `test_case_specs.run_command` — confirm they FAIL
 3. If tests pass already → report `DONE_WITH_CONCERNS` (tests may not be testing the right thing)
@@ -169,9 +173,15 @@ Before you rely on a project-skill's guidance, confirm it still matches the code
 - `keryx skills route <target_file>` — find the project-skill for this module/entity (if any).
 - If one exists: `keryx skills verify <module>/<skill>` — classifies it `fresh | stale | needs-review | blocked`.
 - If it is **not `fresh`**: do not follow it blindly. Verify each claim against the code you read in Phase 2, and note the drift in `notes` (Phase 6.1) so the orchestrator can trigger `skills learn`.
+- If it is **`fresh`**: apply it. Its rules, templates and conventions for the target are part of the task, not background reading, and they supplement this skill's phases: a project skill never replaces a phase, the TDD order or the output contract. Where it and a bundled rule disagree, the project skill wins; say so in `notes`.
 - If no skill exists for a non-trivial module you had to reverse-engineer, note that too — it's a candidate for `skills create`.
 
 This step is read-only and inline; do not spawn a subagent for it.
+
+**2.0c Resolve the project's standard (before 2.1):**
+- Use `workspace.resolved_context_file` when given; otherwise run `keryx skills resolve-context --for implement --files <target_files, comma-joined> --task-type <task_type> --task-text '<task.description, each ' written as '\''>' --out <project-relative path>` (`--task-text` lets a declared keyword promote a document).
+- Read every `must_read` entry in full, project entries first; read `on_demand` ones only when the work touches them. A project rule listed with `shadows` replaces the bundled one. An entry with `also_at` is one file under several paths: citing any of them, with the entry's sha256, counts.
+- An entry with reason `condition:glob:<g>` or `condition:keyword:<k>` was promoted by a declared condition and carries an `anchor`, a `description` and `section_bytes`: read the anchored section in full. Its `project_context_applied` item needs the `path`, the `sha256` of the whole file as pinned, the `anchor` exactly as declared, a `summary` and `how` `read` or `followed`, never `n/a`. Write the `summary` in your own words, at least 40 characters, naming at least three distinct words of five or more letters taken from the anchored section; `contracts validate --resolved` rejects a copied hash without it. Cite what you used in `project_context_applied` (6.1) with the resolver's `sha256`; `n/a` needs a reason in `notes`. Never edit a resolved file: `keryx skills contracts validate <result.json> --schema task-implementer-output --resolved <resolved.json>` fails on drift.
 
 **2.1 Read all target files:**
 - Read each file from `target_files` in full
@@ -179,30 +189,23 @@ This step is read-only and inline; do not spawn a subagent for it.
 - Read the `context` field for additional type/signature info
 
 **2.2 Read existing tests and stories:**
-- `existing_tests` and `existing_stories` are arrays and default to `[]`
-  (`input-contract.schema.json`). Empty means none; the string `"none"` is not a
-  legal value and a request carrying it is refused by 1.4
+- `existing_tests` and `existing_stories` default to `[]`; the string `"none"` is not a legal value and 1.4 refuses it
 - Read each file listed in either array
-- Understand existing test patterns (describe/it structure, mocks, fixtures)
+- Understand existing test patterns (describe/it structure, mocks, fixtures) and, for every file in `existing_stories`, the story patterns it uses (`Meta`/`StoryObj` shape, how variants are declared, how callbacks are stubbed) — 4.4 builds on what you record here
 
 **2.3 Read module neighbors:**
 - List sibling files in the same directory as each target file
 - Read 2-3 similar files to understand module patterns (naming, exports, structure)
-- Pay attention to:
-  - Import aliases used (e.g., `@components`, `@utils`)
-  - Export patterns (named vs default)
-  - TypeScript patterns (interfaces vs types, generics usage)
-  - Component patterns (observer wrapping, props interface naming)
-  - Store patterns (makeObservable(this), explicit decorators, private fields before public fields, thin public @action.bound UI actions, non-mutating public helpers, private API methods, runInAction inside private mutation blocks after await)
+- Pay attention to import aliases, named vs default exports, interfaces vs types, observer wrapping and props naming, and store patterns (makeObservable(this), explicit decorators, private fields before public, thin public @action.bound UI actions, non-mutating public helpers, private API methods, runInAction after await)
 
 **2.4 Load relevant rules (from `module_patterns` or by detection):**
 
-Based on what you're implementing, load and follow the relevant project rules.
+Rules `resolve-context` listed are already read (2.0c); load the rest by what you're implementing.
 
 **Always load (all task types):**
 - `tdd-workflow.mdc` — red-green-refactor, STATUS: DONE requires passing tests
-- `error-handling.mdc` — Result pattern, no silent failures
-- `solid-principles.mdc` — SRP, OCP, DIP (load for any task that creates new classes/services)
+- `error-handling.mdc` — failure signalled explicitly (throw by default, a discriminated result where callers branch), context and `cause` kept, no silent failures
+- `solid-principles.mdc` — SRP, OCP, DIP and the function-design thresholds the code-quality reviewer applies (load for any task that creates or grows classes, services or functions)
 
 **Load by task type:**
 
@@ -220,20 +223,7 @@ Based on what you're implementing, load and follow the relevant project rules.
 - `async`/`await` or queue code → `async-patterns.mdc`
 - New architectural layers or modules → `clean-architecture.mdc`
 
-Rules live at `.metaproject/rules/core/<rule>.mdc` on every harness — that is the
-one tree `keryx init` installs and the one every build of this skill reads.
-Cursor additionally mirrors them under `.cursor/rules/core/<rule>.mdc`; when both
-are present they are copies of the same file, so read either.
-
-**Output of Phase 2:** Mental model of the implementation:
-```
-RESEARCH_SUMMARY:
-  target_files_status: [{path, exists: bool, line_count, key_exports}]
-  test_pattern: <describe structure, assertion style>
-  story_pattern: <Meta/StoryObj, args pattern>
-  module_conventions: <naming, imports, exports, TS patterns>
-  relevant_rules_loaded: [<rule names>]
-```
+Resolve every rule above project first, bundled second: read `.metaproject/rules/project/<rule>.mdc` when it exists, otherwise `.metaproject/rules/core/<rule>.mdc`. A project rule with the same name replaces the bundled one (never read both as if they agreed). `.metaproject/rules/core/` is the tree `keryx init` installs and `keryx update` overwrites, so a project's own rules live only in `rules/project/`.
 
 ### Phase 3: PLAN
 
@@ -288,13 +278,6 @@ Execute the change plan. Write production-quality code.
 5. Component/UI layer implementation (make component tests GREEN)
 6. Stories (if needed)
 
-**4.1 Implementation order (TDD Mode — test_case_specs provided):**
-1. Read all test stubs from `test_case_specs.test_files`
-2. Understand the expected API shape from test assertions
-3. Implement types/interfaces to satisfy test imports
-4. Implement code layer by layer until all tests are GREEN
-5. Stories (if needed)
-
 **4.2 Code standards (always follow):**
 - TypeScript strict mode — no `any`, no `as` casts unless justified
 - Use project path aliases for imports (`@components/...`, `@utils/...`)
@@ -304,27 +287,27 @@ Execute the change plan. Write production-quality code.
 - Follow existing module patterns discovered in Phase 2
 
 **4.3 Test standards:**
-- Unit tests: Vitest with `describe`/`it`, `@testing-library/react` for components
-- Use `data-testid` for test selectors
-- Follow AAA pattern (Arrange, Act, Assert)
-- Mock external dependencies, not internal module logic
+- Use the runner, selectors and structure Phase 2.2 found in this project's own tests — not a remembered stack. Arrange/Act/Assert; mock external dependencies, not internal module logic.
 
 **4.4 Story standards:**
-- `Meta` + `StoryObj` pattern
-- `args`-based variants
-- `fn()` for action callbacks
-- Cover: default state, edge cases, error states
+- Use the story patterns Phase 2.2 found (`Meta` + `StoryObj`, `args`-based variants, `fn()` callbacks); cover default state, edge cases and error states.
 
 **4.5 Commit after implementation:**
 
-When auto-commit is enabled, create a conventional commit with the changes. Include the `refs #<issue_number>` line below only when a positive real issue number was supplied; otherwise omit that entire line:
+When auto-commit is enabled, create a conventional commit with the changes. Stage explicit paths only — never `-A`/`--all`/`.` — and run every git command as `git -C "<codebase_path>"` (`rules/core/git-concurrency.mdc`). Include the `refs #<issue_number>` line below only when a positive real issue number was supplied; otherwise omit that entire line:
 ```bash
-git add <modified files>
-git commit -m "<type>(<scope>): <description>
+git -C "<codebase_path>" add <modified files, explicit paths>
+git -C "<codebase_path>" commit -m "<type>(<scope>): <description>
 
 refs #<issue_number>
 task: <task_id>"
 ```
+
+When auto-commit is disabled, do not commit. Report the exact list of files you
+changed — nothing inferred — in the Phase 6 STATUS response and the result
+file's `files_modified`/`files_created`/`files_deleted`; the orchestrator stages
+and commits those exact paths at the task boundary (`rules/core/git-concurrency.mdc`,
+"Reporting Back").
 
 Commit type mapping:
 | Task Type | Commit Type |
@@ -379,14 +362,14 @@ non-zero exit the signal; if tests were created or modified they must pass.
 
 Maximum 3 self-fix attempts per verification step.
 
-Three, and it is the same three `job-orchestrator` and `flow-orchestrator`
-use: one round bound, not four. *"The first three to four repair iterations
+Three, the same three `job-orchestrator` uses; `flow-orchestrator`'s review
+bound is five by operator decision, so two repair bounds, not four. *"The first three to four repair iterations
 account for most achievable gains"*
 ([arXiv:2607.05197](https://arxiv.org/abs/2607.05197)); correctness falls
 **0.820 -> 0.673** across two forced revisions while cumulative ever-correct is
 **0.847** ([arXiv:2607.24604](https://arxiv.org/abs/2607.24604)) — the agent
-finds the fix and then destroys it. Aider hardcodes `max_reflections = 3`;
-OpenHands' critic uses 3.
+finds the fix and then destroys it. Other agent tools hardcode the same bound
+(`max_reflections = 3`).
 
 **Stop earlier on repetition, whatever the count says.** If an attempt produces
 the same failure output as the previous attempt — the same failing test with the
@@ -395,20 +378,24 @@ attempts. The counter cannot tell "converging slowly" from "stuck", and three
 identical outputs cost the whole budget to learn what the second one already
 said. Report the block instead, naming what repeated.
 
-
-**ROLLBACK POLICY**: If implementation fatally fails (tests still failing after 3 attempts, or unresolvable compilation errors), restore ONLY the files this task changed — `git checkout -- <your files>` for tracked ones, delete the untracked ones you created — then report the failure in Phase 6.
+**ROLLBACK POLICY**: If implementation fatally fails (tests still failing after 3 attempts, or unresolvable compilation errors), restore ONLY the files this task changed — `git -C "<codebase_path>" checkout -- <your files>` for tracked ones, delete the untracked ones you created — then report the failure in Phase 6.
 
 **Never run `git reset --hard`, `git clean`, or any unscoped revert.** You do not own the worktree. `job-orchestrator` dispatches implementers in PARALLEL WAVES sharing a single worktree, so an unscoped reset destroys a wave-mate's uncommitted work — work that is not yours, cannot be recovered, and whose loss is invisible to you because the other agent's failure surfaces somewhere else entirely. If you cannot identify which files are yours, leave the tree exactly as it is and say so in the report: a dirty tree is recoverable, a destroyed one is not.
 
+**Same reasoning bans `git stash` and unscoped `git add`.** Never `git stash` — the stash stack is shared by every worktree, so even a scoped `push -- <file>` can be popped by another lane. Stage only the files this task changed (`git -C "<codebase_path>" add <path> <path>`), never `-A`/`--all`/`.`. Every git command runs as `git -C <this worktree's absolute path>`. See `rules/core/git-concurrency.mdc`.
+
 **5.5 Re-commit fixes if any:**
-When auto-commit is enabled, use the template below. Include `refs #<issue_number>` only for a supplied positive real issue number; otherwise omit that entire line.
+When auto-commit is enabled, use the template below — explicit paths only, `git -C "<codebase_path>"` for every command (`rules/core/git-concurrency.mdc`). Include `refs #<issue_number>` only for a supplied positive real issue number; otherwise omit that entire line.
 ```bash
-git add <fixed files>
-git commit -m "fix(<scope>): resolve lint/type/test issues
+git -C "<codebase_path>" add <fixed files, explicit paths>
+git -C "<codebase_path>" commit -m "fix(<scope>): resolve lint/type/test issues
 
 refs #<issue_number>
 task: <task_id>"
 ```
+
+When auto-commit is disabled, do not commit; report the exact fixed-file list in
+Phase 6 as in 4.5 — the orchestrator commits it at the task boundary.
 
 ### Phase 6: REPORT
 
@@ -438,14 +425,25 @@ Write full JSON to `<JOBS_ROOT>/<JOB_NAME>/results/<task_id>.json`:
   "story_result": "<pass|build error: details|not applicable>",
   "acceptance_criteria_met": "<all|partial: list of unmet criteria|none>",
   "skill_drift": "<none | stale: <module>/<skill> — <what diverged> | missing: <module> should have a project-skill>",
+  "project_context_applied": [{ "path": "<as the resolver printed it>", "sha256": "<resolver's sha256>", "how": "read|followed|n/a", "anchor": "<declared heading; promoted entries only>", "summary": "<own words, 40+ chars; promoted entries only>" }],
+  "noticed_not_touched": [{ "what": "<problem>", "where": "<path|symbol>" }],
+  "assumptions": ["<what you assumed where the task did not say>"],
+  "behavior_changes": [{ "description": "<what now behaves differently>", "user_visible": true, "needs_operator": true, "alternatives": ["<option you did not take>"] }],
+  "not_touched": [{ "path": "src/path/file.ts", "reason": "<why left alone>" }],
   "notes": "<any warnings, blockers, or additional context>"
 }
 ```
 
 Set `skill_drift` from Phase 2.0b: if the project-skill you used was not `fresh`, or the code you wrote diverged from what a skill documents, name the skill and the divergence. The orchestrator uses this to decide whether to trigger `skills learn` (do NOT run `learn` yourself — it is a mutating step the orchestrator dispatches; see `rules/core/skill-lifecycle.mdc`).
 
-Then check the shape and record the file — two commands, both of which refuse
-rather than warn:
+Four of those fields have a bar, and a field that collects noise trains the reader to skim all of them. Omit one rather than pad it. The first three are adapted (MIT; see THIRD_PARTY_NOTICES.md) as contract fields rather than a free-text template; the bars below are ours.
+
+- `assumptions` — what you assumed where the task was silent AND acted on. If the assumption being wrong would not change a line you wrote, it is a hedge, not an assumption; leave it out.
+- `noticed_not_touched` — a problem in code you actually read, stated so a follow-up task could be written from it alone, with `where` it lives. Not a dumping ground for every smell seen in passing, and not style opinion.
+- `not_touched` — of the files this task was aimed at (`target_files`), the ones absent from `files_modified`/`files_created`/`files_deleted`, each with why. It answers that one question and no other: a reader subtracts those lists and this one from `target_files`, and flags the remainder as an unexplained omission.
+- `behavior_changes` — behavior you chose where the task and the plan's state × event matrix did not decide it. **Every user-visible tradeoff goes here with `user_visible: true, needs_operator: true`** and the `alternatives` you rejected: message wording, where an error appears, which state resets or survives a switch, retry or reload. Never only in `assumptions`, `notes` or a journal line — the orchestrator asks the operator before it accepts a result carrying one, and a tradeoff it cannot see is accepted unasked.
+
+Then check the shape and record the file — two commands, both of which refuse rather than warn:
 
 ```bash
 keryx skills contracts validate <JOBS_ROOT>/<JOB_NAME>/results/<task_id>.json \
@@ -484,11 +482,17 @@ The step's own status is the orchestrator's to write (`keryx job step <JOB_NAME>
 
 Return a compact STATUS response following `rules/core/subagent-status-protocol.md`.
 **Do NOT include the full JSON block inline** — the orchestrator reads the result file when it needs details.
-The inline response must contain only: STATUS line + Completed bullets + Files changed + Verification summary.
+The inline response must contain only: STATUS line + Completed bullets + Files changed + Verification summary + a `## Behavior changes` list (each entry's description, `user_visible`, `needs_operator`, alternatives) whenever `behavior_changes` is non-empty — a flow dispatch writes no result file, so this list is the only copy the orchestrator reads. Any `needs_operator: true` entry makes the status at best `DONE_WITH_CONCERNS`, never `DONE`.
 
 **Status classification:**
-- `success` → `STATUS: DONE`
-- `partial` → `STATUS: DONE_WITH_CONCERNS`
+- `success` → `STATUS: DONE`, or `DONE_WITH_CONCERNS` when work that cleared the
+  bar still carries something the orchestrator must know.
+- `partial` → `STATUS: BLOCKED` — never `DONE_WITH_CONCERNS`. An unmet criterion,
+  a failed gate or a gate that did not run breaks `rules/core/definition-of-done.mdc`,
+  and `DONE_WITH_CONCERNS` reports on work that cleared that bar, never a lower
+  one. The harness already reads it this way: `shouldEscalate`
+  (`src/harness/child/escalation.ts`) escalates on any `acceptance[].status` of
+  `not_met` whatever token arrived with it.
 - `failed` → `STATUS: BLOCKED`
 
 ---
@@ -535,10 +539,8 @@ second copy of a schema is how that happens.
 7. **DO** use `runInAction()` after every `await` in MobX actions.
 8. **DO** use conventional commit format when auto-commit is enabled. Reference only a supplied real issue number; omit the issue reference when absent.
 9. **DO** verify your work before reporting.
-10. **DO** make `STATUS: <TOKEN>` the first line of your final message, and put no
-    JSON in the response body. The full JSON result is the file Phase 6.1 writes
-    and records. `parseChildResult` throws on any first line that is not a
-    canonical STATUS token.
+10. **DO** make `STATUS: <TOKEN>` the first line of your final message, and put no JSON in the response body. The full JSON result is the file Phase 6.1 writes and records. `parseChildResult` throws on any first line that is not a canonical STATUS token.
+11. **DO** check a `Rule check flagged: <clause id> at <file>:<line> — fix it if it is a real violation.` line against the named clause as soon as it arrives — fix the flagged line if it's real, otherwise continue; never argue with or silently ignore it, and record a false flag as `edit-guard false flag: <clause id> — <why>` in `notes` (Phase 6.1) so `review.jev.edit_guard_threshold` can be tuned.
 
 ---
 

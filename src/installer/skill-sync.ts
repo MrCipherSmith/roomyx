@@ -1,6 +1,53 @@
 import { createHash } from "node:crypto";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import {
+  closeSync,
+  constants as fsConstants,
+  copyFileSync,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+  writeSync,
+} from "node:fs";
 import { dirname, join, relative } from "node:path";
+
+/** `lstatSync`, but a missing path (or a broken symlink — lstat still succeeds on those) is `null`, not a throw. */
+function lstatIfPresent(path: string): ReturnType<typeof lstatSync> | null {
+  try {
+    return lstatSync(path);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A refusal shaped like `syncSkill`'s other refusals (never-synced-but-pre-existing,
+ * hand-edited-since-last-sync): a returned result, not a thrown error, and gated
+ * by nothing — `yes: true` does not open this one (D-11 is about the *content*
+ * gate; a symlink on a write path is a different failure and stays refused).
+ */
+function symlinkRefusal(path: string, verb: "back up" | "write"): SyncResult {
+  return {
+    wouldWrite: true,
+    written: false,
+    backedUpTo: null,
+    warnings: [`${path} is a symlink — refusing to ${verb} through it (AC9).`],
+    upToDate: false,
+  };
+}
+
+function isSymlinkRaceError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as NodeJS.ErrnoException).code === "ELOOP"
+  );
+}
 
 export interface SyncOptions {
   bundledSkillPath: string;
@@ -54,6 +101,15 @@ export function syncSkill(options: SyncOptions): SyncResult {
   const bundledContent = readFileSync(options.bundledSkillPath, "utf8");
   const config = readConfig(options.configPath);
   const lastSyncedHash = config.lastSyncedHashes?.[options.targetPath];
+
+  // AC9: a symlink planted at the target refuses outright, before anything reads
+  // or writes through it. Checked via `lstat`, not `existsSync` — `existsSync`
+  // follows the link (so a *broken* symlink at the target reads as "doesn't
+  // exist" and would otherwise sail past this check straight into `mkdirSync` +
+  // `writeFileSync`, which follows it just the same as a live one).
+  if (lstatIfPresent(options.targetPath)?.isSymbolicLink()) {
+    return symlinkRefusal(options.targetPath, "write");
+  }
 
   const targetExists = existsSync(options.targetPath);
   const targetContent = targetExists ? readFileSync(options.targetPath, "utf8") : null;
@@ -124,7 +180,14 @@ export function syncSkill(options: SyncOptions): SyncResult {
   // differed — a no-op sync does not touch it.
   let backedUpTo: string | null = null;
   if (targetExists) {
-    backedUpTo = `${options.targetPath}.bak`;
+    const candidateBackupPath = `${options.targetPath}.bak`;
+    // The backup destination is as much a write path as the target: a symlink
+    // planted there makes `copyFileSync` overwrite whatever it points at
+    // instead of ever touching an actual backup file (AC9).
+    if (lstatIfPresent(candidateBackupPath)?.isSymbolicLink()) {
+      return symlinkRefusal(candidateBackupPath, "back up");
+    }
+    backedUpTo = candidateBackupPath;
     copyFileSync(options.targetPath, backedUpTo);
   }
 
@@ -133,7 +196,27 @@ export function syncSkill(options: SyncOptions): SyncResult {
   // registry had: the write is ready for a missing file but not a missing
   // directory.
   mkdirSync(dirname(options.targetPath), { recursive: true });
-  writeFileSync(options.targetPath, bundledContent);
+  // `O_NOFOLLOW` closes the gap between the `lstat` check above and this write:
+  // if a symlink is planted at the target in that window, `open` fails with
+  // `ELOOP` instead of writing through it. `writeFileSync`'s `flag` option is
+  // typed as a string, so the numeric flag combination goes through
+  // `openSync`/`writeSync`/`closeSync` instead.
+  try {
+    const fd = openSync(
+      options.targetPath,
+      fsConstants.O_WRONLY | fsConstants.O_CREAT | fsConstants.O_TRUNC | fsConstants.O_NOFOLLOW,
+    );
+    try {
+      writeSync(fd, bundledContent, null, "utf8");
+    } finally {
+      closeSync(fd);
+    }
+  } catch (error) {
+    if (isSymlinkRaceError(error)) {
+      return symlinkRefusal(options.targetPath, "write");
+    }
+    throw error;
+  }
   writeConfig(options.configPath, {
     ...config,
     lastSyncedHashes: { ...config.lastSyncedHashes, [options.targetPath]: hashOf(bundledContent) },

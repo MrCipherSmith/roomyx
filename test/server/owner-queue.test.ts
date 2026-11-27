@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { connectToRoom } from "../helpers/room-client";
 import { serve } from "../../src/server/serve";
 import type { ServeHandle } from "../../src/server/serve";
 import { OWNER_QUEUE_LIMIT } from "../../src/server/owner-queue";
@@ -26,10 +26,8 @@ afterEach(async () => {
  * session cannot read — a feature that passes every single-client test and does
  * nothing in the shape it exists for.
  */
-async function connect(url: string): Promise<Client> {
-  const client = new Client({ name: "owner-queue-test", version: "0.0.0" });
-  await client.connect(new StreamableHTTPClientTransport(new URL(url)));
-  return client;
+function connect(room: { url: string; token: string }): Promise<Client> {
+  return connectToRoom(room, "owner-queue-test");
 }
 
 function jsonOf(result: unknown): unknown {
@@ -48,8 +46,8 @@ async function pending(client: Client): Promise<Array<{ id: string; kind: string
 describe("an owner command posted in one session is readable in another", () => {
   test("the TUI's veto reaches the session that will act on it", async () => {
     handle = await serve(FIXTURE, { port: 0 });
-    const tui = await connect(handle.url);
-    const dispatcher = await connect(handle.url);
+    const tui = await connect(handle);
+    const dispatcher = await connect(handle);
 
     const posted = (await tui.callTool({
       name: "room.post_owner_command",
@@ -70,7 +68,7 @@ describe("an owner command posted in one session is readable in another", () => 
     // The distinction the backlog demands: "nobody has read it yet" and "nothing
     // will act on this" are different answers and must not share a shape.
     handle = await serve(FIXTURE, { port: 0 });
-    const client = await connect(handle.url);
+    const client = await connect(handle);
 
     const result = jsonOf(
       await client.callTool({
@@ -89,8 +87,8 @@ describe("an owner command posted in one session is readable in another", () => 
 describe("the queue is a resource as well as a tool", () => {
   test("resources/list advertises it, and reading it returns the same pending set", async () => {
     handle = await serve(FIXTURE, { port: 0 });
-    const tui = await connect(handle.url);
-    const reader = await connect(handle.url);
+    const tui = await connect(handle);
+    const reader = await connect(handle);
     await tui.callTool({ name: "room.post_owner_command", arguments: { kind: "veto", body: "stop" } });
 
     const list = (await reader.listResources()) as { resources: Array<{ uri: string }> };
@@ -111,7 +109,7 @@ describe("the queue is a resource as well as a tool", () => {
 describe("acknowledging", () => {
   test("an acked command leaves the pending set", async () => {
     handle = await serve(FIXTURE, { port: 0 });
-    const client = await connect(handle.url);
+    const client = await connect(handle);
     const posted = jsonOf(
       await client.callTool({ name: "room.post_owner_command", arguments: { kind: "veto", body: "stop" } }),
     ) as OwnerCommandResult;
@@ -129,7 +127,7 @@ describe("acknowledging", () => {
     // Reporting success for an id nobody queued would tell a dispatcher it had
     // settled something it never held — and it would stop looking.
     handle = await serve(FIXTURE, { port: 0 });
-    const client = await connect(handle.url);
+    const client = await connect(handle);
 
     const result = await client.callTool({ name: "room.ack_owner_command", arguments: { id: "cmd-nope" } });
     expect(result.isError).toBe(true);
@@ -139,7 +137,7 @@ describe("acknowledging", () => {
 
   test("acking twice is refused the second time", async () => {
     handle = await serve(FIXTURE, { port: 0 });
-    const client = await connect(handle.url);
+    const client = await connect(handle);
     const posted = jsonOf(
       await client.callTool({ name: "room.post_owner_command", arguments: { kind: "veto", body: "stop" } }),
     ) as OwnerCommandResult;
@@ -161,7 +159,7 @@ describe("the handler is a second road into one queue", () => {
         return { status: "accepted", reason: "acted on in round 3" };
       },
     });
-    const client = await connect(handle.url);
+    const client = await connect(handle);
 
     const result = jsonOf(
       await client.callTool({ name: "room.post_owner_command", arguments: { kind: "veto", body: "stop" } }),
@@ -180,7 +178,7 @@ describe("the handler is a second road into one queue", () => {
       port: 0,
       onOwnerCommand: () => ({ status: "refused", reason: "the room already converged" }),
     });
-    const client = await connect(handle.url);
+    const client = await connect(handle);
 
     const result = jsonOf(
       await client.callTool({ name: "room.post_owner_command", arguments: { kind: "goal_edit", body: "raise it" } }),
@@ -199,7 +197,7 @@ describe("the queue is bounded", () => {
     // the session map; a refusal an operator can see beats a leak nobody
     // measures.
     handle = await serve(FIXTURE, { port: 0 });
-    const client = await connect(handle.url);
+    const client = await connect(handle);
 
     for (let i = 0; i < OWNER_QUEUE_LIMIT; i += 1) {
       const result = jsonOf(
@@ -226,7 +224,7 @@ describe("the queue is bounded", () => {
 
   test("acknowledging makes room again", async () => {
     handle = await serve(FIXTURE, { port: 0 });
-    const client = await connect(handle.url);
+    const client = await connect(handle);
     const first = jsonOf(
       await client.callTool({ name: "room.post_owner_command", arguments: { kind: "veto", body: "first" } }),
     ) as OwnerCommandResult;
@@ -249,7 +247,7 @@ describe("nothing here writes the room log", () => {
     const beforeMtime = statSync(FIXTURE).mtimeMs;
 
     handle = await serve(FIXTURE, { port: 0 });
-    const client = await connect(handle.url);
+    const client = await connect(handle);
     const posted = jsonOf(
       await client.callTool({ name: "room.post_owner_command", arguments: { kind: "veto", body: "stop" } }),
     ) as OwnerCommandResult;

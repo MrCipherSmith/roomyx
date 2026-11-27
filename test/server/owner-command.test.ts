@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { connectToRoom } from "../helpers/room-client";
 import { serve } from "../../src/server/serve";
 import type { ServeHandle } from "../../src/server/serve";
 import type { OwnerCommandEnvelope, OwnerCommandResult } from "../../src/server/index";
@@ -20,10 +20,8 @@ afterEach(async () => {
   dir = undefined;
 });
 
-async function connect(url: string): Promise<Client> {
-  const client = new Client({ name: "owner-command-test", version: "0.0.0" });
-  await client.connect(new StreamableHTTPClientTransport(new URL(url)));
-  return client;
+function connect(room: { url: string; token: string }): Promise<Client> {
+  return connectToRoom(room, "owner-command-test");
 }
 
 function textOf(result: unknown): string {
@@ -39,7 +37,7 @@ describe("room.post_owner_command (R5)", () => {
     // worked. The command is held now, and the response says so without
     // pretending anything has acted on it.
     handle = await serve(FIXTURE, { port: 0 });
-    const client = await connect(handle.url);
+    const client = await connect(handle);
 
     const result = await client.callTool({
       name: "room.post_owner_command",
@@ -62,7 +60,7 @@ describe("room.post_owner_command (R5)", () => {
         return { status: "accepted" as const, reason: "queued for round 3" };
       },
     });
-    const client = await connect(handle.url);
+    const client = await connect(handle);
 
     const result = await client.callTool({
       name: "room.post_owner_command",
@@ -83,7 +81,7 @@ describe("room.post_owner_command (R5)", () => {
 
   test("rejects a kind outside the four the contract defines", async () => {
     handle = await serve(FIXTURE, { port: 0, onOwnerCommand: () => ({ status: "accepted" as const }) });
-    const client = await connect(handle.url);
+    const client = await connect(handle);
 
     const result = await client.callTool({
       name: "room.post_owner_command",
@@ -102,7 +100,7 @@ describe("room.post_owner_command (R5)", () => {
     const before = readFileSync(FIXTURE, "utf8");
 
     handle = await serve(FIXTURE, { port: 0, onOwnerCommand: () => ({ status: "accepted" as const }) });
-    const client = await connect(handle.url);
+    const client = await connect(handle);
     await client.callTool({
       name: "room.post_owner_command",
       arguments: { kind: "goal_edit", body: "raise the pass threshold" },

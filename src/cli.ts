@@ -18,7 +18,7 @@ import { installPersonas, personaCount } from "./installer/personas";
 import { callRoomTool } from "./installer/room-tool";
 import { appendMessages, createRoomLog, LEGAL_KINDS, parseRoster } from "./log/write";
 import type { AppendMessageOptions } from "./log/write";
-import { acquireWriterLease, readWriterLease, writerLeasePathFor } from "./writer-lease";
+import { isLeaseHolderAlive, readWriterLease, tombstoneWriterLease, writerLeasePathFor } from "./writer-lease";
 import { MESSAGE_KINDS } from "./log/schema";
 import { LogWriteError } from "./log/write";
 import type { MessageEnvelope } from "./log/types";
@@ -194,6 +194,10 @@ function stateBefore(lease: import("./writer-lease").LeaseState): { pid: number;
   // A stale lease still identifies the writer that stopped: recording it is the
   // difference between a log that says "someone took this over" and one that
   // says who from.
+  //
+  // `released` deliberately displaces nobody. The tombstone already records who
+  // was taken over, and naming that pid again in a second take-over's trace
+  // would report a writer being displaced twice.
   return lease.reason === "stale" ? { pid: lease.last.pid, at: lease.last.at } : undefined;
 }
 
@@ -405,8 +409,23 @@ const COMMANDS: Record<string, Command> = {
       // Two independent pieces of evidence that someone else is writing: a live
       // dispatcher, and a lease somebody is refreshing. The second exists because
       // the first only holds for a server that was started with a lease path.
-      const writerPresent = lease.held || dispatched === true;
-      const writerWasThere = !writerPresent && lease.reason === "stale";
+      //
+      // A held lease is only evidence while the process that wrote it exists. It
+      // is a claim made by a pid, and checking that pid costs one signal — while
+      // not checking it meant a lease left behind by a process that had already
+      // gone refused every write for the whole stale window, naming a pid the
+      // operator could look up and not find. Nothing that is not running can be
+      // writing into this log, so this narrows what counts as a live writer
+      // without widening what may write beside one.
+      const liveHolder = lease.held && isLeaseHolderAlive(lease.lease.pid) ? lease.lease : undefined;
+      const writerPresent = liveHolder !== undefined || dispatched === true;
+      // A fresh lease whose holder is gone is NOT the "a writer stopped here"
+      // case: that one is `stale`, and it still requires --take-over below. This
+      // one is provably nobody, so it is allowed — said out loud on stderr
+      // because a recorded lease that the CLI decides to disregard is exactly the
+      // kind of thing that should not happen quietly.
+      const abandonedHold = lease.held && liveHolder === undefined ? lease.lease : undefined;
+      const writerWasThere = !writerPresent && !lease.held && lease.reason === "stale";
 
       if (writerPresent) {
         // Two different reasons to refuse, and they need different advice: a
@@ -419,7 +438,10 @@ const COMMANDS: Record<string, Command> = {
             : `Wait for that lease to expire (a writer that is running refreshes it), or stop the process holding it.`;
         throw new ArgError(
           `A writer is live in ${absolute}${serving === undefined ? "" : ` (room ${serving.id})`}` +
-            `${lease.held ? ` — pid ${lease.lease.pid}` : " — the room reports a dispatcher attached"}. ` +
+            // `liveHolder`, not `lease.held`: naming a pid is only useful if the
+            // pid is findable, and an unfindable one is what made this message
+            // untrustworthy.
+            `${liveHolder === undefined ? " — the room reports a dispatcher attached" : ` — pid ${liveHolder.pid}`}. ` +
             `Two writers into one append-only log is the race D-01 exists to prevent, and nothing overrides a writer ` +
             `that is still there. ${advice}`,
         );
@@ -458,6 +480,17 @@ const COMMANDS: Record<string, Command> = {
         );
       }
 
+      // A lease that is still inside its window but whose holder has exited. Not
+      // a refusal — a dead process is not writing anything — but not silence
+      // either: this is a writer that stopped without releasing, and the operator
+      // should hear which pid it was.
+      if (abandonedHold !== undefined) {
+        console.error(
+          `Note: the writer lease on ${absolute} names pid ${abandonedHold.pid}, which is no longer running. ` +
+            `Nothing is writing into this log, so this append is allowed.`,
+        );
+      }
+
       // Parsed only after the refusal: an operator whose command is going to be
       // rejected should not be made to pipe a batch in first, and a reader that
       // blocks on stdin while holding a decision helps nobody.
@@ -487,10 +520,19 @@ const COMMANDS: Record<string, Command> = {
       ]);
 
       if (takingOver) {
-        // The lease is replaced with a new token, so a writer that was merely
-        // paused cannot revive the one it lost by refreshing it — the whole
-        // reason a take-over is not just a flag on the write.
-        acquireWriterLease(leasePath, { pid: process.pid, ...(displaced === undefined ? {} : { takeOverFrom: displaced }) });
+        // A tombstone, not a hold. The token is still replaced — that is what
+        // stops a writer which was merely paused from refreshing the lease it
+        // lost and writing beside whoever displaced it, and it is the whole
+        // reason a take-over is not just a flag on the write. What it must not do
+        // is claim the pen: this process exits within milliseconds and calls
+        // `releaseWriterLease` nowhere, so a hold taken here is a hold nothing
+        // ever gives back. Acquiring one turned each deliberate recovery into
+        // thirty seconds of "a writer is live — pid <already exited>" followed by
+        // a permanent demand to keep recovering.
+        tombstoneWriterLease(leasePath, {
+          pid: process.pid,
+          ...(displaced === undefined ? {} : { takeOverFrom: displaced }),
+        });
       }
 
       for (const message of written) console.log(`Appended seq ${message.seq} from ${message.from}.`);
@@ -602,8 +644,17 @@ const COMMANDS: Record<string, Command> = {
         port: handle.port,
         logPath: absoluteLogPath,
         pid: process.pid,
+        // The token goes where the port goes. Anything that can find this room
+        // can find its credential, and nothing else has to be told — which is the
+        // whole of how `roomyx-client`, `rooms list` and the room commands keep
+        // working without a new argument between them.
+        token: handle.token,
       });
 
+      // Deliberately NOT printed. The port and the room id are the two things a
+      // person needs and the two things they paste into a terminal, an issue or a
+      // chat; the token is a credential, and stdout is a scrollback, a CI log and
+      // a `tee`. Whoever needs it reads the registry entry.
       console.log(`roomyx serving ${absoluteLogPath} at ${handle.url}`);
       console.log(`room ID: ${entry.id} — attach with \`roomyx-client --room ${entry.id}\``);
 

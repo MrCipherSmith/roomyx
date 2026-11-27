@@ -3,8 +3,8 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { request } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { connectToRoom } from "../helpers/room-client";
+import { roomTokenHeaders } from "../../src/room-token";
 import { serve } from "../../src/server/serve";
 import type { ServeHandle } from "../../src/server/serve";
 import { serveManagement } from "../../src/mcp-management/server";
@@ -41,6 +41,14 @@ const INITIALIZE = JSON.stringify({
 /**
  * node:http rather than fetch, because fetch refuses to let a caller set
  * `Host` — and forging `Host` is exactly what a rebound page does.
+ *
+ * Every call here passes the room's token (AC10), and that is what keeps these
+ * cases about the rebinding guard. The token gate runs first and answers 401, so
+ * a credential-less forged-Host request would now be refused for the wrong
+ * reason: the assertions would still be green and the guard they exist to pin
+ * would never be reached. Presenting the token makes the statement strictly
+ * stronger — a caller that HAS the room's credential and forges its Host is still
+ * refused 403, which is the browser D-06a is about.
  */
 function post(port: number, headers: Record<string, string>): Promise<{ status: number; body: string }> {
   return new Promise((resolve, reject) => {
@@ -73,6 +81,7 @@ describe("DNS-rebinding guard on the room transport", () => {
     handle = await serve(FIXTURE, { port: 0 });
 
     const res = await post(handle.port, {
+      ...roomTokenHeaders(handle.token),
       host: `127.0.0.1:${handle.port}`,
       origin: "https://evil.example",
     });
@@ -87,6 +96,7 @@ describe("DNS-rebinding guard on the room transport", () => {
     handle = await serve(FIXTURE, { port: 0 });
 
     const res = await post(handle.port, {
+      ...roomTokenHeaders(handle.token),
       host: "roomyx.attacker.test",
       origin: `http://roomyx.attacker.test`,
     });
@@ -100,12 +110,14 @@ describe("DNS-rebinding guard on the room transport", () => {
 
     // Legitimate Host, hostile Origin — only allowedOrigins stops this.
     const browser = await post(handle.port, {
+      ...roomTokenHeaders(handle.token),
       host: `127.0.0.1:${handle.port}`,
       origin: "https://evil.example",
     });
     // Forged Host, and post-rebind the Origin looks same-origin — only
     // allowedHosts stops this one.
     const rebound = await post(handle.port, {
+      ...roomTokenHeaders(handle.token),
       host: "attacker.example",
       origin: "http://attacker.example",
     });
@@ -117,8 +129,7 @@ describe("DNS-rebinding guard on the room transport", () => {
   test("roomyx's own client still connects — it sends no Origin, and the allowlist carries the bound port", async () => {
     handle = await serve(FIXTURE, { port: 0 });
 
-    const client = new Client({ name: "roomyx-client", version: "0.0.0" });
-    await client.connect(new StreamableHTTPClientTransport(new URL(handle.url)));
+    const client = await connectToRoom(handle, "roomyx-client");
     const result = await client.callTool({ name: "room.get_state", arguments: {} });
     expect((result.content as Array<{ text: string }>)[0]?.text).toContain("roster");
     await client.close();
@@ -130,8 +141,11 @@ describe("DNS-rebinding guard on the room transport", () => {
     // Exactly what a legitimate client sends — host WITH the port. This is the
     // case an allowlist of bare hostnames returns 403 for, which is how the
     // naive fix bricks the product.
-    const res = await post(handle.port, { host: `127.0.0.1:${handle.port}` });
+    const res = await post(handle.port, { ...roomTokenHeaders(handle.token), host: `127.0.0.1:${handle.port}` });
     expect(res.status).not.toBe(403);
+    // And not 401 either, which is the way this case could now pass while
+    // proving nothing: `not.toBe(403)` is satisfied by a refusal.
+    expect(res.status).not.toBe(401);
   });
 
   // The transport is shared now, so this is checking the wiring rather than the

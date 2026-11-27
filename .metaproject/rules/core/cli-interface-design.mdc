@@ -1,0 +1,106 @@
+---
+description: "keryx CLI decisions: exit codes (0 clean, 1 found something, 2 cannot tell), machine-readable output on stdout and diagnostics on stderr, versioned --json shapes, unknown flags refused, and flags renamed by alias with one notice or removed by refusing them by name. Use when adding, changing, or retiring a command, subcommand, flag, or --json payload that people already run."
+alwaysApply: false
+stack_requires: "cli"
+---
+
+# CLI Interface Design
+
+## Purpose
+Once a script reads an exit code, pipes stdout, or parses a `--json` payload,
+every later edit is compatible or a silent breakage in someone else's CI. This
+rule records keryx's decisions for those channels, not general CLI practice, and
+no list of current defects: known gaps live in the issue tracker.
+
+## When To Apply
+Apply when adding a command or subcommand, adding or renaming a flag, changing
+what a command exits with, or changing the shape of anything it prints for a
+machine. It governs keryx's own CLI (`src/cli.ts`, `src/commands/**`);
+`rules/core/api-contracts.mdc` governs HTTP surfaces.
+
+---
+
+## Decisions
+
+### 1. Exit codes: three values, three meanings
+
+- **0**: the command ran and the answer is clean.
+- **1**: the command ran and found something the caller should act on: a
+  broken link, a failing gate, a finding, a refusal.
+- **2**: the command could not tell (unreadable store, unparseable input,
+  unresolvable ref), so a script never reads "unreadable" as "gone".
+
+A new command uses 0/1/2. An existing command moves toward it only with its
+consumers named, because narrowing 1 into 1-or-2 is itself a breaking change.
+Corollaries:
+
+- A checker that reports defects and exits 0 cannot be gated on. Zero items
+  evaluated is not a pass.
+- A wrapper forwards its child's exit code unchanged, as `keryx ctx run` does.
+
+### 2. stdout is the answer, stderr is everything else
+
+- Structured output (`--json` payloads, rendered reports, whatever a pipe is for)
+  goes to stdout, alone.
+- Progress, warnings, deprecation notices and usage errors go to stderr. A bare
+  `keryx mcp` is the stdio MCP server, so a notice on stdout corrupts its frames.
+- Under `--json`, a failure is data on stdout, not prose on stderr: a
+  discriminated object such as `{ outcome: "store-unreadable", ... }` with the
+  exit code the failure earns (2 for "could not tell").
+- Help printed because of an error goes to stderr. Help printed because `--help`
+  was asked for goes to stdout. A new flag appears in that command's help text in
+  the same change.
+
+### 3. A `--json` shape is versioned, deterministic, and pinned
+
+1. A top-level object with a `schemaVersion`, per shape. Never a bare array: it
+   cannot grow a field, so its envelope could never be versioned later.
+2. Deterministic key order, so two runs on an unchanged tree are byte-identical.
+3. A test asserts the version and the required keys, in the same change.
+4. Adding an optional field is compatible. Removing or renaming one bumps the
+   version in the same commit.
+
+### 4. An unknown flag is refused, never ignored
+
+- A command refuses an unrecognised flag: it names the flag, lists what is
+  accepted, and exits 1. A dropped flag writes nothing and reports success.
+- A flag with a fixed value set refuses an unknown value and lists the valid
+  ones, rather than silently keeping the default.
+- A new command validates its flags with the shared refusal, not a private copy.
+
+### 5. A flag is renamed by aliasing, and removed by refusing it out loud
+
+keryx does not delete a published spelling.
+
+- **Rename**: the old spelling keeps working through the same implementation (no
+  second implementation to drift) and prints exactly one stderr line per
+  invocation naming the replacement. A contract test asserts both.
+- **Removal**: refuse by name with the reason, never as a generic unknown
+  option, so a script that used it learns why it is gone instead of reading it
+  as a typo.
+- **Wrapper flags**: a wrapper's own flag is consumed, not forwarded. Check the
+  wrapped tool's namespace before claiming a flag name it already owns.
+- An alias is documented in `--help`; an undocumented one reads as an
+  accidental duplicate and can never be retired.
+
+---
+
+## The three that are not negotiable
+
+A nonzero exit never means "I could not tell" in a command that also uses
+nonzero to mean "I found something": pick 2 for the first. A `--json` payload
+never loses or renames a field without a `schemaVersion` bump in the same
+commit. An old flag spelling is never deleted: it is aliased with a notice, or
+refused by name with the reason.
+
+---
+
+## Red Flags: stop and re-read this rule if you are thinking
+
+| Rationalization | Why it's wrong |
+|---|---|
+| "Exit 1 is fine, the message says which kind of failure it was" | Scripts read the code, not the message |
+| "Nobody parses this `--json` yet, so I can change the shape freely" | You cannot observe who parses a published CLI's output |
+| "The old flag is unused, I'll just delete it" | "Unused" means no usage you can see |
+
+**IRON LAW: ONCE A COMMAND IS PUBLISHED, ITS EXIT CODE, ITS STDOUT, AND ITS `--json` SHAPE ARE A CONTRACT. CHANGE THEM THE WAY YOU WOULD CHANGE AN API, OR NOT AT ALL.**

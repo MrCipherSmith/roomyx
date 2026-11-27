@@ -44,9 +44,29 @@ export function createManagementMcpServer(options: ManagementOptions): McpServer
       title: "List live rooms",
       description: "Rooms currently registered and confirmed live (liveness-checked, not just registry presence).",
     },
-    async () => ({
-      content: [{ type: "text", text: JSON.stringify(await listLiveRooms(options.registryPath, { prune: false })) }],
-    }),
+    async () => {
+      const rooms = await listLiveRooms(options.registryPath, { prune: false });
+      // The per-room token is stripped, field by field, and this is not a
+      // nicety: this server takes no credential of its own, so echoing the
+      // rooms' tokens here would hand every room's credential to exactly the
+      // caller the token was introduced to bound — an unauthenticated loopback
+      // request, which is the request the audit made with `curl`. The token would
+      // have travelled out of here for free simply because the registry entry it
+      // lives in is what this tool serialises.
+      //
+      // Allow-listed rather than deleted (`{ token, ...rest }`): a field added to
+      // the registry entry later must not appear on this surface by default. The
+      // whole point of the D-07 shared-transport lesson is that a second thing
+      // getting the same treatment silently is the failure, not the exception.
+      const listed = rooms.map((room) => ({
+        id: room.id,
+        port: room.port,
+        logPath: room.logPath,
+        pid: room.pid,
+        startedAt: room.startedAt,
+      }));
+      return { content: [{ type: "text", text: JSON.stringify(listed) }] };
+    },
   );
 
   server.registerTool(

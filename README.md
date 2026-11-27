@@ -247,6 +247,28 @@ Multiple independent MCP client sessions against one `serve` process are
 supported: each new session gets its own transport and server instance, keyed by
 `mcp-session-id`.
 
+**Every request must present the room's token.** `serve` mints one per room, per
+process start, and writes it into the room's registry entry beside the port —
+never to stdout, because stdout is a scrollback and a CI log. A request without
+it, or with the wrong one, is refused with `401` before the MCP layer sees it;
+the refusal never quotes the expected value. Present it as a standard
+`Authorization: Bearer <token>` header:
+
+```bash
+TOKEN=$(jq -r '.rooms[0].token' .roomyx/rooms/registry.json)
+curl -H "authorization: Bearer $TOKEN" ... http://127.0.0.1:4319/mcp
+```
+
+Every in-tree caller — the TUI, `roomyx room delta|commands|ack`, `rooms list`'s
+liveness probe — reads it from that entry and needs no flag. **This is not
+authentication of a person.** Nobody signs in, and it records nothing about who
+called. What it does is stop a process that knows only the port from driving the
+room: reaching the endpoint means reading the transcript *and* queueing owner
+commands to an agent that is holding tools, so knowing the port is no longer
+enough. A process that can read the registry file is still inside the boundary.
+`roomyx mcp`, the management server, has no token — a different surface, no
+owner-command queue, and its tools report rather than act.
+
 ### `roomyx rooms list`
 
 Lists rooms that are **confirmed live**, not merely present in the registry —
@@ -379,13 +401,23 @@ lifetime from `serve`/`mcp`.
 | Flag | Meaning |
 | --- | --- |
 | `--room <id>` | Attach to a specific live room by id. |
-| `--connect <url>` | Attach to an explicit MCP URL. Wins outright; the registry is not consulted. |
+| `--connect <url>` | Attach to an explicit MCP URL. The address wins outright; the registry is consulted only to find that port's token. |
+| `--token <token>` | The room's token, when `--connect` names a room this registry does not know. |
 | `--registry <path>` | Registry file to resolve rooms from. |
 | `--archive` | Pick a closed room from the history index and open it read-only. |
 | `--open <logPath>` | Reread one closed room directly, read-only. No server needed. |
 
 With no flags it auto-attaches when exactly one room is live, and refuses with a
 list of candidate ids when more than one is.
+
+**The room's token.** A room requires the per-room token `roomyx serve` mints for
+it, presented as `Authorization: Bearer <token>`. It is recorded in the room's
+registry entry beside its port and is never printed, so `--room <id>` and
+auto-attach find it for you and need no extra flag. `--token` exists for the one
+case that cannot be looked up: `--connect` against a room registered somewhere
+this client cannot read. Without a token the room answers 401, which the client
+reports as `disconnected` — so it says so in one line rather than leaving that to
+look like a room that is not running.
 
 **Read-only mode.** `--open` and `--archive` load a finished log once — no
 server, no polling, no reconnect. Scrolling, per-participant filtering, search,
@@ -416,7 +448,7 @@ and skill-sync — to any MCP client.
 
 | Tool | Input | Returns |
 | --- | --- | --- |
-| `roomyx.rooms.list` | — | Live, liveness-checked rooms. |
+| `roomyx.rooms.list` | — | Live, liveness-checked rooms — id, port, log path, pid and start time. Never a room's token: this server takes no credential of its own, so echoing them here would hand every room's credential to the caller the token bounds. |
 | `roomyx.skills.sync` | `target: claude \| codex \| keryx \| all`, `dryRun?: boolean`, `yes?: boolean` | One result per target: whether it would write, whether it did, and where the backup went. |
 
 **Named targets only, deliberately.** This tool once accepted a literal

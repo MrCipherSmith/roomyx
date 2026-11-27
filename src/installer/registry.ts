@@ -2,8 +2,8 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "
 import { dirname } from "node:path";
 import { z } from "zod";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { withLock } from "../lockfile";
+import { roomTransport } from "../room-token";
 import { archiveRoom, defaultHistoryPath } from "./history";
 
 /** Re-exported: the registry's own tests reach for it, and it lives in ../lockfile now. */
@@ -15,6 +15,20 @@ const registryEntrySchema = z.object({
   logPath: z.string().min(1),
   pid: z.number().int(),
   startedAt: z.string().min(1),
+  /**
+   * The room's per-room token, written here because this entry is already the
+   * only place a room's port is recorded: whoever can find the port can find the
+   * token, and nobody else has to be told twice.
+   *
+   * **Optional on read, required on write.** `registerRoom` always writes one —
+   * the parameter type makes forgetting it a type error rather than a room
+   * nothing can reach. But an entry left behind by a roomyx from before this
+   * change has no token, and refusing to parse it would turn every `rooms list`
+   * on an existing machine into "Invalid room registry" instead of a room that
+   * answers 401. Reading permissively and failing at the door is the same shape
+   * AC5 settled for the log: a stale record must not make the file unreadable.
+   */
+  token: z.string().min(1).optional(),
 });
 
 const registryFileSchema = z.object({
@@ -52,7 +66,16 @@ function readRegistryUnlocked(path: string): { schemaVersion: 1; rooms: RoomRegi
   return parsed.data;
 }
 
-/** Write-to-temp-then-rename: a reader never observes a partially-written file. */
+/**
+ * Write-to-temp-then-rename: a reader never observes a partially-written file.
+ *
+ * The file mode is left exactly as it was when this file held only ports —
+ * `writeFileSync`'s default, so `0666 & ~umask`. That is a deliberate
+ * non-change, not an oversight: the per-room token now lives here, and
+ * tightening the mode in the same change that introduced it would be a second,
+ * undiscussed decision riding along. It is recorded as a follow-up instead,
+ * because it bears directly on how far the token reaches — see D-06b.
+ */
 function writeRegistryUnlocked(path: string, rooms: RoomRegistryEntry[]): void {
   const tmpPath = `${path}.tmp-${process.pid}-${Math.random().toString(36).slice(2)}`;
   writeFileSync(tmpPath, JSON.stringify({ schemaVersion: 1, rooms }, null, 2));
@@ -73,7 +96,12 @@ function generateRoomId(): string {
  */
 export function registerRoom(
   registryPath: string,
-  info: { port: number; logPath: string; pid: number },
+  // `token` is required rather than optional, and that is the point of taking it
+  // here at all: a registered room with no token is a room every in-tree client
+  // resolves to and then cannot talk to, and the failure shows up as `unknown`
+  // liveness rather than as an error. A required parameter makes the omission a
+  // type error at the one call site that can make it.
+  info: { port: number; logPath: string; pid: number; token: string },
 ): RoomRegistryEntry {
   mkdirSync(dirname(registryPath), { recursive: true });
   return withLock(registryPath, () => {
@@ -84,6 +112,7 @@ export function registerRoom(
       logPath: info.logPath,
       pid: info.pid,
       startedAt: new Date().toISOString(),
+      token: info.token,
     };
     writeRegistryUnlocked(registryPath, [...registry.rooms, entry]);
     return entry;
@@ -287,7 +316,13 @@ export async function probeRoomState(
 ): Promise<{ log_path?: string; dispatcherAttached?: boolean } | undefined> {
   if (!isPidAlive(room.pid)) return undefined;
   const client = new Client({ name: "roomyx-registry-check", version: "0.1.0" });
-  const transport = new StreamableHTTPClientTransport(new URL(`http://${LOOPBACK_HOST}:${room.port}/mcp`));
+  // Through `roomTransport`, with the token off the entry being probed. This is
+  // the call site D-06a's precedent points at: the probe is the only in-tree
+  // caller whose failure is silent, because a refused probe is reported as
+  // `unknown` liveness and `unknown` is an ordinary answer. A hand-assembled
+  // header here that drifted from the server's expectation would read as a busy
+  // machine, not as a bug.
+  const transport = roomTransport(`http://${LOOPBACK_HOST}:${room.port}/mcp`, room.token);
   const timeout = new Promise<never>((_, reject) => {
     setTimeout(() => reject(new Error("liveness check timed out")), timeoutMs);
   });

@@ -72,6 +72,48 @@ describe("the client's ordered shutdown", () => {
     expect([stops, destroys, exits]).toEqual([1, 1, 1]);
   });
 
+  test("a renderer teardown that throws still reaches exit", async () => {
+    // `destroyRenderer` runs inside `.finally()`, so its throw replaces the
+    // `exit()` after it — and @opentui's `destroy()` is exactly the call that
+    // throws when the renderer is already half torn down ("TextBuffer is
+    // destroyed" is this file's own history). The result is a TUI that was asked
+    // to quit, restored nothing, and did not exit: the terminal is left in the
+    // alternate screen with mouse tracking on, and the only way out is another
+    // window.
+    let exited: number | undefined;
+    const shutdown = createShutdown({
+      stopClient: () => Promise.resolve(),
+      destroyRenderer: () => {
+        throw new Error("TextBuffer is destroyed");
+      },
+      exit: (code) => {
+        exited = code;
+      },
+    });
+
+    shutdown(0);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(exited).toBeDefined();
+  });
+
+  test("a stopClient that rejects exits non-zero, even when zero was asked for", async () => {
+    // Same rule as the server's: the exit code is what a parent process reads. A
+    // client that could not stop its poller — the MCP session is still open, the
+    // room still has an attached reader — reporting 0 tells a supervising
+    // dispatcher the session was closed cleanly when it was not.
+    const codes: number[] = [];
+    const shutdown = createShutdown({
+      stopClient: () => Promise.reject(new Error("poll in flight")),
+      destroyRenderer: () => undefined,
+      exit: (code) => codes.push(code),
+    });
+
+    shutdown(0);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(codes).toHaveLength(1);
+    expect(codes[0]).not.toBe(0);
+  });
+
   test("the exit code is carried through", async () => {
     const codes: number[] = [];
     const shutdown = createShutdown({
