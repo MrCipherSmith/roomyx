@@ -57,6 +57,10 @@ releases that followed it are in
   per-room token work the way they do,** and its `src/cli` page reflects the split.
   Internal documentation under `.metaproject/wiki/`; nothing shipped changes.
 
+- **`roomyx init` now says that room logs are committed with the repository,** when it
+  creates the logs directory, and how to keep them out. It still ignores only the
+  registry and lockfiles; the transcript is deliberately kept.
+
 ## [0.12.2] — 2026-09-12
 
 A documentation patch, and the defect it fixes was on the first screen anyone

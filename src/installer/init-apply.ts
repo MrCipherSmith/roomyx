@@ -77,7 +77,7 @@ function applyOne(item: PlanItem, context: ApplyContext): string {
 
     case "logs":
       mkdirSync(item.path, { recursive: true });
-      return "created";
+      return "created (room logs are committed with the repo, not ignored: add this path to .gitignore if a transcript could hold anything private)";
 
     case "gitignore":
       return ensureGitignore(context.cwd);
