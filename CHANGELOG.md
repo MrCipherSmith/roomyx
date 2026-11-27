@@ -49,6 +49,10 @@ releases that followed it are in
 - **`bun run check` and CI fail when `CHANGELOG.md` has no entry for the version in
   `package.json`,** so a version bump cannot ship without its notes.
 
+- **`src/cli.ts` is split into one module per command under `src/cli/`.** An internal
+  refactor with no behaviour change: `src/cli.ts` keeps the dispatcher, the version
+  and the help, and every command's flags, output and exit codes are as before.
+
 ## [0.12.2] — 2026-09-12
 
 A documentation patch, and the defect it fixes was on the first screen anyone

@@ -59,7 +59,7 @@ describe("the bundled skill and the room server", () => {
     // clothes.
     const cli = readFileSync(join(import.meta.dir, "..", "src", "cli.ts"), "utf8");
     for (const command of ["room delta", "room commands", "room ack"]) {
-      expect(cli).toContain(`"${command}": {`);
+      expect(cli).toContain(`"${command}":`);
     }
   });
 
